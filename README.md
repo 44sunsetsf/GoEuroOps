@@ -1,4 +1,4 @@
-# EchoMind
+# GoEuroOps
 
 一个多 Agent 智能运营系统：意图识别、RAG 知识检索、Redis + ChromaDB 分层记忆、动态 Skills 注入、在线监控与降级、LLM-as-Judge 端到端评测。
 
@@ -7,21 +7,21 @@
 ## 目录结构
 
 ```text
-EchoMind/           Python 后端：FastAPI + 多 Agent 编排 + RAG + 记忆 + 监控 + 评测
-EchoMindFrontend/   Vue 前端：对话调试台 / 知识库管理 / 评测面板
+backend/    Python 后端：FastAPI + 多 Agent 编排 + RAG + 记忆 + 监控 + 评测
+frontend/   Vue 前端：对话调试台 / 知识库管理 / 评测面板
 ```
 
 两部分可以独立运行，也可以通过各自的 `docker-compose.yml` 一起启动。详细说明见各自目录下的 README：
 
-- [EchoMind/README.md](EchoMind/README.md) — 后端架构、API、快速开始
-- [EchoMindFrontend/README.md](EchoMindFrontend/README.md) — 前端本地运行、Docker 部署
+- [backend/README.md](backend/README.md) — 后端架构、API、快速开始
+- [frontend/README.md](frontend/README.md) — 前端本地运行、Docker 部署
 
-更详细的技术文档（架构图、业务流程、重点代码解读）在 [EchoMind/wiki](EchoMind/wiki) 下。
+更详细的技术文档（架构图、业务流程、重点代码解读）在 [backend/wiki](backend/wiki) 下。
 
 ## 快速开始
 
 ```bash
-cd EchoMind
+cd backend
 cp .env.example .env   # 填入 ANTHROPIC_API_KEY（或兼容 Anthropic 协议的第三方模型，如 DeepSeek）
 docker compose up -d --build
 ```
@@ -29,7 +29,7 @@ docker compose up -d --build
 后端启动后访问 `http://localhost:8000/docs` 看 API，或者启动前端：
 
 ```bash
-cd EchoMindFrontend
+cd frontend
 npm install
 npm run dev
 ```
