@@ -20,18 +20,27 @@ frontend/   Vue 前端：对话调试台 / 知识库管理 / 评测面板
 
 ## 快速开始
 
+在项目根目录一条命令启动全部服务（后端、前端、Redis、ChromaDB、Prometheus）：
+
 ```bash
-cd backend
 cp .env.example .env   # 填入 ANTHROPIC_API_KEY（或兼容 Anthropic 协议的第三方模型，如 DeepSeek）
 docker compose up -d --build
 ```
 
-后端启动后访问 `http://localhost:8000/docs` 看 API，或者启动前端：
+| 入口 | 地址 |
+|---|---|
+| 前端（对话 / 知识库 / 评测） | http://localhost（端口可用 `.env` 里的 `FRONTEND_PORT` 修改） |
+| API 文档 | http://localhost:8000/docs |
+| Prometheus | http://localhost:9090 |
+
+首次构建后，可以直接在 Docker Desktop 的 Containers 页面里对 `goeuroops` 项目点击启动/停止。
+
+注意：代码是打进镜像的，修改 `backend/` 或 `frontend/` 下的代码后需要重新执行 `docker compose up -d --build`；`backend/skills/` 是挂载进容器的，改完调用 `POST /skills/reload` 即可热加载，不用重建。
+
+如果想本地开发前端（热更新），保持后端容器运行，再执行：
 
 ```bash
-cd frontend
-npm install
-npm run dev
+cd frontend && npm install && npm run dev   # http://localhost:5173，自动代理到 localhost:8000
 ```
 
 ## 技术栈
