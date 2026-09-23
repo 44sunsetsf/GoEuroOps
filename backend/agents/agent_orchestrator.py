@@ -9,11 +9,15 @@
   3. 降级路由 —— 专属 Agent 不可用时，自动降级到 GeneralAgent
 
 并行协作：
-  - 复杂问题（如"技术问题 + 账单问题"）可同时派发给多个 Agent
-  - 结果由 Orchestrator 合并后返回
+  - 复合问题（如"问瑞典项目 + 问退款"）可同时派发给多个 Agent
+  - 结果由 ResponseComposer 合并后返回
+
+每次 Agent 调用前还有两道确定性的前置处理：
+  - 意图门控 RAG（core/rag_gate.py）：按意图决定预取 / 按需 / 不检索
+  - Skills 路由（core/skill_loader.py）：按意图、关键词、语义样例挑选业务规范注入
 
 升级机制：
-  - Agent 置信度低于阈值 → 自动升级到更高级 Agent 或转人工
+  - 紧急度 CRITICAL 或转人工意图 → EscalationAgent 生成交接单写入线索面板
 """
 import asyncio
 import inspect
@@ -34,14 +38,19 @@ from anthropic import AsyncAnthropic
 
 from agents.tools import (
     AgentToolSpec,
+    build_handoff_summary,
     build_shared_rag_tools,
     billing_tools,
     consulting_tools,
     escalation_tools,
     general_tools,
+    make_tool,
 )
+from business.catalog import get_catalog
+from business.lead_store import LeadStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
+from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +58,10 @@ logger = logging.getLogger(__name__)
 # ── 数据结构 ──────────────────────────────────────────────────────────────────
 
 class AgentType(Enum):
-    GENERAL   = "general"    # 通用客服
-    CONSULTING = "consulting"  # 留学咨询前台答疑
-    BILLING   = "billing"    # 账单/退款
-    ESCALATION = "escalation" # 人工升级与交接
+    GENERAL   = "general"    # 前台接待与分诊
+    CONSULTING = "consulting"  # 留学咨询与服务介绍/报价/线索
+    BILLING   = "billing"    # 服务费用、退款与发票
+    ESCALATION = "escalation" # 转顾问交接
 
 
 @dataclass(frozen=True)
@@ -121,6 +130,7 @@ class AgentResponse:
     escalate:    bool  = False   # 是否需要升级
     tools_used:  List[str] = field(default_factory=list)
     tool_traces: List[Dict[str, Any]] = field(default_factory=list)
+    skills_applied: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -135,7 +145,11 @@ class Request:
     intent_group: Optional[str] = None
     urgency:     Optional[UrgencyLevel]   = None
     intent_confidence: float = 1.0
+    intent_source_scores: Dict[str, float] = field(default_factory=dict)
     request_id:  str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    # 意图门控 RAG 的结果：prefetch 时 knowledge 为预取片段；off 时本轮不暴露检索工具
+    rag_mode:    Optional[str] = None
+    knowledge:   List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -153,6 +167,12 @@ class OrchestratorResult:
     tool_traces: List[Dict[str, Any]] = field(default_factory=list)
     routing_reason: str = ""
     routing_confidence: float = 0.0
+    intent_group: Optional[str] = None
+    intent_confidence: float = 0.0
+    intent_source_scores: Dict[str, float] = field(default_factory=dict)
+    entities: Dict[str, List[str]] = field(default_factory=dict)
+    skills_applied: List[Dict[str, Any]] = field(default_factory=list)
+    rag_gate: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -195,11 +215,59 @@ class BaseAgent:
         self.stats   = AgentStats()
         self._last_tools_used: List[str] = []
         self._last_tool_traces: List[Dict[str, Any]] = []
+        self._last_skills: List[Dict[str, Any]] = []
         self._shared_tools: Dict[str, AgentToolSpec] = {}
+        self._lead_store: Optional[LeadStore] = None
+
+    def set_lead_store(self, lead_store: Optional[LeadStore]) -> None:
+        self._lead_store = lead_store
 
     def get_tools(self) -> Dict[str, AgentToolSpec]:
         """返回该角色真实可调用的工具白名单。"""
         return dict(self._shared_tools)
+
+    def _select_skills(self, req: Request) -> Any:
+        """按意图、关键词、语义样例和会话历史挑选本轮注入的 Skills。"""
+        if self._skill_manager is None:
+            return None
+        if not hasattr(self._skill_manager, "select"):
+            return None
+        selection = self._skill_manager.select(
+            req.message,
+            self.agent_type.value,
+            intent=req.intent.value if req.intent else None,
+            intent_group=req.intent_group,
+            history=req.history,
+        )
+        if hasattr(self._skill_manager, "record"):
+            self._skill_manager.record(selection, self.agent_type.value)
+        return selection
+
+    def _tools_for(self, req: Request, selection: Any = None) -> Dict[str, AgentToolSpec]:
+        """本轮真正暴露给模型的工具：角色白名单 + 门控调整 + Skill 参考资料工具。"""
+        tools = self.get_tools()
+        if req.rag_mode == RagMode.OFF.value:
+            tools.pop("search_knowledge_base", None)
+        if selection is not None and getattr(selection, "has_references", False):
+            skill_manager = self._skill_manager
+            allowed = list(selection.skill_ids)
+
+            def read_skill_reference(_req: Request, args: Dict[str, Any]) -> Dict[str, Any]:
+                return skill_manager.read_reference(
+                    str(args.get("skill", "")), str(args.get("file", "")), allowed_skill_ids=allowed
+                )
+
+            tools["read_skill_reference"] = make_tool(
+                "read_skill_reference",
+                "读取本轮已命中 Skill 的参考资料（话术库、FAQ、案例等），skill 和 file 取自 Skill 说明中列出的资料目录。",
+                {
+                    "skill": {"type": "string", "description": "Skill id"},
+                    "file": {"type": "string", "description": "参考资料文件名，如 objection_handling.md"},
+                },
+                read_skill_reference,
+                required=["skill", "file"],
+            )
+        return tools
 
     def set_shared_tools(self, tools: Optional[Dict[str, AgentToolSpec]]) -> None:
         self._shared_tools = dict(tools or {})
@@ -209,6 +277,7 @@ class BaseAgent:
         self.stats.total += 1
         self._last_tools_used = []
         self._last_tool_traces = []
+        self._last_skills = []
         try:
             content = await self._call_llm(req, on_delta=on_delta)
             ms = (time.monotonic() - t0) * 1000
@@ -223,6 +292,7 @@ class BaseAgent:
                 escalate=escalate,
                 tools_used=list(self._last_tools_used),
                 tool_traces=list(self._last_tool_traces),
+                skills_applied=list(self._last_skills),
             )
         except Exception as ex:
             ms = (time.monotonic() - t0) * 1000
@@ -234,6 +304,7 @@ class BaseAgent:
                 success=False,
                 latency_ms=ms,
                 tool_traces=list(self._last_tool_traces),
+                skills_applied=list(self._last_skills),
             )
 
     async def _call_llm(self, req: Request, on_delta: Optional[OnDelta] = None) -> str:
@@ -252,9 +323,15 @@ class BaseAgent:
         if role_packet:
             messages.append({"role": "user", "content": f"[角色输入契约]\n{_clean(role_packet)}"})
             messages.append({"role": "assistant", "content": "好的，我会按照该角色的输入和输出契约处理。"})
+        if req.knowledge:
+            messages.append({"role": "user", "content": f"[知识库上下文]\n{_clean(RagGate.format_context(req.knowledge))}"})
+            messages.append({"role": "assistant", "content": "好的，我会优先依据这些知识库片段回答，并注明来源。"})
         messages.append({"role": "user", "content": _clean(req.message)})
 
-        tools = self.get_tools()
+        selection = self._select_skills(req)
+        self._last_skills = selection.applied() if selection is not None else []
+        system_prompt = self._build_system_prompt(req, selection)
+        tools = self._tools_for(req, selection)
         tools_used: List[str] = []
         tool_traces: List[Dict[str, Any]] = []
         for _ in range(3):
@@ -262,7 +339,7 @@ class BaseAgent:
                 "model": self._model,
                 "max_tokens": self.profile.max_tokens,
                 "temperature": self.profile.temperature,
-                "system": self._build_system_prompt(req),
+                "system": system_prompt,
                 "messages": messages,
                 **NO_THINKING_KWARGS,
             }
@@ -279,6 +356,7 @@ class BaseAgent:
             tool_uses = [block for block in content_blocks if self._block_type(block) == "tool_use"]
             if not tool_uses:
                 self._last_tools_used = tools_used
+                self._last_tool_traces = tool_traces
                 return extract_text_content(content_blocks)
 
             messages.append({"role": "assistant", "content": content_blocks})
@@ -390,7 +468,7 @@ class BaseAgent:
             if expected in type_map and not isinstance(value, type_map[expected]):
                 raise ValueError(f"参数 {key} 类型错误，期望 {expected}")
 
-    def _build_system_prompt(self, req: Request) -> str:
+    def _build_system_prompt(self, req: Request, selection: Any = None) -> str:
         """把角色契约和动态 Skills 拼入 system prompt。"""
         profile_prompt = (
             f"\n\n[角色契约]\n"
@@ -399,14 +477,17 @@ class BaseAgent:
             f"处理流程：{' -> '.join(self.profile.workflow)}\n"
             f"可用输入：{'；'.join(self.profile.input_contract)}\n"
             f"输出要求：{'；'.join(self.profile.output_contract)}\n"
-            f"升级条件：{'；'.join(self.profile.handoff_conditions) or '无，按通用客服规则处理'}\n"
+            f"升级条件：{'；'.join(self.profile.handoff_conditions) or '无，按通用接待规则处理'}\n"
             f"允许的数据/工具范围：{'、'.join(self.profile.tool_scope) or '仅使用当前请求上下文'}\n"
             "不要声称执行了未提供的查询、修改或退款操作；缺少证据时明确说明需要核验。"
         )
         base_prompt = f"{self.system_prompt}{profile_prompt}"
         if self._skill_manager is None:
             return base_prompt
-        skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
+        if selection is not None:
+            skill_prompt = selection.prompt
+        else:
+            skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
         if not skill_prompt:
             return base_prompt
         return f"{base_prompt}\n\n[动态 Skills]\n{skill_prompt}"
@@ -420,36 +501,48 @@ class BaseAgent:
             "urgency": req.urgency.name if req.urgency else None,
             "intent_confidence": round(req.intent_confidence, 4),
             "available_entities": req.entities or {},
+            "rag_mode": req.rag_mode,
         }
         return json.dumps(packet, ensure_ascii=False)
 
     def _needs_escalation(self, content: str) -> bool:
-        """检测 Agent 是否建议升级（简单关键词检测）。"""
-        keywords = ["转人工", "人工客服", "escalate", "specialist", "无法处理"]
+        """检测 Agent 是否已经明确把用户交给人工（关键词检测）。"""
+        keywords = ["转人工", "已为你转交顾问", "已转交顾问", "escalate", "无法处理"]
         return any(kw in content for kw in keywords)
 
 
 class GeneralAgent(BaseAgent):
     agent_type    = AgentType.GENERAL
     profile = AgentProfile(
-        role="通用客服分诊与首轮接待",
-        mission="快速回答基础问题，澄清不完整需求，并识别是否需要专业 Agent 或人工处理。",
-        workflow=("复述诉求", "判断业务范围", "直接回答或补充必要信息", "给出下一步"),
+        role="前台接待与分诊",
+        mission="接待来访学生，介绍工作室是谁、能做什么，澄清不完整的需求，处理售后进度和投诉的首轮沟通，并把专业问题引导到对应环节。",
+        workflow=("回应问候或复述诉求", "判断属于咨询/费用/售后/投诉哪一类", "直接回答或只追问必要字段", "给出下一步"),
         input_contract=("对话历史", "用户画像", "意图与紧急度", "知识库上下文"),
-        output_contract=("先回应核心问题", "信息不足时只询问必要字段", "明确下一步和边界"),
-        handoff_conditions=("涉及权限、资金、隐私或复杂投诉", "用户明确要求人工"),
-        tool_scope=("search_knowledge_base", "inspect_request_context", "suggest_required_fields"),
+        output_contract=("先回应核心问题", "信息不足时只追问必要字段", "明确下一步和时效", "不编造进度或承诺"),
+        handoff_conditions=(
+            "查询已购服务的具体进度（需要顾问核对后回复）",
+            "投诉或强烈不满",
+            "涉及退款、合同或隐私删除",
+            "用户明确要求真人顾问",
+        ),
+        tool_scope=("search_knowledge_base", "inspect_request_context", "suggest_required_fields", "get_studio_profile"),
         temperature=0.3,
         max_tokens=900,
     )
     system_prompt = (
-        "你是 GoEuroOps 智能客服。友好、简洁地回答用户问题。"
-        "如果问题超出你的能力范围，明确说明并建议转接专业客服。"
+        "你是留学咨询工作室「指北」的前台接待助手。工作室由几位在瑞典的 CS 留学生创办，"
+        "专注瑞典、德国、荷兰、芬兰、丹麦的英语授课计算机硕士申请，提供选校咨询和文书辅导。"
+        "你负责友好接待、介绍工作室、分诊和售后首轮沟通。"
+        "你看不到任何合同、付款或文书进度数据，涉及这些时收集必要信息并说明会由顾问核对后回复，不要编造进度。"
     )
 
     def _build_role_packet(self, req: Request) -> str:
         packet = json.loads(super()._build_role_packet(req))
-        packet["triage_targets"] = ["consulting", "billing", "escalation"]
+        packet["triage_targets"] = {
+            "consulting": "选校/申请/服务价格/预约",
+            "billing": "付款/退款/发票",
+            "escalation": "真人顾问/投诉/隐私",
+        }
         packet["response_mode"] = "answer_or_clarify"
         return json.dumps(packet, ensure_ascii=False)
 
@@ -462,78 +555,99 @@ class GeneralAgent(BaseAgent):
 class ConsultingAgent(BaseAgent):
     agent_type    = AgentType.CONSULTING
     profile = AgentProfile(
-        role="留学咨询工作室前台答疑与线索承接",
-        mission="解答留学申请的公开知识类问题，介绍工作室的选校与文书服务，并在用户表现出明确付费/预约意向或需要个性化判断时，引导其预约人工顾问。",
-        workflow=("理解问题类型", "回答通用知识或介绍服务", "判断是否已触及个性化建议边界", "给出下一步（继续答疑或引导预约）"),
-        input_contract=("对话历史", "识别到的国家实体", "意图与紧急度", "知识库上下文"),
-        output_contract=("先回应核心问题", "明确说明信息为一般参考", "需要个性化判断时明确建议预约顾问", "不假装完成人工顾问才能做的工作"),
+        role="留学咨询答疑与服务顾问助理",
+        mission="解答五国英语授课 CS 硕士的公开知识问题，介绍工作室服务和公开价格，用报价工具给出准确报价，在用户同意后登记咨询线索，并在需要个性化判断时引导预约真人顾问。",
+        workflow=(
+            "判断问题类型：公开知识 / 服务与价格 / 个性化请求",
+            "公开知识结合知识库和国家资料工具回答并标注参考性质",
+            "价格问题调用服务查询或报价工具，不自行计算",
+            "触及个性化边界时说明原因并引导预约",
+            "用户愿意留联系方式时确认同意后登记线索",
+        ),
+        input_contract=("对话历史", "识别到的国家/服务/入学季实体", "意图与紧急度", "知识库上下文"),
+        output_contract=(
+            "先回应核心问题",
+            "具体数字注明参考来源和核实建议",
+            "价格与优惠只来自工具结果",
+            "需要个性化判断时明确建议预约顾问并说明下一步",
+        ),
         handoff_conditions=(
             "用户要求具体选校/定校建议或个性化项目排序",
-            "用户要求撰写、润色或评价文书/个人陈述内容",
-            "用户要求个性化申请策略（如套磁、选校梯度、时间规划定制）",
-            "涉及服务价格协商、优惠或合同条款确认",
-            "需要确认某校官方政策、录取结果或最新截止日期等易变信息",
-            "用户明确要求转人工顾问或表达强烈预约意向",
+            "用户要求撰写、修改或评价文书内容",
+            "用户要求个性化申请策略或时间规划",
+            "用户要求公开优惠以外的折扣或修改合同条款",
+            "用户明确要求真人顾问或表达明确购买意向",
         ),
-        tool_scope=("search_knowledge_base", "lookup_country_admissions_overview", "lookup_service_offering"),
+        tool_scope=(
+            "search_knowledge_base",
+            "lookup_country_admissions_overview",
+            "lookup_service_offering",
+            "quote_service_bundle",
+            "create_consultation_lead",
+        ),
         temperature=0.3,
-        max_tokens=1000,
+        max_tokens=1200,
     )
     system_prompt = (
-        "你是留学咨询工作室的前台答疑助手，只做两件事："
-        "1）介绍工作室的两项服务——选校定位咨询、文书写作辅导；"
-        "2）回答关于瑞典、德国、荷兰、芬兰、丹麦五国英语授课计算机硕士项目的通用公开知识问题。"
-        "你不能：给出针对某个用户背景的个性化选校建议，不能代写、代改或评价任何文书内容，"
-        "不能承诺录取结果、价格优惠或官方政策细节。"
-        "遇到需要这些判断时，清楚说明这是工作室创始人（人工顾问）负责的工作，并引导用户预约咨询。"
-        "回答中涉及具体数字（学费、分数线、截止日期）时，必须提醒这是参考信息，以院校官网和顾问确认为准。"
+        "你是留学咨询工作室「指北」的咨询助理，服务对象是想申请瑞典、德国、荷兰、芬兰、丹麦英语授课计算机硕士的学生。"
+        "你可以：回答这五国 CS 硕士的公开知识问题；介绍工作室的服务、交付内容和公开价格；用报价工具计算报价；"
+        "在用户明确同意后登记咨询线索，由顾问联系。"
+        "你不能：针对某个人的背景给出选校结论或录取概率判断；撰写、修改或评价文书内容；"
+        "承诺录取结果；给出公开规则以外的任何折扣；把参考资料说成最新官方政策。"
+        "遇到这些请求时，说明这是顾问 1 对 1 服务的范围，并介绍对应服务和预约方式。"
+        "任何金额都必须来自工具结果，不要心算或估算。"
     )
 
     def _build_role_packet(self, req: Request) -> str:
         packet = json.loads(super()._build_role_packet(req))
         packet["consulting_fields"] = {
             "countries_mentioned": req.entities.get("country", []),
-            "boundary": "不得提供个性化选校结论或文书内容；触及即建议预约人工顾问",
+            "services_mentioned": req.entities.get("service", []),
+            "intake": req.entities.get("intake", []),
+            "test_score": req.entities.get("test_score", []),
+            "boundary": "不给个性化选校结论、不写改文书、不承诺录取、不给额外折扣；触及即引导预约顾问",
         }
         return json.dumps(packet, ensure_ascii=False)
 
     def get_tools(self) -> Dict[str, AgentToolSpec]:
         tools = super().get_tools()
-        tools.update(consulting_tools())
+        tools.update(consulting_tools(self._lead_store))
         return tools
 
 
 class BillingAgent(BaseAgent):
     agent_type    = AgentType.BILLING
     profile = AgentProfile(
-        role="账单核验与售后处理",
-        mission="区分扣款、退款、发票、订阅等资金场景，解释可判断事实，并明确核验和人工审核边界。",
-        workflow=("确认账单场景", "收集必要核验字段", "区分订单/实付/退款金额", "说明处理路径与时效", "判断是否升级"),
-        input_contract=("订单号", "金额与币种", "支付时间", "支付渠道", "用户期望", "知识库上下文"),
-        output_contract=("需要核验的信息", "当前可判断内容", "下一步处理路径", "时效边界"),
-        handoff_conditions=("实际退款或补偿", "重复扣款或支付成功但订单未生效", "发票作废/重开", "企业合同或大额订单"),
-        tool_scope=("search_knowledge_base", "check_billing_fields", "compare_amounts"),
+        role="服务费用与售后",
+        mission="解答付款方式、定金与尾款、退款政策和发票问题；用退款计算工具给出估算，明确所有实际退款都需要顾问核验协议后处理。",
+        workflow=("确认费用场景", "收集必要核验字段", "按政策解释或用工具估算", "说明处理路径与时效", "需要实际操作时转顾问"),
+        input_contract=("合同号", "金额", "付款时间", "付款渠道", "服务进度", "知识库上下文"),
+        output_contract=("需要核验的信息", "按政策可以判断的内容", "估算结果及依据", "下一步处理路径与时效"),
+        handoff_conditions=("实际发起退款", "多付或付款成功但服务未确认", "发票作废重开", "对退款金额有异议"),
+        tool_scope=("search_knowledge_base", "check_payment_fields", "calculate_refund", "get_payment_policy", "compare_amounts"),
         temperature=0.0,
         max_tokens=1100,
     )
     system_prompt = (
-        "你是账单服务专家。专注于：账单查询、退款申请、发票问题、订阅管理。"
-        "对财务问题保持准确和专业。涉及实际退款操作时，说明需要人工审核。"
+        "你是留学咨询工作室「指北」的费用与售后助理，负责付款、定金尾款、退款和发票问题。"
+        "你看不到真实的付款和合同记录；退款金额只能用 calculate_refund 工具按政策估算，并说明最终以顾问核验协议为准。"
+        "不要承诺退款一定成功或到账时间早于政策说明。"
     )
 
     def _build_role_packet(self, req: Request) -> str:
         packet = json.loads(super()._build_role_packet(req))
         packet["verification_fields"] = {
-            "order_id": req.entities.get("order_id", []),
+            "contract_id": req.entities.get("contract_id", []),
             "amount": req.entities.get("amount", []),
             "date": req.entities.get("date", []),
+            "services_mentioned": req.entities.get("service", []),
             "missing_fields": [
-                field for field, values in (
-                    ("订单号或交易号", req.entities.get("order_id", [])),
-                    ("支付金额", req.entities.get("amount", [])),
+                label for label, values in (
+                    ("合同号", req.entities.get("contract_id", [])),
+                    ("付款金额", req.entities.get("amount", [])),
                 ) if not values
             ],
-            "risk_boundary": "不得承诺退款成功、立即到账或直接修改账单",
+            "risk_boundary": "不得承诺退款成功、立即到账或直接修改合同",
         }
         return json.dumps(packet, ensure_ascii=False)
 
@@ -544,43 +658,83 @@ class BillingAgent(BaseAgent):
 
 
 class EscalationAgent(BaseAgent):
-    """人工升级节点。
+    """转顾问节点。
 
-    升级不是一个普通问答 Prompt：它应该生成标准化的交接信息并停止普通
-    Agent 继续编造答案。生产环境可在这里接工单系统、人工队列或 Webhook。
+    升级不是一个普通问答 Prompt：它生成标准化的交接单写入线索面板，
+    并给用户一个确定的答复（谁、多久、通过什么方式联系），而不是让 LLM
+    继续编造处理结果。
     """
 
     agent_type = AgentType.ESCALATION
     profile = AgentProfile(
-        role="人工升级与交接",
-        mission="确认升级原因，整理已知上下文，告知用户下一步，不执行未经授权的业务操作。",
-        workflow=("确认升级原因", "整理已知信息", "标记优先级", "生成交接摘要"),
+        role="转顾问交接",
+        mission="确认转交原因，整理已知上下文写入交接单，告知用户顾问的响应时效和时差，不执行未经授权的操作。",
+        workflow=("确认转交原因", "整理已知信息", "写入交接单", "告知响应时效"),
         input_contract=("用户消息", "意图", "紧急度", "结构化实体", "对话背景"),
-        output_contract=("升级原因", "已知信息摘要", "还需补充的信息", "保守的后续说明"),
-        handoff_conditions=("用户明确要求人工", "紧急或高风险场景"),
-        tool_scope=("search_knowledge_base", "create_handoff_summary"),
+        output_contract=("已转交说明", "交接单编号", "响应时效与时差", "隐私提醒"),
+        handoff_conditions=("用户明确要求真人顾问", "紧急、投诉或隐私删除请求"),
+        tool_scope=("create_handoff_summary",),
         temperature=0.0,
         max_tokens=500,
     )
-    system_prompt = "你负责客服人工升级交接，不要继续模拟已完成的后台操作。"
+    system_prompt = "你负责把用户转交给工作室顾问，不要继续模拟已完成的后台操作。"
 
     def get_tools(self) -> Dict[str, AgentToolSpec]:
         tools = super().get_tools()
-        tools.update(escalation_tools())
+        tools.update(escalation_tools(self._lead_store))
         return tools
 
     async def handle(self, req: Request, on_delta: Optional[OnDelta] = None) -> AgentResponse:
         t0 = time.monotonic()
         self.stats.total += 1
         intent = req.intent.value if req.intent else "unknown"
-        urgency = req.urgency.name if req.urgency else "UNKNOWN"
-        entities = json.dumps(req.entities or {}, ensure_ascii=False)
-        content = (
-            "我已将这个问题标记为人工升级处理。\n\n"
-            f"升级原因：意图={intent}，紧急度={urgency}\n"
-            f"已记录信息：{entities}\n"
-            "请不要发送密码、短信验证码或完整支付凭证；人工客服会根据会话记录继续核验。"
-        )
+        reason = {
+            "data_privacy": "用户提出个人资料/隐私相关请求",
+            "human_handoff": "用户要求真人顾问",
+            "escalation": "用户要求升级处理或提出投诉",
+        }.get(intent, f"紧急度 {req.urgency.name if req.urgency else 'UNKNOWN'} 需要顾问尽快跟进")
+
+        ticket_id = None
+        tool_traces: List[Dict[str, Any]] = []
+        if self._lead_store is not None:
+            tool_t0 = time.monotonic()
+            try:
+                ticket = await self._lead_store.create(build_handoff_summary(req, reason), lead_type="handoff")
+                ticket_id = ticket["id"]
+                from core.metrics import LEADS_CREATED
+                LEADS_CREATED.labels(type="handoff").inc()
+                success, error = True, ""
+            except Exception as ex:
+                logger.warning("交接单写入失败: %s", ex)
+                success, error = False, str(ex)
+            tool_traces.append({
+                "agent_type": self.agent_type.value,
+                "tool_name": "create_handoff_summary",
+                "tool_use_id": None,
+                "input": {"reason": reason},
+                "success": success,
+                "result_success": success,
+                "latency_ms": round((time.monotonic() - tool_t0) * 1000, 1),
+                "cached": False,
+                "reranked": False,
+                "error": error,
+            })
+
+        studio = get_catalog().studio
+        lines = ["我已经把你的问题转交给工作室顾问。", ""]
+        if ticket_id:
+            lines.append(f"- 交接单编号：{ticket_id}")
+        lines.append(f"- 转交原因：{reason}")
+        lines.append(f"- 响应时效：{studio.response_sla}")
+        lines.append(f"- 时差提醒：{studio.timezone_note}")
+        if intent == "data_privacy":
+            lines.append("- 资料删除或停止联系的请求会由顾问确认身份后处理，完成后会告知你。")
+        lines += [
+            "",
+            "如果还没留过联系方式，可以直接回复称呼和微信/邮箱/手机中的一种，方便顾问联系你。"
+            "请不要发送身份证号、护照号、银行卡号或任何密码。",
+        ]
+        content = "\n".join(lines)
         if on_delta is not None:
             await on_delta(content)
         ms = (time.monotonic() - t0) * 1000
@@ -592,7 +746,8 @@ class EscalationAgent(BaseAgent):
             success=True,
             latency_ms=ms,
             escalate=True,
-            tools_used=[],
+            tools_used=["create_handoff_summary"] if ticket_id else [],
+            tool_traces=tool_traces,
         )
 
 
@@ -616,18 +771,20 @@ class ResponseComposer:
             for response in successful
         )
         prompt = (
-            "你是客服 Response Composer，负责把多个专业 Agent 的结果合并成一条最终回复。\n"
+            "你是留学咨询工作室「指北」的回复整合助手，负责把多个专业 Agent 的结果合并成一条最终回复。\n"
             "要求：以主 Agent 的结论为主，按用户问题优先级组织内容；去掉重复和冲突表述；"
-            "不能补造订单、退款、后台查询结果；如果结论冲突，明确说明需要核验；"
-            "保留必要的排查步骤、核验字段和升级边界。只输出给用户看的中文回复，不要提及 Agent。\n\n"
+            "不能补造价格、折扣、退款金额或进度；金额只保留工具算出的数字；如果结论冲突，明确说明需要顾问核实；"
+            "保留必要的核验字段和转顾问边界。只输出给用户看的中文回复，不要提及 Agent。\n\n"
             f"主 Agent：{successful[0].agent_type.value}\n"
             f"用户问题：{req.message}\n"
             f"候选结果：\n{evidence}"
         )
-        if self._skill_manager is not None:
-            skill = self._skill_manager.prompt_for(req.message, "general")
-            if skill:
-                prompt += f"\n\n[通用客服输出边界]\n{skill}"
+        if self._skill_manager is not None and hasattr(self._skill_manager, "select"):
+            # 只取常驻的品牌语气类 Skill，保证合并后的口吻和边界统一
+            selection = self._skill_manager.select(req.message, "general")
+            voice = [m.skill for m in selection.matches if m.skill.mode == "always"]
+            if voice:
+                prompt += "\n\n[品牌语气与输出边界]\n" + "\n\n".join(skill.to_prompt_block() for skill in voice)
         try:
             response = await self._client.messages.create(
                 model=self._model,
@@ -651,6 +808,37 @@ class ResponseComposer:
 
 # ── 编排器 ────────────────────────────────────────────────────────────────────
 
+_GENERAL_INTENTS = {
+    IntentCategory.QUERY,
+    IntentCategory.SERVICE_PROGRESS,
+    IntentCategory.REQUEST,
+    IntentCategory.COMPLAINT,
+    IntentCategory.GREETING,
+    IntentCategory.FEEDBACK,
+    IntentCategory.ACCOUNT,
+    IntentCategory.OTHER,
+}
+_CONSULTING_INTENTS = {
+    IntentCategory.STUDY_CONSULT,
+    IntentCategory.APPLICATION_PROCESS,
+    IntentCategory.SERVICE_INQUIRY,
+    IntentCategory.BOOKING,
+}
+_BILLING_INTENTS = {
+    IntentCategory.BILLING,
+    IntentCategory.REFUND,
+    IntentCategory.INVOICE,
+    IntentCategory.PAYMENT_ISSUE,
+}
+# 领域关键词：只用于主/辅 Agent 打分和复合问题检测，不直接决定路由
+_CONSULTING_KWS = ["留学", "申请", "硕士", "研究生", "选校", "文书", "雅思", "托福", "aps", "报价", "多少钱",
+                   "套餐", "陪跑", "瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧"]
+# 复合问题检测只看"问留学本身"的词：问退款时顺口提到"全程陪跑"不算咨询问题
+_CONSULTING_COLLAB_KWS = ["留学", "申请", "硕士", "研究生", "选校", "雅思", "托福", "aps",
+                          "瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧"]
+_BILLING_KWS = ["退款", "退钱", "定金", "尾款", "发票", "付款", "多付", "refund", "invoice"]
+_GENERAL_KWS = ["进度", "第几轮", "你们是", "工作室", "联系方式", "帮助"]
+
 class AgentOrchestrator:
     """
     多 Agent 编排器。
@@ -666,14 +854,14 @@ class AgentOrchestrator:
         IntentCategory.STUDY_CONSULT:  AgentType.CONSULTING,
         IntentCategory.APPLICATION_PROCESS: AgentType.CONSULTING,
         IntentCategory.SERVICE_INQUIRY: AgentType.CONSULTING,
+        IntentCategory.BOOKING:    AgentType.CONSULTING,
         IntentCategory.BILLING:    AgentType.BILLING,
         IntentCategory.REFUND:     AgentType.BILLING,
         IntentCategory.INVOICE:    AgentType.BILLING,
         IntentCategory.PAYMENT_ISSUE: AgentType.BILLING,
-        IntentCategory.ACCOUNT:    AgentType.BILLING,
-        IntentCategory.ACCOUNT_SECURITY: AgentType.BILLING,
         IntentCategory.ESCALATION: AgentType.ESCALATION,
         IntentCategory.HUMAN_HANDOFF: AgentType.ESCALATION,
+        IntentCategory.DATA_PRIVACY: AgentType.ESCALATION,
         # 其余意图 → GENERAL（默认）
     }
 
@@ -684,6 +872,8 @@ class AgentOrchestrator:
         model:    str = "claude-3-5-sonnet-20241022",
         skill_manager: Optional[Any] = None,
         rag_tool_manager: Optional[Any] = None,
+        lead_store: Optional[LeadStore] = None,
+        rag_gate: Optional[RagGate] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -694,6 +884,7 @@ class AgentOrchestrator:
         self._skill_manager = skill_manager
         self._composer = ResponseComposer(client, model, skill_manager)
         self._recent_tool_traces = deque(maxlen=_env_int("GOEUROOPS_TOOL_TRACE_MAX", 200))
+        self._rag_gate = rag_gate or RagGate()
 
         # Agent 池：每种类型可有多个实例（水平扩展）
         self._pool: Dict[AgentType, List[BaseAgent]] = {
@@ -703,6 +894,18 @@ class AgentOrchestrator:
             AgentType.ESCALATION: [self._make_agent(EscalationAgent, client, model, skill_manager)],
         }
         self.set_shared_tools(rag_tool_manager)
+        self.set_lead_store(lead_store or LeadStore())
+
+    @property
+    def rag_gate(self) -> RagGate:
+        return self._rag_gate
+
+    def set_lead_store(self, lead_store: Optional[LeadStore]) -> None:
+        """线索库注入给需要写线索/交接单的 Agent（咨询、转顾问）。"""
+        self._lead_store = lead_store
+        for agents in self._pool.values():
+            for agent in agents:
+                agent.set_lead_store(lead_store)
 
     @staticmethod
     def _make_agent(
@@ -738,9 +941,19 @@ class AgentOrchestrator:
         共享同一份不做区分的知识库入口——避免跨业务线内容互相串场。
         """
         for agent_type, agents in self._pool.items():
+            # 转顾问节点不做知识问答，不暴露检索工具
+            if agent_type == AgentType.ESCALATION:
+                continue
             domain_tools = build_shared_rag_tools(rag_tool_manager, domain=agent_type.value)
             for agent in agents:
                 agent.set_shared_tools(domain_tools)
+
+        if rag_tool_manager is not None and hasattr(rag_tool_manager, "search_fast"):
+            async def search_fn(query: str, top_k: int, domain: Optional[str]) -> List[Dict[str, Any]]:
+                return await rag_tool_manager.search_fast("knowledge_search", query, top_k=top_k, domain=domain)
+            self._rag_gate.set_search_fn(search_fn)
+        else:
+            self._rag_gate.set_search_fn(None)
 
     async def recognize_intent(
         self,
@@ -759,6 +972,8 @@ class AgentOrchestrator:
             "supporting_agents": [agent.value for agent in result.supporting_agents],
             "tools_used": list(result.tools_used),
             "tool_calls": list(result.tool_traces),
+            "skills_applied": list(result.skills_applied),
+            "rag_gate": dict(result.rag_gate),
             "escalated": result.escalated,
             "latency_ms": round(result.latency_ms, 1),
         }
@@ -789,16 +1004,33 @@ class AgentOrchestrator:
         """
         t0 = time.monotonic()
 
+        # 0. 投机预取：与意图识别并行启动各 domain 的纯向量召回（门控决定是否采用）
+        speculative = self._rag_gate.speculate(req.message) if req.rag_mode is None else None
+
         # 1. 意图识别（如果调用方已识别则跳过）
-        if req.intent is None:
-            intent_result = await self._intent_recognizer.recognize(req.message, history=req.history)
-            req.intent  = intent_result.intent
-            req.intent_group = intent_result.intent_group
-            req.urgency = intent_result.urgency
-            req.intent_confidence = intent_result.confidence
+        try:
+            if req.intent is None:
+                intent_result = await self._intent_recognizer.recognize(req.message, history=req.history)
+                req.intent  = intent_result.intent
+                req.intent_group = intent_result.intent_group
+                req.urgency = intent_result.urgency
+                req.intent_confidence = intent_result.confidence
+                req.intent_source_scores = dict(intent_result.source_scores)
+                if not req.entities:
+                    req.entities = intent_result.entities
+        except BaseException:
+            cancel_speculative(speculative)
+            raise
 
         if self._needs_clarification(req):
-            clarification = "我还不能确定您要处理的是哪类问题。请补充一下是订单物流、退款账单、账户资料，还是技术故障？"
+            cancel_speculative(speculative)
+            clarification = (
+                "我还不太确定你想了解哪方面～可以告诉我是以下哪类吗？\n\n"
+                "- 瑞典/德国/荷兰/芬兰/丹麦 CS 硕士的申请信息\n"
+                "- 我们的选校、文书服务和价格\n"
+                "- 已购服务的进度、付款、退款或发票\n"
+                "- 直接联系真人顾问"
+            )
             if on_delta is not None:
                 await on_delta(clarification)
             result = OrchestratorResult(
@@ -812,16 +1044,22 @@ class AgentOrchestrator:
                 primary_agent=AgentType.GENERAL,
                 routing_reason="低置信度 OTHER 意图，先澄清用户需求",
                 routing_confidence=req.intent_confidence,
+                **self._intent_fields(req),
+                rag_gate={"mode": "skipped", "reason": "澄清追问，不检索"},
             )
             self._record_tool_trace(result)
             return result
 
-        # 复杂问题自动并行协作，例如同一句同时涉及登录故障和扣款/退款。
         decision = self._route_decision(req)
-        if decision.multi_agent:
-            return await self.run_parallel(req, decision, on_delta=on_delta)
 
-        # 2. 执行主 Agent（含降级）
+        # 2. 意图门控 RAG：按意图决定预取 / 按需 / 不检索
+        gate = await self._apply_rag_gate(req, decision, speculative)
+
+        # 复合问题自动并行协作，例如同一句同时问项目信息和退款。
+        if decision.multi_agent:
+            return await self.run_parallel(req, decision, on_delta=on_delta, t0=t0, gate=gate)
+
+        # 3. 执行主 Agent（含降级）
         response = await self._execute(req, decision.primary_agent, on_delta=on_delta)
 
         # 4. 升级检查
@@ -829,10 +1067,10 @@ class AgentOrchestrator:
         if response.escalate or req.urgency == UrgencyLevel.CRITICAL or req.intent in (
             IntentCategory.ESCALATION,
             IntentCategory.HUMAN_HANDOFF,
+            IntentCategory.DATA_PRIVACY,
         ):
             escalated = True
-            logger.warning(f"请求 {req.request_id} 触发升级: urgency={req.urgency}")
-            # 生产环境：此处创建工单、通知人工客服
+            logger.warning(f"请求 {req.request_id} 触发升级: intent={req.intent} urgency={req.urgency}")
 
         result = OrchestratorResult(
             request_id=req.request_id,
@@ -848,24 +1086,63 @@ class AgentOrchestrator:
             tool_traces=list(response.tool_traces),
             routing_reason=decision.reason,
             routing_confidence=decision.confidence,
+            **self._intent_fields(req),
+            skills_applied=list(response.skills_applied),
+            rag_gate=gate.to_dict(),
         )
         self._record_tool_trace(result)
         return result
+
+    @staticmethod
+    def _intent_fields(req: Request) -> Dict[str, Any]:
+        return {
+            "intent_group": req.intent_group,
+            "intent_confidence": req.intent_confidence,
+            "intent_source_scores": dict(req.intent_source_scores),
+            "entities": dict(req.entities or {}),
+        }
+
+    async def _apply_rag_gate(
+        self,
+        req: Request,
+        decision: RoutingDecision,
+        speculative: Optional[Dict[str, Any]],
+    ) -> RagGateDecision:
+        if req.rag_mode is not None:
+            # 调用方已经指定了策略（如评测对照组），不再门控
+            cancel_speculative(speculative)
+            return RagGateDecision(mode=RagMode(req.rag_mode), reason="调用方指定策略", intent=req.intent.value if req.intent else None)
+        gate = await self._rag_gate.resolve(
+            speculative,
+            intent=req.intent.value if req.intent else None,
+            confidence=req.intent_confidence,
+            domain=decision.primary_agent.value,
+            message=req.message,
+        )
+        req.rag_mode = gate.mode.value
+        req.knowledge = list(gate.items)
+        logger.info(
+            "RAG 门控: request=%s mode=%s prefetched=%d reason=%s",
+            req.request_id, gate.mode.value, gate.prefetched, gate.reason,
+        )
+        return gate
 
     async def run_parallel(
         self,
         req: Request,
         decision: RoutingDecision,
         on_delta: Optional[OnDelta] = None,
+        t0: Optional[float] = None,
+        gate: Optional[RagGateDecision] = None,
     ) -> OrchestratorResult:
         """
         并行派发给多个 Agent，合并结果。
-        适用于复杂问题（如同时涉及技术和账单）。
+        适用于复合问题（如同时问项目信息和退款）。
 
         每个子 Agent 仍各自内部完成（不逐 token 转发，多路并行文本交错
         转发给用户没有意义），合并后的最终文本一次性通过 on_delta 转发。
         """
-        t0 = time.monotonic()
+        t0 = t0 if t0 is not None else time.monotonic()
         agent_types = decision.agent_types
         tasks = [self._execute(req, at) for at in agent_types]
         responses = await asyncio.gather(*tasks, return_exceptions=True)
@@ -902,6 +1179,13 @@ class AgentOrchestrator:
             tool_traces=tool_traces,
             routing_reason=decision.reason,
             routing_confidence=decision.confidence,
+            **self._intent_fields(req),
+            skills_applied=[
+                {**skill, "agent": response.agent_type.value}
+                for response in valid_responses
+                for skill in response.skills_applied
+            ],
+            rag_gate=gate.to_dict() if gate else {},
         )
         self._record_tool_trace(result)
         return result
@@ -940,7 +1224,7 @@ class AgentOrchestrator:
                 confidence=1.0,
             )
 
-        if req.intent in (IntentCategory.ESCALATION, IntentCategory.HUMAN_HANDOFF):
+        if req.intent in (IntentCategory.ESCALATION, IntentCategory.HUMAN_HANDOFF, IntentCategory.DATA_PRIVACY):
             return RoutingDecision(
                 primary_agent=AgentType.ESCALATION,
                 reason=f"意图为 {req.intent.value if req.intent else 'unknown'}，触发升级路由",
@@ -996,54 +1280,26 @@ class AgentOrchestrator:
             AgentType.BILLING: 0.0,
         }
 
-        if req.intent in (
-            IntentCategory.QUERY,
-            IntentCategory.ORDER_STATUS,
-            IntentCategory.LOGISTICS,
-            IntentCategory.REQUEST,
-            IntentCategory.COMPLAINT,
-            IntentCategory.GREETING,
-            IntentCategory.FEEDBACK,
-            IntentCategory.OTHER,
-        ):
+        if req.intent in _GENERAL_INTENTS:
             scores[AgentType.GENERAL] += 0.55
-
-        if req.intent in (
-            IntentCategory.STUDY_CONSULT,
-            IntentCategory.APPLICATION_PROCESS,
-            IntentCategory.SERVICE_INQUIRY,
-        ):
+        if req.intent in _CONSULTING_INTENTS:
             scores[AgentType.CONSULTING] += 0.75
-
-        if req.intent in (
-            IntentCategory.BILLING,
-            IntentCategory.ACCOUNT,
-            IntentCategory.ACCOUNT_SECURITY,
-            IntentCategory.REFUND,
-            IntentCategory.INVOICE,
-            IntentCategory.PAYMENT_ISSUE,
-        ):
+        if req.intent in _BILLING_INTENTS:
             scores[AgentType.BILLING] += 0.75
 
-        consulting_kws = ["留学", "申请", "硕士", "签证", "雅思", "托福", "选校", "文书", "瑞典", "德国", "荷兰", "芬兰", "丹麦"]
-        billing_kws = ["退款", "退货", "扣款", "发票", "账单", "支付", "订阅", "refund", "invoice", "多扣"]
-        general_kws = ["订单", "物流", "快递", "配送", "会员", "积分", "咨询", "帮助"]
-
-        consulting_hits = sum(1 for kw in consulting_kws if kw in msg)
-        billing_hits = sum(1 for kw in billing_kws if kw in msg)
-        general_hits = sum(1 for kw in general_kws if kw in msg)
+        consulting_hits = sum(1 for kw in _CONSULTING_KWS if kw in msg)
+        billing_hits = sum(1 for kw in _BILLING_KWS if kw in msg)
+        general_hits = sum(1 for kw in _GENERAL_KWS if kw in msg)
 
         scores[AgentType.CONSULTING] += min(0.45, consulting_hits * 0.18)
         scores[AgentType.BILLING] += min(0.45, billing_hits * 0.18)
         scores[AgentType.GENERAL] += min(0.35, general_hits * 0.12)
 
         entities = req.entities or {}
-        if entities.get("country"):
+        if entities.get("country") or entities.get("service"):
             scores[AgentType.CONSULTING] += 0.2
-        if entities.get("amount"):
+        if entities.get("amount") or entities.get("contract_id"):
             scores[AgentType.BILLING] += 0.15
-        if entities.get("order_id"):
-            scores[AgentType.GENERAL] += 0.1
 
         return {agent_type: round(score, 3) for agent_type, score in scores.items()}
 
@@ -1075,23 +1331,9 @@ class AgentOrchestrator:
         msg = req.message.lower()
         targets: List[AgentType] = []
 
-        consulting_kws = ["留学", "申请", "硕士", "选校", "文书", "瑞典", "德国", "荷兰", "芬兰", "丹麦"]
-        billing_kws = ["退款", "扣款", "发票", "账单", "支付", "订阅", "refund", "invoice"]
-
-        if req.intent in (
-            IntentCategory.STUDY_CONSULT,
-            IntentCategory.APPLICATION_PROCESS,
-            IntentCategory.SERVICE_INQUIRY,
-        ) or any(kw in msg for kw in consulting_kws):
+        if req.intent in _CONSULTING_INTENTS or any(kw in msg for kw in _CONSULTING_COLLAB_KWS):
             targets.append(AgentType.CONSULTING)
-        if req.intent in (
-            IntentCategory.BILLING,
-            IntentCategory.ACCOUNT,
-            IntentCategory.ACCOUNT_SECURITY,
-            IntentCategory.REFUND,
-            IntentCategory.INVOICE,
-            IntentCategory.PAYMENT_ISSUE,
-        ) or any(kw in msg for kw in billing_kws):
+        if req.intent in _BILLING_INTENTS or any(kw in msg for kw in _BILLING_KWS):
             targets.append(AgentType.BILLING)
 
         # 保持顺序去重，并只返回当前有实例的 Agent 类型。

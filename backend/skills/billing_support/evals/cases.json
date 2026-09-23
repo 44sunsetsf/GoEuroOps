@@ -1,0 +1,8 @@
+[
+  {"message": "定金交了还没开始能退吗", "agent": "billing", "intent": "refund", "expect_hit": true},
+  {"message": "发票抬头怎么写", "agent": "billing", "intent": "invoice", "expect_hit": true},
+  {"message": "我好像付了两次钱", "agent": "billing", "expect_hit": true, "note": "无意图，依赖语义样例/关键词"},
+  {"message": "尾款什么时候付", "agent": "billing", "expect_hit": true},
+  {"message": "服务做到一半不想做了", "agent": "billing", "expect_hit": true, "note": "依赖语义样例"},
+  {"message": "退款", "agent": "consulting", "expect_hit": false, "note": "Agent 过滤"}
+]

@@ -1,5 +1,5 @@
 """
-GoEuroOps 智能客服系统 — FastAPI 入口
+GoEuroOps 留学业务智能运营中枢 — FastAPI 入口
 
 启动时打印小熊饼干图案。
 所有核心组件在 lifespan 中初始化，通过环境变量配置。
@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import pathlib
+import secrets
 import sys
 import uuid
 from contextlib import asynccontextmanager
@@ -21,7 +22,7 @@ if _ROOT not in sys.path:
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Response, UploadFile, File
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 BANNER = r"""
     ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ
    ╔══════════════════════╗
-   ║   GoEuroOps  v2.0     ║
+   ║   GoEuroOps  v3.0     ║
    ║ 留学业务智能运营中枢 ║
    ╚══════════════════════╝
     ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ
@@ -51,6 +52,7 @@ _tool_manager = None
 _monitor      = None
 _evaluator    = None
 _skill_manager = None
+_lead_store   = None
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -68,7 +70,7 @@ def _anthropic_cfg() -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager
+    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _lead_store
 
     print(BANNER, flush=True)
 
@@ -80,8 +82,16 @@ async def lifespan(app: FastAPI):
     from memory.conversation_memory import MemoryManager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
+    from business.catalog import get_catalog, get_countries
+    from business.lead_store import LeadStore
 
     cfg = _anthropic_cfg()
+    # 业务目录在启动时校验一次，YAML 写错直接启动失败，而不是等用户问价格时才暴露
+    catalog = get_catalog()
+    logger.info(
+        "业务目录已加载: %s，%d 项服务，%d 个国家",
+        catalog.catalog_version, len(catalog.services), len(get_countries().countries),
+    )
     logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
 
     # 意图识别器（Orchestrator 内部也会创建，这里单独暴露给 Evaluator）
@@ -95,9 +105,12 @@ async def lifespan(app: FastAPI):
     skills_dir = os.getenv("GOEUROOPS_SKILLS_DIR", str(pathlib.Path(_ROOT) / "skills"))
     _skill_manager = SkillManager(
         root_dir=skills_dir,
-        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "5000")),
+        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "6000")),
     )
     _skill_manager.load()
+
+    # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
+    _lead_store = LeadStore(redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"))
 
     # Agent 编排器
     _orchestrator = AgentOrchestrator(
@@ -105,6 +118,7 @@ async def lifespan(app: FastAPI):
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         skill_manager=_skill_manager,
+        lead_store=_lead_store,
     )
 
     # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
@@ -135,7 +149,7 @@ async def lifespan(app: FastAPI):
         query = params.get("query", "")
         return [{
             "title": "知识库降级结果",
-            "content": f"知识库暂时不可用，未能完成对“{query}”的语义检索。请稍后重试，或转人工客服确认。",
+            "content": f"知识库暂时不可用，未能完成对“{query}”的语义检索。请稍后重试，或请顾问确认。",
             "score": 0.0,
             "fallback": True,
             "error": error,
@@ -179,6 +193,7 @@ async def lifespan(app: FastAPI):
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
+        skill_manager=_skill_manager,
     )
 
     logger.info("GoEuroOps 已就绪")
@@ -193,7 +208,7 @@ async def lifespan(app: FastAPI):
 # ── FastAPI ───────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="GoEuroOps 留学业务智能运营中枢",
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
     docs_url="/docs",
 )
@@ -232,6 +247,8 @@ class ChatResponse(BaseModel):
     entities: Dict[str, List[str]] = Field(default_factory=dict)
     intent_confidence: float = 0.0
     intent_source_scores: Dict[str, float] = Field(default_factory=dict)
+    skills_applied: List[Dict[str, Any]] = Field(default_factory=list)
+    rag_gate: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ToolTraceResponse(BaseModel):
@@ -271,53 +288,129 @@ async def reload_skills():
     return _skill_manager.summary()
 
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
-    """
-    主对话接口。完整流程：
-      记忆读取 → 意图识别 → Agent 路由 → 执行 → 记忆写入
-    """
-    if _orchestrator is None or _memory is None:
-        raise HTTPException(503, "服务未就绪")
+class SkillMatchInput(BaseModel):
+    message: str
+    agent_type: Optional[str] = None
+    intent: Optional[str] = None
+    history: Optional[List[Dict[str, str]]] = None
 
+
+@app.post("/skills/match", tags=["Skills"])
+async def match_skills(body: SkillMatchInput):
+    """
+    命中测试（干跑）：给一句话，返回每个 Skill 的得分明细和最终会注入哪些。
+
+    不传 intent 时会现场做一次意图识别，与真实对话链路保持一致。
+    """
+    if _skill_manager is None:
+        raise HTTPException(503, "Skills 未初始化")
+    intent, intent_group, intent_confidence = body.intent, None, None
+    if intent is None and _orchestrator is not None:
+        result = await _orchestrator.recognize_intent(body.message, history=body.history)
+        intent, intent_group, intent_confidence = result.intent.value, result.intent_group, result.confidence
+    report = _skill_manager.match_report(
+        body.message,
+        body.agent_type,
+        intent=intent,
+        intent_group=intent_group,
+        history=body.history,
+    )
+    report["intent_confidence"] = intent_confidence
+    return report
+
+
+@app.get("/skills/evals", tags=["Skills"])
+async def run_skill_evals():
+    """跑所有 Skill 自带的命中回归用例（skills/*/evals/cases.json）。"""
+    if _skill_manager is None:
+        raise HTTPException(503, "Skills 未初始化")
+    return _skill_manager.run_evals()
+
+
+@app.get("/skills/{skill_id}", tags=["Skills"])
+async def skill_detail(skill_id: str):
+    """查看单个 Skill 的完整正文、参考资料目录和命中统计。"""
+    if _skill_manager is None:
+        raise HTTPException(503, "Skills 未初始化")
+    detail = _skill_manager.detail(skill_id)
+    if detail is None:
+        raise HTTPException(404, f"Skill 不存在: {skill_id}")
+    return detail
+
+
+# ── 业务目录 / 线索 ───────────────────────────────────────────────────────────
+
+@app.get("/catalog", tags=["业务"])
+async def catalog_view():
+    """服务价目、优惠、付款退款政策和五国资料（前端价目面板使用）。"""
+    from business.catalog import get_catalog, get_countries
+
+    return {"catalog": get_catalog().model_dump(), "countries": get_countries().model_dump()}
+
+
+def _require_admin(x_admin_token: Optional[str] = Header(default=None)) -> None:
+    """设置了 GOEUROOPS_ADMIN_TOKEN 时，线索接口必须带 X-Admin-Token。"""
+    expected = os.getenv("GOEUROOPS_ADMIN_TOKEN", "").strip()
+    if expected and not secrets.compare_digest(x_admin_token or "", expected):
+        raise HTTPException(401, "需要有效的 X-Admin-Token")
+
+
+class LeadUpdateInput(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.get("/leads", tags=["线索"], dependencies=[Depends(_require_admin)])
+async def list_leads(status: Optional[str] = None, type: Optional[str] = None, limit: int = 100):
+    """咨询线索与转顾问交接单列表（按时间倒序）。"""
+    if _lead_store is None:
+        raise HTTPException(503, "线索库未初始化")
+    items = await _lead_store.list(status=status, lead_type=type, limit=limit)
+    return {"items": items, "stats": await _lead_store.stats()}
+
+
+@app.patch("/leads/{lead_id}", tags=["线索"], dependencies=[Depends(_require_admin)])
+async def update_lead(lead_id: str, body: LeadUpdateInput):
+    """更新线索状态（new / contacted / converted / closed）和跟进备注。"""
+    if _lead_store is None:
+        raise HTTPException(503, "线索库未初始化")
+    try:
+        lead = await _lead_store.update(lead_id, status=body.status, notes=body.notes)
+    except ValueError as ex:
+        raise HTTPException(400, str(ex))
+    if lead is None:
+        raise HTTPException(404, f"线索不存在: {lead_id}")
+    return lead
+
+
+async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatResponse:
+    """
+    一次完整对话：记忆读取 → 编排（意图识别 ∥ 投机预取 → 路由 → RAG 门控 →
+    Skills 注入 → Agent 执行）→ 记忆写入。/chat 和 /chat/stream 共用。
+
+    意图识别交给编排器内部完成，这样知识库预取才能和意图识别并行。
+    """
     from agents.agent_orchestrator import Request as OrcReq
     from memory.conversation_memory import MsgRole
 
-    conv_id = req.conv_id or str(uuid.uuid4())
-
-    # 1. 读取记忆上下文
     mem_ctx = await _memory.get_context(req.user_id, conv_id, query=req.message)
-
-    # 2. 构建编排请求（含对话历史，用于意图识别上下文）
     history = [
         {"role": m.role.value, "content": m.content}
         for m in mem_ctx.recent_messages[-5:]
     ] if mem_ctx.recent_messages else None
 
-    intent_result = await _orchestrator.recognize_intent(req.message, history=history)
-    full_context = mem_ctx.to_prompt_text()
-
     orch_req = OrcReq(
         message=req.message,
         user_id=req.user_id,
         conv_id=conv_id,
-        context=full_context,
+        context=mem_ctx.to_prompt_text(),
         history=history,
-        entities=intent_result.entities,
-        intent=intent_result.intent,
-        intent_group=intent_result.intent_group,
-        urgency=intent_result.urgency,
-        intent_confidence=intent_result.confidence,
     )
+    result = await _orchestrator.run(orch_req, on_delta=on_delta)
 
-    # 3. 执行
-    result = await _orchestrator.run(orch_req)
-
-    # 4. 写入记忆
     await _memory.add_message(req.user_id, conv_id, MsgRole.USER, req.message)
     await _memory.add_message(req.user_id, conv_id, MsgRole.ASSISTANT, result.response)
-
-    # 5. 异步更新用户画像（不阻塞响应）
+    # 异步更新用户画像（不阻塞响应）
     asyncio.create_task(_memory.update_profile(req.user_id, conv_id))
 
     return ChatResponse(
@@ -325,7 +418,7 @@ async def chat(req: ChatRequest):
         request_id=result.request_id,
         response=result.response,
         intent=result.intent.value if result.intent else "other",
-        intent_group=intent_result.intent_group,
+        intent_group=result.intent_group or "other",
         agent_type=result.agent_type.value,
         agent_types=[agent_type.value for agent_type in result.agent_types],
         primary_agent=result.primary_agent.value if result.primary_agent else result.agent_type.value,
@@ -335,11 +428,24 @@ async def chat(req: ChatRequest):
         routing_confidence=result.routing_confidence,
         escalated=result.escalated,
         latency_ms=round(result.latency_ms, 1),
-        knowledge_used="search_knowledge_base" in result.tools_used,
-        entities=intent_result.entities,
-        intent_confidence=round(intent_result.confidence, 4),
-        intent_source_scores=intent_result.source_scores,
+        knowledge_used=(
+            "search_knowledge_base" in result.tools_used
+            or bool(result.rag_gate.get("prefetched"))
+        ),
+        entities=result.entities,
+        intent_confidence=round(result.intent_confidence, 4),
+        intent_source_scores=result.intent_source_scores,
+        skills_applied=result.skills_applied,
+        rag_gate=result.rag_gate,
     )
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest):
+    """主对话接口（一次性返回）。"""
+    if _orchestrator is None or _memory is None:
+        raise HTTPException(503, "服务未就绪")
+    return await _run_chat(req, req.conv_id or str(uuid.uuid4()))
 
 
 def _sse(event: str, data: Any) -> str:
@@ -361,9 +467,6 @@ async def chat_stream(req: ChatRequest):
     if _orchestrator is None or _memory is None:
         raise HTTPException(503, "服务未就绪")
 
-    from agents.agent_orchestrator import Request as OrcReq
-    from memory.conversation_memory import MsgRole
-
     conv_id = req.conv_id or str(uuid.uuid4())
 
     async def event_gen():
@@ -375,54 +478,8 @@ async def chat_stream(req: ChatRequest):
 
         async def produce() -> None:
             try:
-                mem_ctx = await _memory.get_context(req.user_id, conv_id, query=req.message)
-                history = [
-                    {"role": m.role.value, "content": m.content}
-                    for m in mem_ctx.recent_messages[-5:]
-                ] if mem_ctx.recent_messages else None
-
-                intent_result = await _orchestrator.recognize_intent(req.message, history=history)
-                full_context = mem_ctx.to_prompt_text()
-
-                orch_req = OrcReq(
-                    message=req.message,
-                    user_id=req.user_id,
-                    conv_id=conv_id,
-                    context=full_context,
-                    history=history,
-                    entities=intent_result.entities,
-                    intent=intent_result.intent,
-                    intent_group=intent_result.intent_group,
-                    urgency=intent_result.urgency,
-                    intent_confidence=intent_result.confidence,
-                )
-
-                result = await _orchestrator.run(orch_req, on_delta=on_delta)
-
-                await _memory.add_message(req.user_id, conv_id, MsgRole.USER, req.message)
-                await _memory.add_message(req.user_id, conv_id, MsgRole.ASSISTANT, result.response)
-                asyncio.create_task(_memory.update_profile(req.user_id, conv_id))
-
-                await queue.put(("done", ChatResponse(
-                    conv_id=conv_id,
-                    request_id=result.request_id,
-                    response=result.response,
-                    intent=result.intent.value if result.intent else "other",
-                    intent_group=intent_result.intent_group,
-                    agent_type=result.agent_type.value,
-                    agent_types=[agent_type.value for agent_type in result.agent_types],
-                    primary_agent=result.primary_agent.value if result.primary_agent else result.agent_type.value,
-                    supporting_agents=[agent_type.value for agent_type in result.supporting_agents],
-                    tools_used=result.tools_used,
-                    routing_reason=result.routing_reason,
-                    routing_confidence=result.routing_confidence,
-                    escalated=result.escalated,
-                    latency_ms=round(result.latency_ms, 1),
-                    knowledge_used="search_knowledge_base" in result.tools_used,
-                    entities=intent_result.entities,
-                    intent_confidence=round(intent_result.confidence, 4),
-                    intent_source_scores=intent_result.source_scores,
-                ).model_dump()))
+                response = await _run_chat(req, conv_id, on_delta=on_delta)
+                await queue.put(("done", response.model_dump()))
             except Exception as ex:
                 logger.exception("流式对话处理失败")
                 await queue.put(("error", {"message": str(ex)}))
@@ -526,12 +583,17 @@ class EvalDialogInput(BaseModel):
     turns: Optional[List[str]] = None
     user_id: Optional[str] = None
     conv_id: Optional[str] = None
+    expected_behavior: Optional[str] = None   # 该场景的期望行为，供 LLM Judge 按场景打分
+    expected_tools: Optional[List[str]] = None  # 期望调用的工具，确定性检查
+    knowledge: bool = False                     # 是否为知识类问题（参与 RAG 门控对照实验）
 
 
 class EvalRunInput(BaseModel):
     """评测请求。为空时使用内置默认用例。"""
     intent_cases: Optional[List[EvalIntentInput]] = None
     dialog_cases: Optional[List[EvalDialogInput]] = None
+    include_skill_evals: bool = True
+    compare_rag_gate: bool = False   # 额外跑一组"模型自行检索"对照，会多调用 LLM
 
 
 @app.post("/knowledge/add", tags=["知识库"])
@@ -622,7 +684,7 @@ async def knowledge_stats():
     if tool is None:
         raise HTTPException(503, "知识库未初始化")
     kb = tool.handler.__self__
-    return {"total_chunks": await kb.doc_count_async()}
+    return await kb.stats_async()
 
 
 @app.post("/eval/run")
@@ -655,6 +717,8 @@ async def run_eval(body: Optional[EvalRunInput] = None):
     report = await _evaluator.run(
         intent_cases=intent_cases,
         dialog_cases=dialog_cases,
+        include_skill_evals=body.include_skill_evals if body else True,
+        compare_rag_gate=body.compare_rag_gate if body else False,
     )
     return {
         "pass_rate":       report.pass_rate,
@@ -688,7 +752,7 @@ async def _cli():
     cfg = _anthropic_cfg()
     skill_manager = SkillManager(
         root_dir=os.getenv("GOEUROOPS_SKILLS_DIR", str(pathlib.Path(_ROOT) / "skills")),
-        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "5000")),
+        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "6000")),
     )
     skill_manager.load()
     orch = AgentOrchestrator(

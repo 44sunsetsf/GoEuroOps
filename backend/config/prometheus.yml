@@ -1,4 +1,4 @@
-# Prometheus 配置文件 — GoEuroOps 智能客服系统
+# Prometheus 配置文件 — GoEuroOps 留学业务智能运营中枢
 
 global:
   scrape_interval: 15s

@@ -1,0 +1,153 @@
+# 五国英语授课 CS 硕士申请参考资料
+#
+# 数据基于 2026 年初的公开资料整理，属于"通用参考"而非实时官方信息。
+# 每个申请季开始前需要由顾问逐项核对 source_urls 并更新 last_verified。
+# 工具和知识库会原样带上 last_verified，AI 助手不得把这里的内容表述为最新官方政策。
+
+last_verified: "草案（整理于 2026 年初，待顾问核实）"
+target_intake: 2027 年秋季入学
+
+countries:
+  - key: 瑞典
+    name_en: Sweden
+    aliases: [瑞典, sweden, se]
+    portal: University Admissions in Sweden（universityadmissions.se）统一申请
+    application_window: 国际轮通常 10 月中旬开放、次年 1 月中旬截止；上传材料和缴费截止约 2 月初；录取结果约 3 月底 / 4 月初公布。
+    application_fee: 非欧盟申请者 SEK 900（每轮一次，最多可填 4 个排序志愿）
+    tuition_non_eu: 约 SEK 130,000–190,000 / 年，理工类热门院校偏高；欧盟/欧洲经济区学生免学费
+    duration: 多数为 2 年（120 ECTS）
+    language: 统一标准为 "English 6"，常见等价成绩约为 IELTS 6.5（单项不低于 5.5）或 TOEFL iBT 90（写作不低于 20）
+    academic_notes:
+      - 看重本科计算机/数学相关学分构成，部分项目对先修课有明确学分要求
+      - 中国学生的学历材料需按官网"国家特定要求"提交，以官网说明为准
+    representative_programs:
+      - KTH 皇家理工学院 — Computer Science / Machine Learning
+      - "Chalmers 查尔姆斯理工 — Computer Science: Algorithms, Languages and Logic / Data Science and AI"
+      - Lund 隆德大学 — Computer Science
+      - Uppsala 乌普萨拉大学 — Computer Science
+      - Linköping 林雪平大学 — Computer Science
+      - Stockholm University 斯德哥尔摩大学 — Computer and Systems Sciences
+    residence_permit: 录取并缴纳首期学费后向瑞典移民局（Migrationsverket）在线申请学习居留许可，需证明每月约 1 万瑞典克朗以上的生活费（以移民局当年标准为准）及医疗保险。
+    scholarships:
+      - 瑞典政府 SI 全球职业人才奖学金（名额少、适用国家名单每年变化）
+      - 各校学费减免奖学金（如 KTH、Chalmers、Lund 的全球奖学金），多与申请同期截止
+    highlights: 学制规范、统一平台一次最多申 4 个项目；工作与生活平衡好；毕业后可申请找工作居留。
+    source_urls:
+      - https://www.universityadmissions.se
+      - https://studyinsweden.se
+      - https://www.migrationsverket.se
+
+  - key: 德国
+    name_en: Germany
+    aliases: [德国, germany, de]
+    portal: uni-assist 或学校自有申请系统（如 TUM 使用 TUMonline），因校而异
+    application_window: 冬季学期（10 月入学）多在 5 月 31 日至 7 月 15 日之间截止，部分热门项目更早（如 TUM 多数项目在年初开放、5 月 31 日前截止）；夏季学期截止多在 11 月至次年 1 月。
+    application_fee: 经 uni-assist 申请时，首个志愿约 €75，同一学期后续每个志愿约 €30；学校自有系统多数免费
+    tuition_non_eu: 多数联邦州公立大学免学费，仅收每学期约 €150–400 注册费（常含交通票）；巴符州对非欧盟学生收 €1,500 / 学期；TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期
+    duration: 多数为 2 年（120 ECTS），少数 1.5 年
+    language: 英语授课项目常见要求 IELTS 6.5 或 TOEFL iBT 88–95；少数项目要求基础德语
+    academic_notes:
+      - 中国大陆学生申请德国高校需先通过 APS 审核，排期可能较长，建议申请前 3–6 个月办理
+      - 课程匹配审核严格，会逐项核对数学、理论计算机、编程类学分
+      - 部分项目要求或建议提供 GRE，或有线上测试 / 面试
+    representative_programs:
+      - TUM 慕尼黑工业大学 — Informatics / Data Engineering and Analytics
+      - RWTH 亚琛工业大学 — Computer Science / Software Systems Engineering
+      - KIT 卡尔斯鲁厄理工学院 — Computer Science
+      - TU Berlin 柏林工业大学 — Computer Science
+      - TU Darmstadt 达姆施塔特工业大学 — Computer Science
+      - Saarland 萨尔大学 — Computer Science
+    residence_permit: 持国家 D 类学生签证入境后办理居留；需 APS 证书、保证金账户（Sperrkonto，2025 年起标准为 €11,904 / 年，即每月 €992，以德国外交部当年公告为准）或奖学金证明、医疗保险。
+    scholarships:
+      - DAAD 奖学金（竞争激烈，多面向有工作或科研经历的申请者）
+      - Deutschlandstipendium 德国国家奖学金（入学后申请，每月 €300）
+    highlights: 公立大学学费低、项目多、工科强；但申请流程链条长（APS → uni-assist → 签证），需要最早规划。
+    source_urls:
+      - https://www.uni-assist.de
+      - https://www.aps.org.cn
+      - https://www.daad.de
+      - https://www.study-in-germany.de
+
+  - key: 荷兰
+    name_en: Netherlands
+    aliases: [荷兰, netherlands, holland, nl]
+    portal: Studielink 注册 + 学校自有申请系统
+    application_window: 非欧盟申请者截止多在 1 月 15 日至 4 月 1 日之间，热门学校（如 TU Delft、部分 UvA 项目）截止较早，奖学金申请截止通常更早。
+    application_fee: 因校而异，常见约 €75–100（如 TU Delft 收取申请费）
+    tuition_non_eu: 约 €16,000–26,000 / 年；欧盟学生约 €2,500 / 年（法定学费）
+    duration: CS 类研究型硕士多为 2 年，少数项目 1 年
+    language: 常见要求 IELTS 6.5（单项不低于 6.0）或 TOEFL iBT 90
+    academic_notes:
+      - 对本科院校背景和均分有明确门槛，部分学校有针对中国院校的分级要求
+      - 部分项目有名额限制，并可能增加动机信、面试或选拔环节
+    representative_programs:
+      - TU Delft 代尔夫特理工 — Computer Science
+      - UvA / VU 阿姆斯特丹大学与自由大学联合 — Computer Science
+      - TU/e 埃因霍温理工 — Computer Science and Engineering
+      - Leiden 莱顿大学 — Computer Science
+      - Utrecht 乌得勒支大学 — Computing Science
+      - University of Twente 特文特大学 — Computer Science
+    residence_permit: 由录取学校作为担保方向荷兰移民局（IND）代为申请入境签证和居留许可，学生需提前向学校证明足够生活费。
+    scholarships:
+      - Holland Scholarship（一次性 €5,000，面向非欧盟学生）
+      - 各校卓越奖学金（如 TU Delft Excellence、Amsterdam Merit、Leiden Excellence），竞争激烈、截止早
+    highlights: 英语普及率高、项目偏研究型、与产业结合紧密；住房紧张，录取后要尽早找房。
+    source_urls:
+      - https://www.studyinnl.org
+      - https://www.studielink.nl
+      - https://ind.nl
+
+  - key: 芬兰
+    name_en: Finland
+    aliases: [芬兰, finland, fi]
+    portal: Studyinfo.fi 联合申请（部分学校、部分项目单独申请）
+    application_window: 秋季入学的主申请季通常在前一年 12 月初开放、1 月初截止（例如 2027 年秋季入学，大约是 2026 年 12 月至 2027 年 1 月初），结果多在 3–4 月公布。
+    application_fee: 自 2025 年起，非欧盟申请者需缴纳 €100 申请费（每个申请季一次）
+    tuition_non_eu: 约 €10,000–18,000 / 年；欧盟学生免学费
+    duration: 多数为 2 年（120 ECTS）
+    language: 常见要求 IELTS 6.5（单项不低于 5.5 或 6.0）或 TOEFL iBT 90–92
+    academic_notes:
+      - 联合申请一次最多可填 6 个排序志愿
+      - 学费减免奖学金普遍（常见 50%–100% 减免），通常与项目申请同步申请
+    representative_programs:
+      - Aalto 阿尔托大学 — Computer, Communication and Information Sciences
+      - University of Helsinki 赫尔辛基大学 — Computer Science
+      - Tampere University 坦佩雷大学 — Computing Sciences
+      - University of Oulu 奥卢大学 — Computer Science and Engineering
+      - LUT 拉彭兰塔-拉赫蒂理工 — Software Engineering and Digital Transformation
+    residence_permit: 向芬兰移民局（Migri）在线申请学生居留许可，需证明学费缴纳或减免、每年数千欧元的生活费（近年标准有上调，以 Migri 当年公布为准）及医疗保险。
+    scholarships:
+      - 各校学费减免奖学金（覆盖面广，是芬兰申请的重要优势）
+      - Finland Scholarship（部分学校提供，含首年学费减免和一次性安置补助）
+    highlights: 奖学金友好、生活节奏平和、英语环境好；冬季较长，需要考虑适应问题。
+    source_urls:
+      - https://studyinfo.fi
+      - https://www.studyinfinland.fi
+      - https://migri.fi
+
+  - key: 丹麦
+    name_en: Denmark
+    aliases: [丹麦, denmark, dk]
+    portal: 各校独立申请系统（DTU、哥本哈根大学、奥胡斯大学等不统一）
+    application_window: 非欧盟申请者秋季入学的截止多在 1 月 15 日至 3 月 1 日之间（因校而异）；部分项目另有 2 月（春季）入学轮次。
+    application_fee: 多数学校不收申请费
+    tuition_non_eu: 约 DKK 75,000–130,000 / 年（约 €10,000–17,500）；欧盟/欧洲经济区学生免学费
+    duration: 多数为 2 年（120 ECTS）
+    language: 常见要求为丹麦 "English B" 等级，大致相当于 IELTS 6.5 或 TOEFL iBT 83–88
+    academic_notes:
+      - 重视 ECTS 学分构成，常按数学、编程、算法等模块分别计算学分
+      - 政府奖学金名额有限，通常由学校按申请材料择优推荐
+    representative_programs:
+      - DTU 丹麦技术大学 — Computer Science and Engineering / Human-Centered Artificial Intelligence
+      - University of Copenhagen 哥本哈根大学 — Computer Science
+      - Aarhus University 奥胡斯大学 — Computer Science
+      - Aalborg University 奥尔堡大学 — Software / Computer Science
+      - IT University of Copenhagen 哥本哈根信息技术大学 — Computer Science / Software Design
+    residence_permit: 录取后通过丹麦国际招聘与融合署（SIRI）申请学习居留许可（ST1），需证明学费已缴纳和生活费；毕业后可申请求职居留（Establishment Card）。
+    scholarships:
+      - 丹麦政府奖学金（Danish Government Scholarships，由学校分配名额）
+      - 部分学校自有奖学金
+    highlights: 科技产业发达、英语环境好、毕业后留欧政策友好；生活成本在五国中偏高。
+    source_urls:
+      - https://studyindenmark.dk
+      - https://www.nyidanmark.dk

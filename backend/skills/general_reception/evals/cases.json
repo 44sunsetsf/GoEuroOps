@@ -1,0 +1,7 @@
+[
+  {"message": "你好", "agent": "general", "intent": "greeting", "expect_hit": true},
+  {"message": "我的PS改到第几轮了", "agent": "general", "intent": "service_progress", "expect_hit": true},
+  {"message": "顾问三天都没回我", "agent": "general", "expect_hit": true, "note": "无意图，依赖语义样例/关键词"},
+  {"message": "你们是做什么的", "agent": "general", "expect_hit": true},
+  {"message": "瑞典的CS硕士一般读几年？", "agent": "consulting", "intent": "study_consult", "expect_hit": false, "note": "Agent 过滤"}
+]

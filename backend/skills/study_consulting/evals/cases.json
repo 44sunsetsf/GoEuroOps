@@ -1,0 +1,12 @@
+[
+  {"message": "瑞典的CS硕士一般读几年？", "agent": "consulting", "intent": "study_consult", "expect_hit": true},
+  {"message": "德国申请要APS吗", "agent": "consulting", "intent": "application_process", "expect_hit": true},
+  {"message": "想去北欧读计算机研究生", "agent": "consulting", "expect_hit": true, "note": "无意图，依赖关键词/语义"},
+  {"message": "芬兰申请什么时候开始", "agent": "consulting", "expect_hit": true, "note": "无意图，依赖关键词"},
+  {"message": "欧洲读研要准备哪些材料", "agent": "consulting", "expect_hit": true, "note": "无意图，依赖语义样例"},
+  {"message": "TUM 学费多少", "agent": "consulting", "expect_hit": true},
+  {"message": "那丹麦呢？", "agent": "consulting", "history": [{"role": "user", "content": "瑞典的计算机硕士学费多少"}], "expect_hit": true, "note": "关键词 + 会话"},
+  {"message": "docs 在哪下载", "agent": "consulting", "expect_hit": false, "note": "ASCII 关键词 cs 不应命中 docs"},
+  {"message": "定金能退吗", "agent": "billing", "intent": "refund", "expect_hit": false, "note": "Agent 过滤"},
+  {"message": "你好", "agent": "consulting", "intent": "greeting", "expect_hit": false}
+]

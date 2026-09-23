@@ -361,6 +361,23 @@ class MCPToolManager:
             return ToolResult(success=False, data=[], tool_name=tool_name, error="知识库中没有与问题足够相关的内容", reranked=True)
         return ToolResult(success=True, data=reranked, tool_name=tool_name, reranked=True)
 
+    async def search_fast(
+        self,
+        tool_name: str,
+        query: str,
+        top_k: int = 3,
+        domain: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """快速检索：单次向量召回，不做 LLM 改写和重排。
+
+        给意图门控 RAG 的投机预取使用——它和意图识别并行跑，必须足够快；
+        仍然走 call()，复用缓存、熔断和降级。
+        """
+        result = await self.call(tool_name, {"query": query, "top_k": top_k, "domain": domain}, use_cache=True)
+        if not result.success or not isinstance(result.data, list):
+            return []
+        return [item for item in result.data if isinstance(item, dict) and not item.get("fallback")]
+
     # ── 结果重排（解决召回不好）──────────────────────────────────────────────
 
     # 相关性打分低于这个阈值（0-10）的结果会被丢弃，而不是硬塞给 top_k。
@@ -410,7 +427,9 @@ class MCPToolManager:
                 reverse=True,
             )
             relevant = [
-                items[int(entry["index"])] for entry in ranked
+                {**items[int(entry["index"])], "relevance": float(entry.get("relevance", 0) or 0)}
+                if isinstance(items[int(entry["index"])], dict) else items[int(entry["index"])]
+                for entry in ranked
                 if float(entry.get("relevance", 0) or 0) >= self.RERANK_MIN_RELEVANCE
             ]
             return relevant[:top_k]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# GoEuroOps 智能客服系统 - Docker 部署脚本
+# GoEuroOps 留学业务智能运营中枢 - Docker 部署脚本
 
 
 set -e
@@ -254,7 +254,7 @@ restore_data() {
 # 函数：显示帮助信息
 show_help() {
     cat << EOF
-GoEuroOps 智能客服系统 - Docker 部署脚本
+GoEuroOps 留学业务智能运营中枢 - Docker 部署脚本
 
 用法: ./docker-deploy.sh [命令]
 

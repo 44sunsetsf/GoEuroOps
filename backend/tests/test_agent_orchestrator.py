@@ -35,14 +35,14 @@ class FakeClient:
 
 def make_request(**kwargs):
     values = {
-        "message": "咨询瑞典的CS硕士申请，同时这笔订单被重复扣款",
+        "message": "咨询瑞典的CS硕士申请，另外我交的定金能退款吗",
         "user_id": "u1",
         "conv_id": "c1",
         "intent": IntentCategory.APPLICATION_PROCESS,
         "intent_group": "study_consult",
         "urgency": UrgencyLevel.HIGH,
         "intent_confidence": 0.92,
-        "entities": {"country": ["瑞典"], "amount": ["99 元"]},
+        "entities": {"country": ["瑞典"], "amount": ["3540 元"]},
     }
     values.update(kwargs)
     return Request(**values)
@@ -55,7 +55,7 @@ def test_agent_profiles_have_distinct_contracts_and_generation_config():
     assert ConsultingAgent.profile.temperature != BillingAgent.profile.temperature
     assert "search_knowledge_base" in GeneralAgent.profile.tool_scope
     assert "lookup_country_admissions_overview" in ConsultingAgent.profile.tool_scope
-    assert "check_billing_fields" in BillingAgent.profile.tool_scope
+    assert "calculate_refund" in BillingAgent.profile.tool_scope
 
 
 def test_domain_agents_build_different_role_packets():
@@ -81,8 +81,24 @@ def test_escalation_agent_is_a_real_non_llm_handoff_node():
 
     assert result.success is True
     assert result.escalate is True
-    assert "人工升级" in result.content
+    assert "转交给工作室顾问" in result.content
     assert client.calls == []
+
+
+def test_escalation_agent_writes_handoff_ticket():
+    from business.lead_store import LeadStore
+
+    store = LeadStore()
+    agent = EscalationAgent(FakeClient(), "test-model")
+    agent.set_lead_store(store)
+
+    result = asyncio.run(agent.handle(make_request(intent=IntentCategory.DATA_PRIVACY)))
+    tickets = asyncio.run(store.list(lead_type="handoff"))
+
+    assert len(tickets) == 1
+    assert tickets[0]["id"] in result.content
+    assert result.tools_used == ["create_handoff_summary"]
+    assert result.tool_traces[0]["success"] is True
 
 
 def test_composer_fallback_preserves_primary_and_supporting_results():
@@ -90,14 +106,14 @@ def test_composer_fallback_preserves_primary_and_supporting_results():
     req = make_request()
     responses = [
         AgentResponse(AgentType.CONSULTING, "瑞典CS硕士通常是2年制，具体以院校官网为准。", True),
-        AgentResponse(AgentType.BILLING, "请提供两笔扣款的时间和金额。", True),
+        AgentResponse(AgentType.BILLING, "请提供合同号和两笔付款的时间和金额。", True),
     ]
 
     content = asyncio.run(composer.compose(req, responses))
 
     assert content.startswith("瑞典CS硕士通常是2年制，具体以院校官网为准。")
     assert "补充说明" in content
-    assert "两笔扣款" in content
+    assert "两笔付款" in content
 
 
 def test_routing_decision_can_target_escalation_pool():
@@ -132,9 +148,14 @@ def test_agent_tool_scopes_are_real_and_isolated():
     billing_tools = set(BillingAgent(FakeClient(), "test-model").get_tools())
     escalation_tools = set(EscalationAgent(FakeClient(), "test-model").get_tools())
 
-    assert general_tools == {"inspect_request_context", "suggest_required_fields"}
-    assert consulting_tools == {"lookup_country_admissions_overview", "lookup_service_offering"}
-    assert billing_tools == {"check_billing_fields", "compare_amounts"}
+    assert general_tools == {"inspect_request_context", "suggest_required_fields", "get_studio_profile"}
+    assert consulting_tools == {
+        "lookup_country_admissions_overview",
+        "lookup_service_offering",
+        "quote_service_bundle",
+        "create_consultation_lead",
+    }
+    assert billing_tools == {"check_payment_fields", "calculate_refund", "get_payment_policy", "compare_amounts"}
     assert escalation_tools == {"create_handoff_summary"}
     assert not general_tools & consulting_tools
     assert not consulting_tools & billing_tools
@@ -231,5 +252,81 @@ def test_tool_use_round_trip_executes_only_whitelisted_tool():
     assert {tool["name"] for tool in client.calls[0]["tools"]} == {
         "lookup_country_admissions_overview",
         "lookup_service_offering",
+        "quote_service_bundle",
+        "create_consultation_lead",
     }
     assert "tool_result" in str(client.calls[1]["messages"])
+    # 成功路径上也要保留工具轨迹（之前只有失败路径会写入）
+    assert [t["tool_name"] for t in response.tool_traces] == ["lookup_country_admissions_overview"]
+    assert response.tool_traces[0]["result_success"] is True
+
+
+class TextOnlyClient:
+    def __init__(self, text="好的"):
+        self.calls = []
+        owner = self
+
+        class Messages:
+            async def create(inner, **kwargs):
+                owner.calls.append(kwargs)
+                return type("R", (), {"content": [type("T", (), {"type": "text", "text": text})()]})()
+
+        self.messages = Messages()
+
+
+def _shared_rag():
+    class RagManager:
+        async def search_with_rewrite(self, *a, **k):
+            return type("Result", (), {"success": True, "data": [], "reranked": False})()
+
+    return build_shared_rag_tools(RagManager(), domain="general")
+
+
+def test_rag_mode_off_hides_search_tool():
+    client = TextOnlyClient()
+    agent = GeneralAgent(client, "test-model")
+    agent.set_shared_tools(_shared_rag())
+
+    asyncio.run(agent.handle(make_request(intent=IntentCategory.GREETING, rag_mode="off")))
+    names = {tool["name"] for tool in client.calls[0]["tools"]}
+    assert "search_knowledge_base" not in names
+
+    asyncio.run(agent.handle(make_request(rag_mode="on_demand")))
+    names = {tool["name"] for tool in client.calls[1]["tools"]}
+    assert "search_knowledge_base" in names
+
+
+def test_prefetched_knowledge_is_injected_with_titles():
+    client = TextOnlyClient()
+    agent = ConsultingAgent(client, "test-model")
+    req = make_request(
+        rag_mode="prefetch",
+        knowledge=[{"title": "瑞典CS硕士申请概览", "content": "1 月中旬截止", "score": 0.6}],
+    )
+    asyncio.run(agent.handle(req))
+    messages = str(client.calls[0]["messages"])
+    assert "[知识库上下文]" in messages
+    assert "《瑞典CS硕士申请概览》" in messages
+
+
+def test_skill_selection_is_reported_and_reference_tool_exposed(tmp_path):
+    from core.skill_loader import SkillManager
+
+    skill_dir = tmp_path / "study_consulting"
+    (skill_dir / "references").mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: 留学咨询\ndescription: 测试\nagents: [consulting]\nintents: [application_process]\n---\n规则正文",
+        encoding="utf-8",
+    )
+    (skill_dir / "references" / "faq.md").write_text("# 常见问题\n内容", encoding="utf-8")
+    manager = SkillManager(str(tmp_path))
+    manager.load()
+
+    client = TextOnlyClient()
+    agent = ConsultingAgent(client, "test-model", skill_manager=manager)
+    response = asyncio.run(agent.handle(make_request()))
+
+    assert [s["id"] for s in response.skills_applied] == ["study_consulting"]
+    assert "规则正文" in client.calls[0]["system"]
+    assert "read_skill_reference" in {tool["name"] for tool in client.calls[0]["tools"]}
+    assert manager.summary()["skills"][0]["stats"]["hits"] == 1

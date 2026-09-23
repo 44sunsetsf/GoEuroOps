@@ -5,7 +5,8 @@ export function createInitialSettings() {
   return {
     userId: saved.userId || 'u1001',
     conversationId: saved.conversationId || '',
-    apiUrl: saved.apiUrl || DEFAULT_BASE_URL
+    apiUrl: saved.apiUrl || DEFAULT_BASE_URL,
+    adminToken: saved.adminToken || ''
   }
 }
 
@@ -37,6 +38,36 @@ export async function reloadSkills(settings) {
   return requestJson(backendMeta(settings).baseUrl, '/skills/reload', { method: 'POST' })
 }
 
+export async function requestSkillDetail(settings, skillId) {
+  return requestJson(backendMeta(settings).baseUrl, `/skills/${encodeURIComponent(skillId)}`)
+}
+
+export async function matchSkills(settings, body) {
+  return requestJson(backendMeta(settings).baseUrl, '/skills/match', jsonRequest('POST', body))
+}
+
+export async function runSkillEvals(settings) {
+  return requestJson(backendMeta(settings).baseUrl, '/skills/evals')
+}
+
+export async function requestCatalog(settings) {
+  return requestJson(backendMeta(settings).baseUrl, '/catalog')
+}
+
+export async function requestLeads(settings, { status = '', type = '' } = {}) {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  if (type) params.set('type', type)
+  const query = params.toString() ? `?${params}` : ''
+  return requestJson(backendMeta(settings).baseUrl, `/leads${query}`, { headers: adminHeaders(settings) })
+}
+
+export async function updateLead(settings, leadId, patch) {
+  const request = jsonRequest('PATCH', patch)
+  request.headers = { ...request.headers, ...adminHeaders(settings) }
+  return requestJson(backendMeta(settings).baseUrl, `/leads/${encodeURIComponent(leadId)}`, request)
+}
+
 export async function requestKnowledgeStats(settings) {
   return requestJson(backendMeta(settings).baseUrl, '/knowledge/stats')
 }
@@ -49,8 +80,9 @@ export async function runEvaluation(settings, body = null) {
   })
 }
 
-export async function requestSearch(settings, query, topK = 5) {
+export async function requestSearch(settings, query, topK = 5, domain = '') {
   const params = new URLSearchParams({ query, top_k: String(topK) })
+  if (domain) params.set('domain', domain)
   return requestJson(backendMeta(settings).baseUrl, `/search?${params}`, { method: 'POST' })
 }
 
@@ -124,10 +156,11 @@ export async function addKnowledge(settings, documents) {
   })
 }
 
-export async function uploadKnowledge(settings, file) {
+export async function uploadKnowledge(settings, file, domain = '') {
   const form = new FormData()
   form.append('file', file)
-  return requestJson(backendMeta(settings).baseUrl, '/knowledge/upload', {
+  const query = domain ? `?domain=${encodeURIComponent(domain)}` : ''
+  return requestJson(backendMeta(settings).baseUrl, `/knowledge/upload${query}`, {
     method: 'POST',
     body: form
   })
@@ -160,8 +193,9 @@ function normalizeChatResponse(raw) {
     escalated: Boolean(raw.escalated),
     latencyMs: Number(raw.latency_ms ?? raw.latencyMs ?? 0),
     knowledgeUsed: Boolean(raw.knowledge_used ?? raw.knowledgeUsed),
-    verified: raw.verified,
-    grounded: raw.grounded,
+    skillsApplied: raw.skills_applied || raw.skillsApplied || [],
+    ragGate: raw.rag_gate || raw.ragGate || {},
+    toolsUsed: raw.tools_used || raw.toolsUsed || [],
     raw
   }
 }
@@ -178,6 +212,18 @@ function normalizeToolTraceResponse(raw) {
     },
     raw
   }
+}
+
+function jsonRequest(method, body) {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {})
+  }
+}
+
+function adminHeaders(settings) {
+  return settings.adminToken ? { 'X-Admin-Token': settings.adminToken } : {}
 }
 
 async function requestJson(baseUrl, path, options = {}) {

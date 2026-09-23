@@ -22,29 +22,31 @@ from typing import Any, Dict, List, Optional
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
+from core.text_embedding import cosine, hashed_ngram_embedding
 
 logger = logging.getLogger(__name__)
 
 
 class IntentCategory(Enum):
-    QUERY      = "query"       # 查询信息
+    """指北工作室的意图体系：通用大类 + 细粒度业务意图（细粒度优先）。"""
+    QUERY      = "query"       # 一般信息查询
     COMPLAINT  = "complaint"   # 投诉不满
     REQUEST    = "request"     # 请求操作
     GREETING   = "greeting"    # 问候
-    ESCALATION = "escalation"  # 要求升级/转人工
-    STUDY_CONSULT = "study_consult"  # 留学项目/国家公开知识咨询
-    BILLING    = "billing"     # 账单/退款
-    ACCOUNT    = "account"     # 账户管理
+    ESCALATION = "escalation"  # 要求升级/找创始人
+    STUDY_CONSULT = "study_consult"  # 五国 CS 硕士公开知识咨询
+    BILLING    = "billing"     # 费用/付款大类
+    ACCOUNT    = "account"     # 个人资料与联系方式
     FEEDBACK   = "feedback"    # 正面反馈
-    ORDER_STATUS = "order_status"        # 订单状态
-    LOGISTICS = "logistics"              # 物流配送
-    REFUND = "refund"                    # 退款/退货
-    INVOICE = "invoice"                  # 发票
-    PAYMENT_ISSUE = "payment_issue"      # 支付/扣款异常
-    ACCOUNT_SECURITY = "account_security" # 账户安全
+    SERVICE_PROGRESS = "service_progress"  # 已购服务进度（文书改到第几轮、报告何时交付）
+    BOOKING = "booking"                    # 预约/改期/取消咨询
+    REFUND = "refund"                      # 服务退款
+    INVOICE = "invoice"                    # 发票
+    PAYMENT_ISSUE = "payment_issue"        # 定金/尾款/付款异常
+    DATA_PRIVACY = "data_privacy"          # 资料删除、隐私与授权
     APPLICATION_PROCESS = "application_process"  # 申请材料/截止日期/语言成绩等流程问题
-    SERVICE_INQUIRY = "service_inquiry"  # 咨询工作室自身服务/价格/预约
-    HUMAN_HANDOFF = "human_handoff"      # 转人工
+    SERVICE_INQUIRY = "service_inquiry"    # 工作室服务/价格/报价
+    HUMAN_HANDOFF = "human_handoff"        # 转人工顾问
     OTHER      = "other"
 
 
@@ -69,33 +71,33 @@ class IntentResult:
 
 # ── Few-shot 模板（同时用于 LLM 示例和 Embedding 匹配）────────────────────────
 _TEMPLATES: Dict[IntentCategory, List[str]] = {
-    IntentCategory.QUERY:      ["我的订单状态是什么？", "如何重置密码？", "快递什么时候到？"],
-    IntentCategory.COMPLAINT:  ["等了好几个小时！", "服务太差了！", "一直没人处理！"],
-    IntentCategory.REQUEST:    ["帮我取消订单", "我需要修改地址", "请协助退款"],
+    IntentCategory.QUERY:      ["你们工作室在哪里？", "你们是做什么的？", "顾问都是什么背景？"],
+    IntentCategory.COMPLAINT:  ["文书返回太慢了！", "说好的时间又拖了", "消息一直没人回"],
+    IntentCategory.REQUEST:    ["帮我把联系方式改一下", "我需要一份服务协议", "请把报告再发我一次"],
     IntentCategory.GREETING:   ["你好", "嗨，有人吗", "早上好"],
-    IntentCategory.ESCALATION: ["我要投诉！", "转人工客服", "找你们经理"],
-    IntentCategory.STUDY_CONSULT: ["瑞典有哪些英语授课的CS硕士？", "德国和荷兰的CS硕士项目有什么区别？", "芬兰读计算机硕士好不好申请？"],
-    IntentCategory.BILLING:    ["为什么扣了两次款？", "申请退款", "发票问题"],
-    IntentCategory.ACCOUNT:    ["修改邮箱", "注销账户", "更新个人信息"],
-    IntentCategory.FEEDBACK:   ["服务很棒！", "非常满意", "给个好评"],
-    IntentCategory.ORDER_STATUS: ["我的订单现在是什么状态？", "订单有没有发货？", "订单处理到哪一步了？"],
-    IntentCategory.LOGISTICS: ["快递什么时候到？", "物流一直不更新", "配送要多久？"],
-    IntentCategory.REFUND: ["我要申请退款", "退货退款怎么处理？", "退款多久到账？"],
-    IntentCategory.INVOICE: ["帮我开发票", "发票抬头怎么改？", "电子发票在哪里？"],
-    IntentCategory.PAYMENT_ISSUE: ["为什么重复扣款？", "支付失败怎么办？", "这个月多扣了钱"],
-    IntentCategory.ACCOUNT_SECURITY: ["账户被盗了", "发现异常登录", "我要重置密码"],
-    IntentCategory.APPLICATION_PROCESS: ["申请材料需要准备什么？", "雅思一般要多少分？", "申请截止日期一般是什么时候？"],
-    IntentCategory.SERVICE_INQUIRY: ["你们提供什么服务？", "选校咨询怎么收费？", "怎么预约你们的顾问？"],
-    IntentCategory.HUMAN_HANDOFF: ["转人工客服", "我要找人工", "请升级处理"],
+    IntentCategory.ESCALATION: ["我要投诉你们的服务", "找你们负责人", "我要和创始人直接谈"],
+    IntentCategory.STUDY_CONSULT: ["瑞典有哪些英语授课的CS硕士？", "德国和荷兰的CS硕士有什么区别？", "芬兰读计算机硕士好不好申请？"],
+    IntentCategory.BILLING:    ["费用怎么付？", "付款相关问题", "我想了解收费方式"],
+    IntentCategory.ACCOUNT:    ["修改我的联系方式", "更新我的邮箱", "换个微信号联系"],
+    IntentCategory.FEEDBACK:   ["顾问特别专业！", "非常满意", "文书改得很好，谢谢"],
+    IntentCategory.SERVICE_PROGRESS: ["我的PS改到第几轮了？", "选校报告什么时候能交付？", "我的文书进度怎么样了"],
+    IntentCategory.BOOKING: ["我想预约一次咨询", "能改一下咨询时间吗？", "我要取消明天的咨询"],
+    IntentCategory.REFUND: ["我想申请退款", "定金能退吗？", "服务还没开始可以退款吗？"],
+    IntentCategory.INVOICE: ["能开发票吗？", "发票抬头怎么改？", "发票什么时候开？"],
+    IntentCategory.PAYMENT_ISSUE: ["尾款付不了", "付款失败了", "我好像多付了一笔钱"],
+    IntentCategory.DATA_PRIVACY: ["请删除我的个人资料", "你们会把我的信息给别人吗？", "我不想再被联系了"],
+    IntentCategory.APPLICATION_PROCESS: ["申请材料需要准备什么？", "雅思一般要多少分？", "APS要提前多久办？"],
+    IntentCategory.SERVICE_INQUIRY: ["你们提供什么服务？", "选校咨询怎么收费？", "全程陪跑多少钱？"],
+    IntentCategory.HUMAN_HANDOFF: ["转人工", "我要找真人顾问", "请让顾问联系我"],
 }
 
 _SPECIFIC_INTENTS = {
-    IntentCategory.ORDER_STATUS,
-    IntentCategory.LOGISTICS,
+    IntentCategory.SERVICE_PROGRESS,
+    IntentCategory.BOOKING,
     IntentCategory.REFUND,
     IntentCategory.INVOICE,
     IntentCategory.PAYMENT_ISSUE,
-    IntentCategory.ACCOUNT_SECURITY,
+    IntentCategory.DATA_PRIVACY,
     IntentCategory.APPLICATION_PROCESS,
     IntentCategory.SERVICE_INQUIRY,
     IntentCategory.HUMAN_HANDOFF,
@@ -110,12 +112,12 @@ _GENERIC_INTENTS = {
 }
 
 _INTENT_GROUPS: Dict[IntentCategory, IntentCategory] = {
-    IntentCategory.ORDER_STATUS: IntentCategory.QUERY,
-    IntentCategory.LOGISTICS: IntentCategory.QUERY,
+    IntentCategory.SERVICE_PROGRESS: IntentCategory.QUERY,
+    IntentCategory.BOOKING: IntentCategory.STUDY_CONSULT,
     IntentCategory.REFUND: IntentCategory.BILLING,
     IntentCategory.INVOICE: IntentCategory.BILLING,
     IntentCategory.PAYMENT_ISSUE: IntentCategory.BILLING,
-    IntentCategory.ACCOUNT_SECURITY: IntentCategory.ACCOUNT,
+    IntentCategory.DATA_PRIVACY: IntentCategory.ACCOUNT,
     IntentCategory.APPLICATION_PROCESS: IntentCategory.STUDY_CONSULT,
     IntentCategory.SERVICE_INQUIRY: IntentCategory.STUDY_CONSULT,
     IntentCategory.HUMAN_HANDOFF: IntentCategory.ESCALATION,
@@ -129,12 +131,14 @@ _URGENCY_KEYWORDS = {
 }
 
 
-def _cosine(a: List[float], b: List[float]) -> float:
-    """纯 Python 余弦相似度，不依赖 numpy。"""
-    dot = sum(x * y for x, y in zip(a, b))
-    na  = sum(x * x for x in a) ** 0.5
-    nb  = sum(x * x for x in b) ** 0.5
-    return dot / (na * nb) if na and nb else 0.0
+_cosine = cosine
+
+
+def _keyword_in(keyword: str, text: str) -> bool:
+    """中文关键词做子串匹配；纯字母关键词按单词边界匹配，避免 "cs" 命中 "docs"。"""
+    if keyword.isascii() and keyword[:1].isalnum():
+        return re.search(rf"(?<![a-z0-9]){re.escape(keyword)}(?![a-z0-9])", text) is not None
+    return keyword in text
 
 
 class IntentRecognizer:
@@ -252,9 +256,14 @@ class IntentRecognizer:
                 for m in history[-3:]
             )
 
-        prompt = f"""你是客服意图分析专家。根据示例判断用户意图，返回 JSON。
-如果用户问题能匹配细粒度业务意图，请优先返回细粒度意图，而不是宽泛大类。
-例如退款优先返回 refund，发票优先返回 invoice，咨询服务/价格优先返回 service_inquiry，申请材料/截止日期优先返回 application_process。
+        prompt = f"""你是留学咨询工作室「指北」的意图分析专家。工作室提供瑞典/德国/荷兰/芬兰/丹麦英语授课 CS 硕士的选校咨询和文书辅导服务。
+根据示例判断用户意图，返回 JSON。能匹配细粒度业务意图时优先返回细粒度意图，而不是宽泛大类：
+服务内容/价格/报价 → service_inquiry；预约/改期/取消咨询 → booking；已购服务的进度 → service_progress；
+申请材料/截止日期/语言成绩/APS → application_process；退款/定金能否退 → refund；发票 → invoice；
+付款失败/多付 → payment_issue；删除资料/隐私 → data_privacy；要求真人顾问 → human_handoff。
+
+示例:
+{examples}
 
         {ctx}
         用户消息: "{message}"
@@ -306,25 +315,26 @@ class IntentRecognizer:
         """策略 3：关键词模式匹配（同步，零延迟兜底）。"""
         msg = message.lower()
         specific_patterns = {
-            IntentCategory.HUMAN_HANDOFF: ["转人工", "人工客服", "找人工"],
-            IntentCategory.ORDER_STATUS: ["订单状态", "发货了吗", "处理到哪", "order status"],
-            IntentCategory.LOGISTICS: ["物流", "快递", "配送", "运单", "delivery", "shipping"],
-            IntentCategory.REFUND: ["退款", "退货", "refund", "return"],
+            IntentCategory.HUMAN_HANDOFF: ["转人工", "真人", "人工顾问", "让顾问联系"],
+            IntentCategory.DATA_PRIVACY: ["删除我的", "删除资料", "个人信息", "隐私", "不要再联系", "gdpr"],
+            IntentCategory.SERVICE_PROGRESS: ["第几轮", "进度", "什么时候交付", "改好了吗", "报告什么时候"],
+            IntentCategory.BOOKING: ["预约", "改期", "改时间", "取消咨询", "约个时间", "booking"],
+            IntentCategory.REFUND: ["退款", "退钱", "能退吗", "refund"],
             IntentCategory.INVOICE: ["发票", "抬头", "税号", "invoice"],
-            IntentCategory.PAYMENT_ISSUE: ["重复扣款", "多扣", "支付失败", "扣费", "payment failed"],
-            IntentCategory.ACCOUNT_SECURITY: ["被盗", "异常登录", "重置密码", "两步验证", "安全"],
-            IntentCategory.APPLICATION_PROCESS: ["申请材料", "截止日期", "雅思", "托福", "语言成绩", "deadline", "requirement"],
-            IntentCategory.SERVICE_INQUIRY: ["收费", "价格", "怎么收费", "预约", "咨询服务", "怎么找你们", "booking", "price"],
+            IntentCategory.PAYMENT_ISSUE: ["付款失败", "付不了", "多付", "重复付款", "扣了两次", "payment failed"],
+            IntentCategory.APPLICATION_PROCESS: ["申请材料", "截止", "雅思", "托福", "语言成绩", "aps", "uni-assist", "推荐信要", "deadline", "requirement"],
+            IntentCategory.SERVICE_INQUIRY: ["收费", "价格", "多少钱", "报价", "套餐", "陪跑", "服务内容", "优惠", "便宜", "price"],
         }
         generic_patterns = {
-            IntentCategory.ESCALATION: ["投诉", "经理", "supervisor"],
-            IntentCategory.COMPLAINT:  ["太差", "糟糕", "horrible", "等了很久"],
-            IntentCategory.QUERY:      ["?", "？", "怎么", "什么", "status"],
+            IntentCategory.ESCALATION: ["投诉", "负责人", "创始人"],
+            IntentCategory.COMPLAINT:  ["太慢", "太差", "拖了", "没人回", "不满意"],
+            IntentCategory.QUERY:      ["?", "？", "怎么", "什么", "哪里"],
             IntentCategory.REQUEST:    ["帮我", "需要", "please", "help"],
             IntentCategory.GREETING:   ["你好", "嗨", "hello", "hi"],
-            IntentCategory.BILLING:    ["退款", "扣款", "发票", "refund"],
-            IntentCategory.STUDY_CONSULT: ["瑞典", "德国", "荷兰", "芬兰", "丹麦", "硕士", "cs", "计算机"],
-            IntentCategory.ACCOUNT:    ["密码", "邮箱", "账户", "password"],
+            IntentCategory.FEEDBACK:   ["谢谢", "满意", "专业", "很棒"],
+            IntentCategory.BILLING:    ["付款", "定金", "尾款", "费用"],
+            IntentCategory.STUDY_CONSULT: ["瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧", "硕士", "研究生", "cs", "计算机"],
+            IntentCategory.ACCOUNT:    ["联系方式", "邮箱", "微信号", "手机号"],
         }
 
         best_cat, best_score = self._best_pattern_match(msg, specific_patterns)
@@ -376,14 +386,18 @@ class IntentRecognizer:
     def _extract_entities(self, message: str) -> Dict[str, List[str]]:
         """用规则提取高价值实体，避免每次识别都额外调用 LLM。"""
         message = self._clean_text(message)
+        from business.catalog import match_service_mentions
+
         return {
-            "order_id": self._unique(re.findall(r"(?:订单号?|order(?:_id)?|#)\s*[:：#]?\s*([A-Za-z0-9_-]{4,32})", message, re.I)),
-            "product": [],
+            "contract_id": self._unique(re.findall(r"(?:合同|协议|订单)号?\s*[:：#]?\s*([A-Za-z]{1,4}-?\d{4,12})", message, re.I)),
             "date": self._unique(re.findall(r"(今天|明天|昨天|本周|这周|下周|\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?)", message)),
-            "amount": self._unique(re.findall(r"((?:¥|￥)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?\s*(?:元|块|rmb|cny|usd|美元))", message, re.I)),
+            "amount": self._unique(re.findall(r"((?:¥|￥)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?\s*(?:元|块|rmb|cny|欧元|eur|€))", message, re.I)),
             "country": self._unique(
                 re.findall(r"(瑞典|Sweden|德国|Germany|荷兰|Netherlands|芬兰|Finland|丹麦|Denmark)", message, re.I)
             ),
+            "intake": self._unique(re.findall(r"(20\d{2}\s*(?:年)?\s*(?:秋|春|fall|autumn|spring)(?:季|季入学|入学)?)", message, re.I)),
+            "test_score": self._unique(re.findall(r"((?:雅思|ielts|托福|toefl)\s*(?:总分)?\s*\d{1,3}(?:\.\d)?)", message, re.I)),
+            "service": match_service_mentions(message),
         }
 
     # ── 辅助 ──────────────────────────────────────────────────────────────────
@@ -422,22 +436,8 @@ class IntentRecognizer:
 
     @staticmethod
     def _local_embedding(text: str, dims: int = 256) -> List[float]:
-        """稳定的字符 n-gram 哈希向量，用于无远端 Embedding 时的语义近似匹配。"""
-        normalized = text.lower().strip()
-        vec = [0.0] * dims
-        tokens = set()
-        for n in (1, 2, 3):
-            if len(normalized) >= n:
-                tokens.update(normalized[i:i + n] for i in range(len(normalized) - n + 1))
-        if not tokens:
-            tokens.add(normalized)
-
-        for token in tokens:
-            digest = hashlib.md5(token.encode("utf-8")).digest()
-            idx = int.from_bytes(digest[:4], "big") % dims
-            sign = 1.0 if digest[4] % 2 == 0 else -1.0
-            vec[idx] += sign
-        return vec
+        """稳定的字符 n-gram 哈希向量（实现见 core/text_embedding.py）。"""
+        return hashed_ngram_embedding(text, dims)
 
     def _urgency(self, message: str, intent: IntentCategory) -> UrgencyLevel:
         msg = message.lower()
@@ -474,7 +474,7 @@ class IntentRecognizer:
     ) -> tuple[IntentCategory, float]:
         best_cat, best_score = IntentCategory.OTHER, 0.0
         for cat, kws in patterns.items():
-            hits = sum(1 for kw in kws if kw in message)
+            hits = sum(1 for kw in kws if _keyword_in(kw, message))
             if not hits:
                 continue
             # 单个明确业务关键词就给可用置信度；多个关键词命中时提高置信度。

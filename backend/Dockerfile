@@ -1,4 +1,4 @@
-# EchoMind 智能客服系统 — Docker 多阶段构建
+# GoEuroOps 留学业务智能运营中枢 — Docker 多阶段构建
 # 目标：生产镜像尽量精简，开发镜像包含调试工具
 
 # ── 阶段 1：基础环境 ──────────────────────────────────────────────────────────
@@ -40,6 +40,10 @@ with tarfile.open(archive, "r:gz") as tar:
 archive.unlink()
 PY
 
+# 预下载知识库中文向量模型（bge-small-zh-v1.5，约 90MB，fastembed/ONNX 推理，不依赖 torch）
+ENV FASTEMBED_CACHE_PATH=/opt/fastembed
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-zh-v1.5', cache_dir='/opt/fastembed')"
+
 # ── 阶段 3：生产镜像 ──────────────────────────────────────────────────────────
 FROM base AS production
 
@@ -51,6 +55,8 @@ COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 # 复制预下载的 ONNX 模型缓存
 COPY --from=dependencies --chown=echomind:echomind /root/.cache/chroma /home/echomind/.cache/chroma
+COPY --from=dependencies --chown=echomind:echomind /opt/fastembed /opt/fastembed
+ENV FASTEMBED_CACHE_PATH=/opt/fastembed
 
 # 复制应用代码
 COPY --chown=echomind:echomind . .

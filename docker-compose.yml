@@ -83,6 +83,8 @@ services:
       - backend-logs:/app/logs
       # Skills 可以在不重建镜像的情况下热加载：改文件后 POST /skills/reload
       - ./backend/skills:/app/skills
+      # 业务目录（价格、政策、五国资料、知识库文章）：改完 docker compose restart backend 即生效
+      - ./backend/business:/app/business
     depends_on:
       redis:
         condition: service_healthy

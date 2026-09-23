@@ -1,0 +1,303 @@
+# 指北工作室 业务目录（单一数据源）
+#
+# 报价工具、退款计算、知识库种子、前端价目面板都从这里读取。
+# 改价格/政策只改这一个文件，然后重启后端（知识库会按 seed_version 自动重建种子文档）。
+#
+# 注意：以下价格、政策为草案，需要创始人确认后再对外使用。
+
+catalog_version: "2026.09-v3"
+currency: CNY
+currency_symbol: "¥"
+
+studio:
+  name: 指北 · Nordic CS Master Studio
+  brand: 指北
+  tagline: 北欧在读学长学姐，陪你把 CS 硕士申请这件事想清楚
+  founders_note: 由几位在瑞典就读/毕业的计算机方向留学生创办，选校咨询和文书辅导都由创始人亲自完成，不外包、不流水线。
+  base: 瑞典斯德哥尔摩
+  timezone: Europe/Stockholm
+  timezone_note: 顾问在瑞典（中欧时间 CET/CEST），比北京时间晚 6 小时（夏令时）或 7 小时（冬令时）。
+  response_sla: 工作日 24 小时内回复；周末和瑞典公共假期顺延。
+  capacity_note: 为保证质量，每个申请季最多接 15 名全程陪跑学员，满员后按预约顺序排队。
+  coverage:
+    countries: [瑞典, 德国, 荷兰, 芬兰, 丹麦]
+    programs: 英语授课的计算机科学/软件工程/数据科学/人工智能等 CS 相关硕士项目
+  not_covered:
+    - 本科、博士及非 CS 方向申请
+    - 上述五国以外的国家和地区
+    - 代写文书、代考语言、代办签证或伪造任何材料
+    - 录取担保或"保录"承诺
+  contact:
+    booking_note: 在对话中留下称呼和联系方式（微信/邮箱/手机任选其一），顾问会在 1 个工作日内主动联系约时间。
+    channels: [微信, 邮箱, 手机]
+
+services:
+  - sku: intro_call
+    name: 免费初步沟通
+    category: consult
+    price: 0
+    unit: 次
+    duration: 15 分钟线上语音/视频
+    summary: 了解你的背景和目标，判断我们能不能帮上忙、适合哪项服务。
+    includes:
+      - 了解本科背景、目标国家和入学时间
+      - 说明服务流程与适合的服务项目
+    excludes:
+      - 不给出具体选校结论
+      - 不看文书
+    turnaround: 预约后 3 个工作日内安排
+    discount_eligible: false
+
+  - sku: consult_single
+    name: 单次选校咨询
+    category: consult
+    price: 699
+    unit: 次（60 分钟）
+    duration: 60 分钟线上 1 对 1
+    summary: 适合已经有初步想法、想找过来人快速把方向定下来的同学。
+    includes:
+      - 背景快速评估（院校背景、均分、科研/实习、语言）
+      - 目标国家与项目方向建议
+      - 会后 48 小时内发送一页初步方向笔记
+    excludes:
+      - 不含完整选校清单和申请时间规划
+      - 不含文书服务
+    turnaround: 预约后 5 个工作日内安排
+    extras:
+      - name: 加时
+        price: 299
+        unit: 30 分钟
+    discount_eligible: false
+    upgrade_note: 30 天内升级选校定位全案，可抵扣 ¥699。
+
+  - sku: selection_full
+    name: 选校定位全案
+    category: selection
+    price: 2999
+    unit: 套
+    summary: 从背景评估到最终选校清单和时间规划，一次讲透。
+    includes:
+      - 书面背景评估报告（优势、短板和补强建议）
+      - 8–12 个项目的选校清单，分冲刺/匹配/保底三档，每个项目附匹配理由
+      - 各项目语言、先修课、截止日期和材料要求汇总表
+      - 个人申请时间规划表（精确到月）
+      - 2 次 60 分钟 1 对 1 沟通
+      - 交付后 14 天内文字答疑
+    excludes:
+      - 不含文书写作辅导
+      - 不代为提交网申
+    deliverables: [背景评估报告, 选校清单, 项目要求汇总表, 申请时间规划表]
+    turnaround: 付款后 10 个工作日内交付初版
+    discount_eligible: true
+
+  - sku: ps_single
+    name: PS/动机信单篇辅导
+    category: essay
+    price: 2499
+    unit: 篇
+    summary: 由顾问陪你把经历梳理成有说服力的个人陈述或动机信（Motivation Letter）。
+    includes:
+      - 1 次 60 分钟素材挖掘与头脑风暴
+      - 结构大纲设计
+      - 3 轮逐段修改意见与语言润色建议
+    excludes:
+      - 不代写：正文由你本人撰写，顾问提供结构、内容和表达上的修改意见
+      - 不含其他项目的改写适配
+    revision_rounds: 3
+    turnaround: 每轮 5–7 个工作日返回
+    discount_eligible: false
+
+  - sku: cv
+    name: 学术简历（CV）优化
+    category: essay
+    price: 899
+    unit: 份
+    summary: 按欧洲高校偏好的学术简历格式，突出课程、项目和科研经历。
+    includes:
+      - 格式模板与结构建议
+      - 2 轮修改意见
+    excludes: [不代写]
+    revision_rounds: 2
+    turnaround: 每轮 3–5 个工作日返回
+    discount_eligible: false
+
+  - sku: rl_guide
+    name: 推荐信指导
+    category: essay
+    price: 599
+    unit: 封
+    summary: 帮你和推荐人准备素材、明确侧重点，让推荐信和其他材料互相印证。
+    includes:
+      - 推荐人选择建议
+      - 素材梳理与结构建议
+      - 2 轮修改意见
+    excludes: [不代写、不代签推荐信]
+    revision_rounds: 2
+    turnaround: 每轮 3–5 个工作日返回
+    discount_eligible: false
+
+  - sku: extra_round
+    name: 文书额外修改轮
+    category: addon
+    price: 399
+    unit: 轮
+    summary: 任意文书超出套餐轮次后的追加修改。
+    includes: [1 轮完整修改意见]
+    excludes: []
+    turnaround: 5 个工作日内返回
+    discount_eligible: false
+
+  - sku: essay_pack_3
+    name: 文书套餐 · 3 个项目
+    category: package
+    price: 5999
+    unit: 套
+    summary: 1 篇主文书打磨透，再针对 3 个目标项目做定制化改写。
+    includes:
+      - 1 篇主 PS/动机信（3 轮修改）
+      - 2 篇项目适配改写（各 2 轮）
+      - 学术简历 CV（2 轮）
+      - 2 封推荐信指导
+    excludes: [不含选校服务, 不代写]
+    revision_rounds: 9
+    discount_eligible: true
+
+  - sku: essay_pack_5
+    name: 文书套餐 · 5 个项目
+    category: package
+    price: 8499
+    unit: 套
+    summary: 适合申请项目多、各项目文书题目差异大的同学。
+    includes:
+      - 1 篇主 PS/动机信（3 轮修改）
+      - 4 篇项目适配改写（各 2 轮）
+      - 学术简历 CV（2 轮）
+      - 3 封推荐信指导
+    excludes: [不含选校服务, 不代写]
+    revision_rounds: 13
+    discount_eligible: true
+
+  - sku: full_journey
+    name: 全程陪跑
+    category: package
+    price: 11800
+    unit: 套
+    summary: 从选校到拿录取，一位创始人顾问全程跟进。
+    includes:
+      - 选校定位全案全部内容
+      - 最多 6 个项目的全套文书辅导（主文书 + 适配改写 + CV + 推荐信指导）
+      - 网申材料逐项审核（提交前核对）
+      - 德国 APS 审核与 uni-assist 流程指导（如申请德国）
+      - 录取后的项目对比与选择建议
+      - 申请季内微信群随时答疑（工作日 24 小时内回复）
+    excludes: [不代为提交网申, 不代写, 不承诺录取结果, 不含签证办理]
+    discount_eligible: true
+
+  - sku: full_journey_plus
+    name: 全程陪跑 Plus
+    category: package
+    price: 15800
+    unit: 套
+    summary: 在全程陪跑基础上延伸到面试、签证材料和落地准备。
+    includes:
+      - 全程陪跑全部内容，项目上限提高到 8 个
+      - 2 次模拟面试（含反馈报告）
+      - 学生居留许可/签证材料清单指导
+      - 落地前 1 次 60 分钟北欧生活答疑（住房、银行、交通等）
+    excludes: [不代为提交网申, 不代写, 不承诺录取结果, 不代办签证]
+    discount_eligible: true
+
+  - sku: app_review
+    name: 网申材料审核
+    category: addon
+    price: 499
+    unit: 所学校
+    summary: 提交前逐项核对网申表格和上传材料，降低低级错误。
+    includes: [网申表格逐项核对, 材料完整性与格式检查]
+    excludes: [不代为填写或提交]
+    turnaround: 3 个工作日内返回
+    discount_eligible: false
+
+  - sku: mock_interview
+    name: 模拟面试
+    category: addon
+    price: 399
+    unit: 次（45 分钟）
+    summary: 针对有面试环节的项目（如部分荷兰、丹麦项目）做英文模拟面试。
+    includes: [45 分钟英文模拟, 书面反馈]
+    excludes: []
+    turnaround: 预约后 5 个工作日内安排
+    discount_eligible: false
+
+  - sku: visa_guide
+    name: 签证/居留材料指导
+    category: addon
+    price: 699
+    unit: 次
+    summary: 按目标国家整理学生居留许可材料清单并答疑。
+    includes: [个性化材料清单, 1 次 45 分钟答疑]
+    excludes: [不代办、不代为提交]
+    turnaround: 付款后 5 个工作日内
+    discount_eligible: false
+
+discounts:
+  early_bird:
+    name: 早鸟优惠
+    rate: 0.90
+    deadline_month_day: "09-30"
+    rule: 每年 9 月 30 日前（含）签约，选校定位全案、文书套餐和全程陪跑类服务享 9 折。
+  group:
+    name: 同伴团报
+    rate: 0.95
+    min_people: 2
+    rule: 同校或同班 2 人及以上一起报名任意套餐，每人享 95 折。
+  referral:
+    name: 老带新
+    amount: 300
+    rule: 由指北老学员推荐，新学员立减 ¥300（推荐人同样获得 ¥300 返现）；可与早鸟或团报叠加。
+  stacking_rule: 早鸟和团报二选一，自动取更优惠的一项；老带新可在此基础上叠加。
+  floor_ratio: 0.85
+  floor_rule: 所有优惠叠加后，实付不低于标价的 85%。
+  no_negotiation: 除以上公开优惠外不接受议价；AI 助手无权给出任何额外折扣。
+
+payment:
+  deposit_ratio: 0.30
+  deposit_applies_to: [selection, package]
+  rule: 选校定位全案和套餐类服务，签约时付 30% 定金，服务启动前付清尾款；单次咨询、单项文书和增值服务需全款预付。
+  channels: [微信支付, 支付宝, 银行转账]
+  contract_note: 所有付费服务签电子服务协议，写明服务内容、轮次、交付时间和退款条款。
+  quote_validity_days: 14
+
+refund_policy:
+  summary: 服务未启动全额退；启动后按服务类型和进度退；交付完成后不退。
+  rules:
+    - stage: not_started
+      label: 已付款、服务尚未启动
+      rule: 全额退还已付款项。
+    - stage: in_progress
+      label: 服务进行中
+      rule: >-
+        文书类单项按剩余轮次比例退还；选校全案在报告交付前退还已付款的 50%；
+        套餐类服务启动后定金不退，已付尾款部分按剩余进度比例退还。
+    - stage: delivered
+      label: 已交付完成
+      rule: 不予退款。
+  notes:
+    - 单次咨询在约定时间前 24 小时以外取消可全额退款或改期；24 小时内取消或未到场视为已使用。
+    - 因录取结果不理想不属于退款理由（我们不承诺录取）。
+    - 退款在确认后 7 个工作日内原路退回。
+    - 实际退款金额以服务协议和人工核验结果为准。
+
+invoice:
+  type: 电子普通发票
+  timing: 付清款项后 5 个工作日内开具
+  title_types: [个人, 企业]
+  note: 发票由工作室在国内的合作主体开具；需要企业抬头时请提供税号。
+
+booking:
+  steps:
+    - 在对话中说明想了解的服务，并留下称呼和一种联系方式（微信/邮箱/手机）
+    - 顾问 1 个工作日内联系你，先安排 15 分钟免费初步沟通
+    - 确认服务项目后签电子协议、付款（套餐付定金）
+    - 顾问按协议排期启动服务
+  reschedule: 已约时间可在 24 小时前免费改期一次。

@@ -1,0 +1,10 @@
+[
+  {"message": "你们都提供哪些服务？", "agent": "consulting", "intent": "service_inquiry", "expect_hit": true},
+  {"message": "全程陪跑多少钱", "agent": "consulting", "expect_hit": true, "note": "无意图，依赖关键词"},
+  {"message": "能不能便宜点", "agent": "consulting", "expect_hit": true},
+  {"message": "太贵了吧", "agent": "consulting", "expect_hit": true, "note": "依赖语义样例"},
+  {"message": "我想约一下顾问", "agent": "consulting", "intent": "booking", "expect_hit": true},
+  {"message": "我想报名", "agent": "consulting", "expect_hit": true, "note": "依赖语义样例"},
+  {"message": "瑞典的CS硕士一般读几年？", "agent": "consulting", "intent": "study_consult", "expect_hit": false},
+  {"message": "发票怎么开", "agent": "billing", "intent": "invoice", "expect_hit": false, "note": "Agent 过滤"}
+]
