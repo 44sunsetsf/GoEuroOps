@@ -1,7 +1,26 @@
 # 学生端首页、静态资源、对话和价目接口公开；其余一律要口令：
 # /studio 后台、/api/docs、评测、知识库写入、线索等。
+# 访问日志：记录来源 IP、时间、路径、状态码，便于知道面试官有没有打开过；
+# 去掉请求头（口令、Cookie 不落盘），按 10MB 轮转、保留 90 天。查看方式见 deploy/DEPLOY.md。
+(access_log) {
+	log {
+		output file /data/logs/{args[0]}-access.log {
+			roll_size 10MiB
+			roll_keep 10
+			roll_keep_for 2160h
+		}
+		format filter {
+			request>headers delete
+			request>uri query {
+				replace key REDACTED
+			}
+		}
+	}
+}
+
 {$SITE_ADDRESS} {
 	encode zstd gzip
+	import access_log goeuroops
 
 	@private not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog
 	basic_auth @private {

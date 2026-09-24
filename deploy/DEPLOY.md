@@ -96,3 +96,14 @@ dc restart backend           # 改了 backend/business/ 后生效
 ## 同一台机器上再放一个项目
 
 Caddy 会加载 `deploy/sites/*.caddy`。其他项目把自己的服务接到 `goeuroops_default` 网络上，再在这里放一个站点配置即可共用 HTTPS，例如 Vparser 的部署说明见它仓库里的 `deploy/DEPLOY.md`。这些 `.caddy` 文件含口令哈希，已在 `.gitignore` 里排除。
+
+## 谁访问过
+
+Caddy 把每个站点的访问记录写在自己的数据卷里（`/data/logs/<站点>-access.log`，10MB 轮转、保留 90 天），
+记录来源 IP、时间、路径和状态码；请求头不落盘，进入链接里的 `key` 会被替换成 `REDACTED`。
+
+```bash
+deploy/who-visited.sh              # GoEuroOps
+deploy/who-visited.sh vparser      # Vparser（同机部署时）
+deploy/who-visited.sh vparser 3    # 只看最近 3 天
+```
