@@ -6,8 +6,9 @@
 #   - 后端、前端不再直接暴露端口，只能经 Caddy 访问
 #   - 对话接口有每日上限（GOEUROOPS_DAILY_CHAT_LIMIT）
 #   - Prometheus 默认不启动（小内存机器上省 120MB），需要时加 --profile monitoring
-#   - 向量改用远端 API（硅基流动 bge-large-zh-v1.5），ChromaDB 改为后端进程内嵌入式：
-#     后端常驻内存从约 355MB 降到约 115MB，并省掉约 210MB 的 chromadb 容器
+#   - ChromaDB 改为后端进程内嵌入式，省掉约 210MB 的 chromadb 容器
+#   - 向量模型仍在本地跑（bge-small-zh，与评测基准一致）；内存特别紧时可改用远端 API：
+#     设 GOEUROOPS_EMBEDDING_PROVIDER=api 和 GOEUROOPS_EMBEDDING_API_KEY，后端常驻内存可再降约 240MB
 
 # 容器日志默认不轮转，长期运行会越积越大：每个容器最多 3 个 10MB 文件
 x-logging: &logging
@@ -49,10 +50,10 @@ services:
     ports: !reset []
     environment:
       GOEUROOPS_DAILY_CHAT_LIMIT: ${GOEUROOPS_DAILY_CHAT_LIMIT:-200}
-      GOEUROOPS_EMBEDDING_PROVIDER: api
-      GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:?在 .env 里设置 SILICONFLOW_API_KEY（向量 API）}
+      GOEUROOPS_EMBEDDING_PROVIDER: ${GOEUROOPS_EMBEDDING_PROVIDER:-local}
+      GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:-}
       CHROMA_HOST: ""
-      # 小内存机器：减少 glibc 内存碎片
+      # 小内存机器：减少 glibc 内存碎片；向量推理只用 1 个线程，启动时不会占满 CPU
       MALLOC_ARENA_MAX: "2"
       # 释放的内存及时还给系统，而不是留在 glibc 的空闲链表里
       MALLOC_TRIM_THRESHOLD_: "65536"
@@ -61,8 +62,8 @@ services:
       redis:
         condition: service_healthy
     # 超出上限时只重启后端容器，不会拖垮整台机器
-    mem_limit: 600m
-    memswap_limit: 900m
+    mem_limit: 900m
+    memswap_limit: 1200m
 
   chromadb:
     profiles: ["chroma-server"]
