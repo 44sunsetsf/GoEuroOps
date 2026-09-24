@@ -9,8 +9,17 @@
 #   - 向量改用远端 API（硅基流动 bge-large-zh-v1.5），ChromaDB 改为后端进程内嵌入式：
 #     后端常驻内存从约 355MB 降到约 115MB，并省掉约 210MB 的 chromadb 容器
 
+# 容器日志默认不轮转，长期运行会越积越大：每个容器最多 3 个 10MB 文件
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   caddy:
+    <<: *logging
     image: caddy:2-alpine
     ports:
       - "80:80"
@@ -32,9 +41,11 @@ services:
     restart: unless-stopped
 
   frontend:
+    <<: *logging
     ports: !reset []
 
   backend:
+    <<: *logging
     ports: !reset []
     environment:
       GOEUROOPS_DAILY_CHAT_LIMIT: ${GOEUROOPS_DAILY_CHAT_LIMIT:-200}
@@ -57,7 +68,11 @@ services:
     profiles: ["chroma-server"]
 
   prometheus:
+    <<: *logging
     profiles: ["monitoring"]
+
+  redis:
+    <<: *logging
 
 volumes:
   caddy-data:
