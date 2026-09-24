@@ -40,6 +40,8 @@ services:
       CHROMA_HOST: ""
       # 小内存机器：减少 glibc 内存碎片
       MALLOC_ARENA_MAX: "2"
+      # 释放的内存及时还给系统，而不是留在 glibc 的空闲链表里
+      MALLOC_TRIM_THRESHOLD_: "65536"
       OMP_NUM_THREADS: "1"
     depends_on: !reset
       redis:
