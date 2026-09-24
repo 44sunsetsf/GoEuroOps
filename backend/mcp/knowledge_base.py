@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 import chromadb
 
 from core.text_embedding import ngram_profile
-from mcp.embeddings import load_embedding_function
+from mcp.embeddings import get_shared_embedding_function
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class KnowledgeBase:
             )
 
         # 不同向量模型的向量维度不同，不能混在一个 collection 里：按模型名区分 collection。
-        self._embedder = load_embedding_function()
+        self._embedder = get_shared_embedding_function()
         if self._embedder is not None:
             self.collection_name = f"kb_{self._embedder.collection_suffix}"[:60]
             self._collection = self._client.get_or_create_collection(

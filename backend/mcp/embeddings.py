@@ -54,3 +54,17 @@ def load_embedding_function() -> Optional[FastEmbedFunction]:
     except Exception as ex:
         logger.error("加载向量模型 %s 失败，退回 ChromaDB 默认模型（中文检索效果会明显变差）: %s", model, ex)
         return None
+
+
+_shared: Optional[FastEmbedFunction] = None
+_shared_loaded = False
+
+
+def get_shared_embedding_function() -> Optional[FastEmbedFunction]:
+    """进程内共享的向量模型：知识库和意图识别共用一份，避免重复加载约 90MB 的模型。"""
+    global _shared, _shared_loaded
+    if not _shared_loaded:
+        _shared = load_embedding_function()
+        _shared_loaded = True
+    return _shared
+

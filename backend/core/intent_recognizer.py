@@ -13,6 +13,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -125,13 +126,27 @@ _INTENT_GROUPS: Dict[IntentCategory, IntentCategory] = {
 
 
 
+_UNSET = object()
+
+
 def _group_of(intent: IntentCategory) -> IntentCategory:
     return _INTENT_GROUPS.get(intent, intent)
 
 
 # 分歧检测阈值：向量和关键词两路都达到时，才允许否决 LLM。
-_CONFLICT_MIN_EMB = 0.6
+# 否决的前提是这一路比 LLM（基准上约 92%）更准，所以按各自的分数分布校准：
+# bge 相似度整体偏高，≥0.8 时模板匹配精确率 95%；字符 n-gram 分数低，用 0.6。
+_CONFLICT_MIN_EMB_BGE = 0.8
+_CONFLICT_MIN_EMB_NGRAM = 0.6
 _CONFLICT_MIN_PAT = 0.5
+_PRAGMATIC_INTENTS = {
+    IntentCategory.QUERY,
+    IntentCategory.REQUEST,
+    IntentCategory.GREETING,
+    IntentCategory.FEEDBACK,
+    IntentCategory.COMPLAINT,
+    IntentCategory.OTHER,
+}
 
 # 紧急关键词
 _URGENCY_KEYWORDS = {
@@ -175,6 +190,7 @@ class IntentRecognizer:
         # 本地字符 n-gram 向量始终可用；如果未来客户端暴露 embeddings 资源，
         # _embed_text 会优先尝试远端向量，否则自动回退本地向量。
         self._embedding_enabled = True
+        self._semantic: Any = _UNSET
 
         self._tpl_embeddings: Dict[IntentCategory, List[List[float]]] = {}
         self._cache: Dict[str, IntentResult] = {}
@@ -397,7 +413,8 @@ class IntentRecognizer:
 
         # 分歧检测：向量和关键词两路确定性信号一致指向另一个领域时，
         # 即便 LLM 很自信也不直接采信，降为低置信 OTHER，交给澄清追问。
-        if self._deterministic_conflict(emb, pat, best_group):
+        min_emb = _CONFLICT_MIN_EMB_BGE if self._semantic not in (None, _UNSET) else _CONFLICT_MIN_EMB_NGRAM
+        if self._deterministic_conflict(emb, pat, best_group, min_emb):
             source_scores["conflict"] = 1.0
             return IntentCategory.OTHER, min(confidence, self.threshold - 0.05), source_scores
 
@@ -422,7 +439,9 @@ class IntentRecognizer:
         return best, confidence, source_scores
 
     @staticmethod
-    def _deterministic_conflict(emb: Dict, pat: Dict, chosen_group: IntentCategory) -> bool:
+    def _deterministic_conflict(
+        emb: Dict, pat: Dict, chosen_group: IntentCategory, min_emb: float = _CONFLICT_MIN_EMB_NGRAM,
+    ) -> bool:
         """向量与关键词是否一致指向另一个领域、两路信号都足够强，且消息里没有 LLM 所选领域的任何关键词。"""
         emb_intent = emb.get("intent", IntentCategory.OTHER)
         pat_intent = pat.get("intent", IntentCategory.OTHER)
@@ -431,11 +450,15 @@ class IntentRecognizer:
         det_group = _group_of(emb_intent)
         if det_group != _group_of(pat_intent) or det_group == chosen_group:
             return False
+        # 问候、请求、查询这类只描述语气、不指向具体业务，证据太弱，不能拿来否决 LLM 的业务判断。
+        # （基准集上唯一一次误触发就是"改成用邮件联系我"被两路判成 request，否决了正确的 account。）
+        if det_group in _PRAGMATIC_INTENTS:
+            return False
         # 消息里也出现了 LLM 所选领域的关键词，说明可能是复合问题，不算分歧。
         if chosen_group in pat.get("groups", ()):
             return False
         return (
-            float(emb.get("confidence", 0.0) or 0.0) >= _CONFLICT_MIN_EMB
+            float(emb.get("confidence", 0.0) or 0.0) >= min_emb
             and float(pat.get("confidence", 0.0) or 0.0) >= _CONFLICT_MIN_PAT
         )
 
@@ -478,10 +501,18 @@ class IntentRecognizer:
         """
         生成文本向量。
 
-        如果未来接入的官方/兼容客户端提供 embeddings.create，会优先使用远端向量；
-        当前 Anthropic SDK 没有该资源时，退化为字符 n-gram 哈希向量。这样不会因为
-        Embedding 服务缺失导致三路融合中断。
+        优先使用和知识库共享的本地中文向量模型（bge-small-zh，约 1ms/条）；
+        模型不可用时尝试远端 embeddings.create，再退化为字符 n-gram 哈希向量，
+        保证 Embedding 缺失不会导致三路融合中断。
+        基准测试（380 条）上，仅向量这一路的准确率：字符 n-gram 40.0%，bge 59.2%。
         """
+        semantic = self._semantic_embedder()
+        if semantic is not None:
+            try:
+                return semantic.embed_query(text)
+            except Exception as ex:
+                logger.warning(f"中文向量模型编码失败，使用字符 n-gram 兜底: {ex}")
+
         embeddings = getattr(self.client, "embeddings", None)
         if embeddings is not None:
             try:
@@ -491,6 +522,16 @@ class IntentRecognizer:
                 logger.warning(f"远端 Embedding 失败，使用本地向量兜底: {ex}")
 
         return self._local_embedding(text)
+
+    def _semantic_embedder(self):
+        """懒加载共享的中文向量模型；GOEUROOPS_INTENT_EMBEDDING=ngram 时只用字符 n-gram。"""
+        if self._semantic is _UNSET:
+            self._semantic = None
+            if os.getenv("GOEUROOPS_INTENT_EMBEDDING", "bge").strip().lower() != "ngram":
+                from mcp.embeddings import get_shared_embedding_function
+
+                self._semantic = get_shared_embedding_function()
+        return self._semantic
 
     @staticmethod
     def _local_embedding(text: str, dims: int = 256) -> List[float]:

@@ -96,3 +96,10 @@ def test_end_to_end_conflict_uses_real_pattern_groups():
         pat,
     )
     assert intent == I.OTHER and scores["conflict"] == 1.0
+
+
+def test_pragmatic_intents_cannot_veto_business_intent():
+    # "帮我改成用邮件联系我"：LLM 判 account（正确），两路都判 request，不应否决
+    intent, _, scores = vote((I.ACCOUNT, 0.9), (I.REQUEST, 0.85), (I.REQUEST, 0.5), groups=[I.REQUEST])
+    assert intent == I.ACCOUNT
+    assert "conflict" not in scores

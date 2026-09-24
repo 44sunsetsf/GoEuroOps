@@ -1,0 +1,548 @@
+{
+  "dataset": "intent_eval_v1",
+  "samples": 380,
+  "model": "deepseek-v4-pro",
+  "intent_embedding": "bge",
+  "run_at": "2026-09-24T11:09:43",
+  "wall_seconds": 91.7,
+  "llm_failures": 0,
+  "llm_latency_ms": {
+    "p50": 1444.4,
+    "p95": 1773.3
+  },
+  "metrics": {
+    "fusion": {
+      "accuracy": 0.9158,
+      "macro_f1": 0.9142,
+      "group_accuracy": 0.9368
+    },
+    "fusion_v3_0": {
+      "accuracy": 0.9132,
+      "macro_f1": 0.9115,
+      "group_accuracy": 0.9342
+    },
+    "llm_only": {
+      "accuracy": 0.9158,
+      "macro_f1": 0.9142,
+      "group_accuracy": 0.9368
+    },
+    "embedding": {
+      "accuracy": 0.5921,
+      "macro_f1": 0.5651,
+      "group_accuracy": 0.6605
+    },
+    "pattern": {
+      "accuracy": 0.3868,
+      "macro_f1": 0.4486,
+      "group_accuracy": 0.4132
+    },
+    "degraded": {
+      "accuracy": 0.5921,
+      "macro_f1": 0.5651,
+      "group_accuracy": 0.6605
+    }
+  },
+  "per_class": {
+    "query": {
+      "precision": 0.9091,
+      "recall": 0.5,
+      "f1": 0.6452,
+      "support": 20
+    },
+    "complaint": {
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9744,
+      "support": 20
+    },
+    "request": {
+      "precision": 0.9412,
+      "recall": 0.8,
+      "f1": 0.8649,
+      "support": 20
+    },
+    "greeting": {
+      "precision": 0.9048,
+      "recall": 0.95,
+      "f1": 0.9268,
+      "support": 20
+    },
+    "escalation": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75,
+      "support": 20
+    },
+    "study_consult": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "billing": {
+      "precision": 0.9444,
+      "recall": 0.85,
+      "f1": 0.8947,
+      "support": 20
+    },
+    "account": {
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9744,
+      "support": 20
+    },
+    "feedback": {
+      "precision": 0.95,
+      "recall": 0.95,
+      "f1": 0.95,
+      "support": 20
+    },
+    "service_progress": {
+      "precision": 0.95,
+      "recall": 0.95,
+      "f1": 0.95,
+      "support": 20
+    },
+    "booking": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "refund": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "invoice": {
+      "precision": 0.9524,
+      "recall": 1.0,
+      "f1": 0.9756,
+      "support": 20
+    },
+    "payment_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "data_privacy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "application_process": {
+      "precision": 0.8696,
+      "recall": 1.0,
+      "f1": 0.9302,
+      "support": 20
+    },
+    "service_inquiry": {
+      "precision": 0.625,
+      "recall": 1.0,
+      "f1": 0.7692,
+      "support": 20
+    },
+    "human_handoff": {
+      "precision": 0.6897,
+      "recall": 1.0,
+      "f1": 0.8163,
+      "support": 20
+    },
+    "other": {
+      "precision": 1.0,
+      "recall": 0.9,
+      "f1": 0.9474,
+      "support": 20
+    }
+  },
+  "by_tag": {
+    "boundary": {
+      "n": 48,
+      "accuracy": 0.7292
+    },
+    "colloquial": {
+      "n": 25,
+      "accuracy": 0.88
+    },
+    "context": {
+      "n": 9,
+      "accuracy": 1.0
+    },
+    "long": {
+      "n": 1,
+      "accuracy": 1.0
+    },
+    "mixed": {
+      "n": 24,
+      "accuracy": 1.0
+    },
+    "plain": {
+      "n": 271,
+      "accuracy": 0.941
+    },
+    "typo": {
+      "n": 2,
+      "accuracy": 1.0
+    }
+  },
+  "confusions": [
+    {
+      "gold": "query",
+      "pred": "service_inquiry",
+      "count": 8
+    },
+    {
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "count": 7
+    },
+    {
+      "gold": "request",
+      "pred": "application_process",
+      "count": 2
+    },
+    {
+      "gold": "billing",
+      "pred": "service_inquiry",
+      "count": 2
+    },
+    {
+      "gold": "other",
+      "pred": "service_inquiry",
+      "count": 2
+    },
+    {
+      "gold": "query",
+      "pred": "greeting",
+      "count": 1
+    },
+    {
+      "gold": "query",
+      "pred": "human_handoff",
+      "count": 1
+    },
+    {
+      "gold": "complaint",
+      "pred": "feedback",
+      "count": 1
+    },
+    {
+      "gold": "request",
+      "pred": "billing",
+      "count": 1
+    },
+    {
+      "gold": "request",
+      "pred": "service_progress",
+      "count": 1
+    },
+    {
+      "gold": "greeting",
+      "pred": "human_handoff",
+      "count": 1
+    },
+    {
+      "gold": "escalation",
+      "pred": "query",
+      "count": 1
+    }
+  ],
+  "conflict_triggered": 0,
+  "fixed_by_v3_1": [
+    "付款截止是哪天"
+  ],
+  "broken_by_v3_1": [],
+  "errors": [
+    {
+      "text": "顾问是全职的吗还是兼职",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "text": "你们顾问都是哪个学校毕业的",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": []
+    },
+    {
+      "text": "你们和那些大中介有什么区别",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "可以用英文沟通吗",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.6859,
+      "tags": []
+    },
+    {
+      "text": "你们一般用什么软件开会",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "你们只做计算机方向吗",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.8165,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "你们一年带多少学生",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": []
+    },
+    {
+      "text": "你们是正规公司吗",
+      "gold": "query",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": []
+    },
+    {
+      "text": "怎么称呼你",
+      "gold": "query",
+      "pred": "greeting",
+      "llm": "greeting",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "你是真人还是机器人",
+      "gold": "query",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.8489,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "你们这个服务真的一般",
+      "gold": "complaint",
+      "pred": "feedback",
+      "llm": "feedback",
+      "confidence": 0.63,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "text": "麻烦发一下付款确认截图给我",
+      "gold": "request",
+      "pred": "billing",
+      "llm": "billing",
+      "confidence": 0.8295,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "帮我记一下我下个月雅思考试",
+      "gold": "request",
+      "pred": "application_process",
+      "llm": "application_process",
+      "confidence": 0.8048,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "请把文书的批注版也发我",
+      "gold": "request",
+      "pred": "service_progress",
+      "llm": "service_progress",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "麻烦把推荐信模板发我",
+      "gold": "request",
+      "pred": "application_process",
+      "llm": "application_process",
+      "confidence": 0.644,
+      "tags": []
+    },
+    {
+      "text": "有人在线吗",
+      "gold": "greeting",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "我要找你们老板",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.7854,
+      "tags": []
+    },
+    {
+      "text": "把你们负责人叫来",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.9016,
+      "tags": []
+    },
+    {
+      "text": "这个问题我要直接和创始人谈",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.915,
+      "tags": []
+    },
+    {
+      "text": "找个能做主的人来",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.7953,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "text": "请上报给你们合伙人",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.7933,
+      "tags": []
+    },
+    {
+      "text": "我需要你们给一个正式的书面答复",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.7025,
+      "tags": []
+    },
+    {
+      "text": "你们创始人的联系方式给我",
+      "gold": "escalation",
+      "pred": "query",
+      "llm": "query",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "我不想跟客服说了，找负责人",
+      "gold": "escalation",
+      "pred": "human_handoff",
+      "llm": "human_handoff",
+      "confidence": 0.729,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "付款后会有收据吗",
+      "gold": "billing",
+      "pred": "invoice",
+      "llm": "invoice",
+      "confidence": 0.8235,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "费用包含申请费吗",
+      "gold": "billing",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.644,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "收费是按项目还是按年",
+      "gold": "billing",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.715,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "我的名字拼音写错了",
+      "gold": "account",
+      "pred": "request",
+      "llm": "request",
+      "confidence": 0.63,
+      "tags": []
+    },
+    {
+      "text": "好的明白了，谢谢",
+      "gold": "feedback",
+      "pred": "greeting",
+      "llm": "greeting",
+      "confidence": 0.63,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "我的APS材料清单准备好了吗",
+      "gold": "service_progress",
+      "pred": "application_process",
+      "llm": "application_process",
+      "confidence": 0.8561,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "日本留学你们做吗",
+      "gold": "other",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.665,
+      "tags": [
+        "boundary"
+      ]
+    },
+    {
+      "text": "MBA申请你们接吗",
+      "gold": "other",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.777,
+      "tags": [
+        "boundary"
+      ]
+    }
+  ]
+}
