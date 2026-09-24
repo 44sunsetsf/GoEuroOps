@@ -12,7 +12,7 @@
 
 ## 服务器要求
 
-- 2 vCPU / 2 GiB 内存起步，Ubuntu 22.04 或 24.04。ChromaDB 嵌入式后全部容器约 450MB（向量改走 API 可再降约 240MB）
+- 2 vCPU / 2 GiB 内存起步，Ubuntu 22.04 或 24.04。向量走 API、ChromaDB 嵌入式后，全部容器约 200MB
 - 云厂商防火墙放行 TCP 22、80、443
 - 访问者主要在国内时，选中国香港或新加坡地域，免备案
 
@@ -55,8 +55,8 @@ STUDIO_USER=studio
 # 第 3 步的输出；必须用单引号，否则哈希里的 $ 会被 compose 当成变量
 STUDIO_PASSWORD_HASH='$2a$14$...'
 GOEUROOPS_DAILY_CHAT_LIMIT=200
-# 可选：内存特别紧时改用远端向量 API（硅基流动），并设 GOEUROOPS_EMBEDDING_PROVIDER=api
-# SILICONFLOW_API_KEY=你的硅基流动 key
+# 向量 API（硅基流动）：生产环境不在本机跑向量模型，省内存
+SILICONFLOW_API_KEY=你的硅基流动 key
 EOF
 chmod 600 .env
 ```
