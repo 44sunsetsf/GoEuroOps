@@ -1,0 +1,41 @@
+# 公网部署：在默认 compose 之上叠加
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+#
+# 变化：
+#   - Caddy 接管 80/443，自动申请 HTTPS 证书，并给学生端以外的页面和接口加口令
+#   - 后端、前端不再直接暴露端口，只能经 Caddy 访问
+#   - 对话接口有每日上限（GOEUROOPS_DAILY_CHAT_LIMIT）
+#   - Prometheus 默认不启动（小内存机器上省 120MB），需要时加 --profile monitoring
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?在 .env 里设置 SITE_ADDRESS，例如 47.84.60.190.sslip.io}
+      STUDIO_USER: ${STUDIO_USER:-studio}
+      STUDIO_PASSWORD_HASH: ${STUDIO_PASSWORD_HASH:?在 .env 里设置 STUDIO_PASSWORD_HASH，见 deploy/DEPLOY.md}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+  frontend:
+    ports: !reset []
+
+  backend:
+    ports: !reset []
+    environment:
+      GOEUROOPS_DAILY_CHAT_LIMIT: ${GOEUROOPS_DAILY_CHAT_LIMIT:-200}
+
+  prometheus:
+    profiles: ["monitoring"]
+
+volumes:
+  caddy-data:
+  caddy-config:

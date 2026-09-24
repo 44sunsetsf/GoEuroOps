@@ -27,7 +27,7 @@
             <div v-else-if="m.role === 'assistant'" class="bubble-md" v-html="renderMarkdown(m.content)"></div>
             <p v-else>{{ m.content }}</p>
             <p v-if="m.handoff" class="bubble-note">已转给顾问，工作日 24 小时内会联系你。</p>
-            <p v-if="m.failed" class="bubble-note is-error">没有连上指北的服务。检查网络后再发一次试试。</p>
+            <p v-if="m.failed" class="bubble-note is-error">{{ m.failed }}</p>
           </article>
         </div>
 
@@ -89,6 +89,13 @@ function persist() {
   try { localStorage.setItem(KEY, JSON.stringify({ userId: settings.userId, conversationId: settings.conversationId })) } catch { /* ignore */ }
 }
 
+function failureText(error) {
+  const message = String(error?.message || '')
+  if (message.includes('名额')) return '今天的体验名额已经用完了，明天再来看看吧。'
+  if (message.startsWith('429')) return '发得有点快了，歇一分钟再问吧。'
+  return '没有连上指北的服务。检查网络后再发一次试试。'
+}
+
 function grow() {
   const el = input.value
   if (!el) return
@@ -106,7 +113,7 @@ async function send(text) {
   draft.value = ''
   nextTick(grow)
   messages.value.push({ id: ++seq, role: 'user', content })
-  const reply = reactive({ id: ++seq, role: 'assistant', content: '', pending: true, handoff: false, failed: false })
+  const reply = reactive({ id: ++seq, role: 'assistant', content: '', pending: true, handoff: false, failed: '' })
   messages.value.push(reply)
   busy.value = true
   scrollDown()
@@ -118,10 +125,10 @@ async function send(text) {
         if (res.conversationId) { settings.conversationId = res.conversationId; persist() }
         reply.handoff = Boolean(res.escalated)
       },
-      onError() { reply.failed = true }
+      onError(error) { reply.failed = failureText(error) }
     })
-  } catch {
-    reply.failed = true
+  } catch (error) {
+    reply.failed = failureText(error)
   } finally {
     reply.pending = false
     busy.value = false

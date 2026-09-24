@@ -40,6 +40,7 @@ docs/       变更记录
 - [backend/wiki/Skills与意图门控RAG.md](backend/wiki/Skills与意图门控RAG.md)：核心设计说明
 - [docs/CHANGELOG-2026-09.md](docs/CHANGELOG-2026-09.md)：变更记录
 - [docs/ROADMAP-commercial.md](docs/ROADMAP-commercial.md)：商用化差距评估与优化计划
+- [deploy/DEPLOY.md](deploy/DEPLOY.md)：公网部署（HTTPS、限流、后台口令、每日对话上限）
 
 ## 快速开始
 

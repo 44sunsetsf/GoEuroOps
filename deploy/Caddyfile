@@ -1,0 +1,12 @@
+# 学生端首页、静态资源、对话和价目接口公开；其余一律要口令：
+# /studio 后台、/api/docs、评测、知识库写入、线索等。
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	@private not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog
+	basic_auth @private {
+		{$STUDIO_USER} {$STUDIO_PASSWORD_HASH}
+	}
+
+	reverse_proxy frontend:80
+}

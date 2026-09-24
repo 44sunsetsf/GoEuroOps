@@ -53,6 +53,7 @@ _monitor      = None
 _evaluator    = None
 _skill_manager = None
 _lead_store   = None
+_quota        = None
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -70,11 +71,12 @@ def _anthropic_cfg() -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _lead_store
+    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _lead_store, _quota
 
     print(BANNER, flush=True)
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
+    from api.quota import DailyQuota
     from core.intent_recognizer import IntentRecognizer
     from evaluation.evaluator import EndToEndEvaluator
     from mcp.knowledge_base import KnowledgeBase
@@ -108,6 +110,12 @@ async def lifespan(app: FastAPI):
         max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "6000")),
     )
     _skill_manager.load()
+
+    # 公开演示的每日对话上限（GOEUROOPS_DAILY_CHAT_LIMIT，0 = 不限）
+    _quota = DailyQuota(
+        limit=int(os.getenv("GOEUROOPS_DAILY_CHAT_LIMIT", "0") or 0),
+        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
+    )
 
     # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
     _lead_store = LeadStore(redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"))
@@ -440,11 +448,17 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     )
 
 
+async def _check_quota() -> None:
+    if _quota is not None and not await _quota.consume():
+        raise HTTPException(429, "今天的体验名额已经用完了，明天再来看看吧。")
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     """主对话接口（一次性返回）。"""
     if _orchestrator is None or _memory is None:
         raise HTTPException(503, "服务未就绪")
+    await _check_quota()
     return await _run_chat(req, req.conv_id or str(uuid.uuid4()))
 
 
@@ -466,6 +480,7 @@ async def chat_stream(req: ChatRequest):
     """
     if _orchestrator is None or _memory is None:
         raise HTTPException(503, "服务未就绪")
+    await _check_quota()
 
     conv_id = req.conv_id or str(uuid.uuid4())
 

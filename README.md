@@ -43,6 +43,8 @@ docs/       change log and roadmap
 
 The documents above are written in Chinese.
 
+To put it on a public server with HTTPS, rate limiting and a password-protected console, see [deploy/DEPLOY.md](deploy/DEPLOY.md) (in Chinese).
+
 ## Quick start
 
 Start every service (backend, frontend, Redis, ChromaDB, Prometheus) from the project root with one command:
