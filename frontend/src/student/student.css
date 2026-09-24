@@ -12,8 +12,9 @@
   --falu: #8e2f25;
   --glow: #f2c265;
   --lichen: #9db0a3;
-  --serif: 'Noto Serif SC', 'Songti SC', 'STSong', serif;
-  --sans: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  /* 只用系统字体：Google Fonts 在国内常被阻断，会让页面白屏到请求超时 */
+  --serif: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI", Roboto, sans-serif;
   --wrap: 1180px;
   --gutter: clamp(20px, 5vw, 56px);
 }
