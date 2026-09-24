@@ -97,6 +97,9 @@ dc restart backend           # 改了 backend/business/ 后生效
 
 Caddy 会加载 `deploy/sites/*.caddy`。其他项目把自己的服务接到 `goeuroops_default` 网络上，再在这里放一个站点配置即可共用 HTTPS，例如 Vparser 的部署说明见它仓库里的 `deploy/DEPLOY.md`。这些 `.caddy` 文件含口令哈希，已在 `.gitignore` 里排除。
 
+静态站点（例如个人主页）：`.env` 里设 `CADDY_STATIC_DIR=/某个目录`（挂载到 Caddy 的 `/srv`），站点配置里用 `root * /srv/<子目录>` 加 `file_server`，不占额外内存。
+要把主地址让给别的站点时，在 `.env` 里设 `GOEUROOPS_ADDRESS=goeuroops.<SITE_ADDRESS>`；不设时 GoEuroOps 就在主地址。
+
 ## 谁访问过
 
 Caddy 把每个站点的访问记录写在自己的数据卷里（`/data/logs/<站点>-access.log`，10MB 轮转、保留 90 天），

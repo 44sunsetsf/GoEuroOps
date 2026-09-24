@@ -17,11 +17,14 @@ services:
       - "443:443"
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:?在 .env 里设置 SITE_ADDRESS，例如 47.84.60.190.sslip.io}
+      GOEUROOPS_ADDRESS: ${GOEUROOPS_ADDRESS:-${SITE_ADDRESS}}
       STUDIO_USER: ${STUDIO_USER:-studio}
       STUDIO_PASSWORD_HASH: ${STUDIO_PASSWORD_HASH:?在 .env 里设置 STUDIO_PASSWORD_HASH，见 deploy/DEPLOY.md}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./deploy/sites:/etc/caddy/sites:ro
+      # 同机静态站点的文件（例如个人主页），不设时为空目录
+      - ${CADDY_STATIC_DIR:-./deploy/static}:/srv:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

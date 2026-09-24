@@ -18,7 +18,9 @@
 	}
 }
 
-{$SITE_ADDRESS} {
+# GOEUROOPS_ADDRESS 默认等于 SITE_ADDRESS；同机把主地址让给别的站点时（例如个人主页），
+# 在 .env 里设成子域名即可，例如 goeuroops.1.2.3.4.sslip.io
+{$GOEUROOPS_ADDRESS} {
 	encode zstd gzip
 	import access_log goeuroops
 
@@ -30,6 +32,7 @@
 	reverse_proxy frontend:80
 }
 
-# 同一台机器上的其他项目（例如 Vparser）把站点配置放进 deploy/sites/*.caddy 即可，
+# 同一台机器上的其他项目（例如 Vparser、个人主页）把站点配置放进 deploy/sites/*.caddy 即可，
+# 静态站点的文件放在 CADDY_STATIC_DIR（挂载到 /srv），
 # 共用这一个 Caddy 和证书；这些文件带口令哈希，只放在服务器上，不提交。
 import /etc/caddy/sites/*.caddy
