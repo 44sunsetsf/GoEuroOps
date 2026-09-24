@@ -12,7 +12,7 @@ AI 助手负责工作室的前台工作：
 - 解释付款和退款政策，**估算可退金额**
 - 遇到个性化选校、文书修改、录取判断这类需要顾问的请求时，交接给真人顾问
 
-创始人在控制台里跟进线索、维护价目和 Skills、查看评测结果。
+学生从学生端首页了解五国和服务，并和助手对话；创始人在工作室后台跟进线索、维护价目和 Skills、查看评测结果。
 
 ## 技术要点
 
@@ -31,7 +31,7 @@ AI 助手负责工作室的前台工作：
 
 ```text
 backend/    Python 后端：FastAPI + 多 Agent + RAG + Skills + 业务目录 + 评测
-frontend/   Vue 控制台：对话 / 线索 / 服务价目 / Skills / 知识库 / 评测
+frontend/   Vue：学生端首页与对话（/），工作室后台（/studio：对话调试 / 线索 / 服务价目 / Skills / 知识库 / 评测）
 docs/       变更记录
 ```
 
@@ -52,7 +52,8 @@ docker compose up -d --build
 
 | 入口 | 地址 |
 |---|---|
-| 控制台 | http://localhost（端口可用 `.env` 里的 `FRONTEND_PORT` 修改） |
+| 学生端 | http://localhost（端口可用 `.env` 里的 `FRONTEND_PORT` 修改） |
+| 工作室后台 | http://localhost/studio |
 | API 文档 | http://localhost/api/docs 或 http://localhost:8000/docs |
 | Prometheus | http://localhost:9090 |
 
@@ -62,7 +63,7 @@ docker compose up -d --build
 
 | 改了什么 | 怎么生效 |
 |---|---|
-| `backend/skills/` | 已挂载进容器，改完调用 `POST /skills/reload` 或在控制台点「重新加载」 |
+| `backend/skills/` | 已挂载进容器，改完调用 `POST /skills/reload` 或在工作室后台点「重新加载」 |
 | `backend/business/`（价格、政策、五国资料） | 已挂载，改完执行 `docker compose restart backend`；知识库种子会按内容版本自动重建 |
 | 其他 `backend/` 或 `frontend/` 代码 | 需要重新执行 `docker compose up -d --build` |
 

@@ -1,11 +1,11 @@
 <template>
   <main :class="['app-shell', `app-shell-${activeView}`, { 'app-shell-scroll': activeView !== 'chat' }]">
     <header class="topbar">
-      <a class="brand" href="#" aria-label="指北首页" @click.prevent="activeView = 'chat'">
+      <a class="brand" href="#" aria-label="后台首页" @click.prevent="activeView = 'chat'">
         <span class="brand-mark">北</span>
         <span class="brand-copy">
           <span class="brand-name">指北 · True North</span>
-          <span class="brand-sub">留学运营助手控制台</span>
+          <span class="brand-sub">工作室后台</span>
         </span>
       </a>
 
@@ -23,6 +23,7 @@
           <i :class="healthOk ? 'online' : 'offline'"></i>
           {{ healthOk ? '服务在线' : '服务离线' }}
         </span>
+        <a class="docs-link" href="/">学生端</a>
         <a class="docs-link" :href="docsUrl" target="_blank" rel="noreferrer">API 文档</a>
         <button class="avatar-button" title="当前用户">{{ userInitial }}</button>
       </div>
@@ -376,6 +377,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import './styles.css'
 import CatalogView from './components/CatalogView.vue'
 import LeadsView from './components/LeadsView.vue'
 import SkillsView from './components/SkillsView.vue'

@@ -1,35 +1,35 @@
 :root {
   color-scheme: light;
-  font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Noto Sans SC', 'PingFang SC', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --display-font: 'Space Grotesk', 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --bg: #f6f6f2;
-  --bg-soft: #edece3;
+  --display-font: 'Noto Serif SC', 'Songti SC', serif;
+  --bg: #f3f5f4;
+  --bg-soft: #e8edeb;
   --panel: #ffffff;
-  --panel-2: #fbfbf8;
-  --panel-3: #f2f2ec;
-  --line: #e1e0d3;
-  --line-strong: #c9c7b5;
-  --text: #14203a;
-  --text-soft: #4b5875;
-  --muted: #8992a6;
-  --accent: #0058a3;
-  --accent-strong: #003d73;
-  --accent-soft: rgba(0, 88, 163, 0.10);
-  --spark: #ffdb00;
-  --spark-ink: #4a3b00;
-  --spark-soft: rgba(255, 219, 0, 0.24);
-  --sand: #fff3b0;
+  --panel-2: #fafbfa;
+  --panel-3: #eef2f1;
+  --line: #d8dfdd;
+  --line-strong: #bcc7c4;
+  --text: #1d2a31;
+  --text-soft: #465660;
+  --muted: #76858c;
+  --accent: #2f5566;
+  --accent-strong: #223f4c;
+  --accent-soft: rgba(47, 85, 102, 0.10);
+  --spark: #f2c265;
+  --spark-ink: #5a4410;
+  --spark-soft: rgba(242, 194, 101, 0.26);
+  --sand: #f7e6c0;
   --green: #2e7d46;
   --green-strong: #1f5a32;
   --green-soft: rgba(46, 125, 70, 0.12);
-  --red: #d6493d;
-  --red-strong: #9c3128;
-  --red-soft: rgba(214, 73, 61, 0.12);
-  --shadow: 0 14px 32px rgba(20, 32, 58, 0.09);
-  --shadow-low: 0 2px 6px rgba(20, 32, 58, 0.07);
+  --red: #8e2f25;
+  --red-strong: #6f241c;
+  --red-soft: rgba(142, 47, 37, 0.10);
+  --shadow: 0 14px 32px rgba(29, 42, 49, 0.08);
+  --shadow-low: 0 2px 6px rgba(29, 42, 49, 0.06);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -43,7 +43,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--bg);
-  background-image: radial-gradient(1100px 600px at 10% -10%, rgba(0, 88, 163, 0.06), transparent 60%);
+  background-image: radial-gradient(1100px 600px at 10% -10%, rgba(47, 85, 102, 0.07), transparent 60%);
   color: var(--text);
   overflow: hidden;
 }
@@ -68,7 +68,7 @@ button {
 
 button:hover:not(:disabled) {
   background: var(--accent-strong);
-  box-shadow: 0 0 0 1px rgba(0, 61, 115, 0.22);
+  box-shadow: 0 0 0 1px rgba(34, 63, 76, 0.22);
 }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { cursor: not-allowed; opacity: 0.5; }
@@ -78,7 +78,7 @@ input:focus-visible,
 textarea:focus-visible,
 a:focus-visible,
 summary:focus-visible {
-  outline: 2px solid rgba(0, 88, 163, 0.4);
+  outline: 2px solid rgba(47, 85, 102, 0.4);
   outline-offset: 2px;
 }
 
@@ -98,8 +98,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(0, 88, 163, 0.45);
-  box-shadow: 0 0 0 3px rgba(0, 88, 163, 0.12);
+  border-color: rgba(47, 85, 102, 0.45);
+  box-shadow: 0 0 0 3px rgba(47, 85, 102, 0.12);
 }
 
 textarea {
@@ -157,7 +157,7 @@ a { color: inherit; }
   width: 34px;
   height: 34px;
   border-radius: 11px;
-  background: linear-gradient(160deg, #0058a3 0%, #003d73 100%);
+  background: linear-gradient(160deg, #2f5566 0%, #223f4c 100%);
   color: #fff;
   font-size: 14px;
   font-weight: 800;
@@ -281,7 +281,7 @@ a { color: inherit; }
   right: 28px;
   z-index: 10;
   padding: 11px 14px;
-  border: 1px solid rgba(0, 88, 163, 0.28);
+  border: 1px solid rgba(47, 85, 102, 0.28);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.97);
   color: var(--text);
@@ -704,14 +704,14 @@ a { color: inherit; }
   border-radius: 14px;
   background: var(--spark);
   color: var(--text);
-  box-shadow: 0 10px 22px rgba(255, 219, 0, 0.35);
+  box-shadow: 0 10px 22px rgba(242, 194, 101, 0.35);
   font-size: 22px;
   animation: star-breathe 3.2s ease-in-out infinite;
 }
 
 @keyframes star-breathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 10px 22px rgba(255, 219, 0, 0.35); }
-  50% { transform: scale(1.06); box-shadow: 0 14px 30px rgba(255, 219, 0, 0.5); }
+  0%, 100% { transform: scale(1); box-shadow: 0 10px 22px rgba(242, 194, 101, 0.35); }
+  50% { transform: scale(1.06); box-shadow: 0 14px 30px rgba(242, 194, 101, 0.5); }
 }
 
 .empty-state h2,
@@ -855,7 +855,7 @@ a { color: inherit; }
   padding-bottom: 16px;
 }
 
-.side-card:nth-child(1) { border-top: 2px solid rgba(0, 88, 163, 0.4); }
+.side-card:nth-child(1) { border-top: 2px solid rgba(47, 85, 102, 0.4); }
 .side-card:nth-child(2) { border-top: 2px solid rgba(184, 145, 0, 0.4); }
 .side-card:nth-child(3) { border-top: 2px solid rgba(46, 125, 70, 0.32); }
 
@@ -1161,7 +1161,7 @@ a { color: inherit; }
 
 .import-workspace {
   background: var(--panel);
-  border-color: rgba(0, 88, 163, 0.22);
+  border-color: rgba(47, 85, 102, 0.22);
 }
 
 .upload-button {
@@ -1340,7 +1340,7 @@ button.tiny { min-height: 26px; padding: 0 8px; font-size: 11px; }
   font-weight: 700;
   white-space: nowrap;
 }
-.chip-accent { border-color: rgba(0, 88, 163, 0.25); background: var(--accent-soft); color: var(--accent-strong); }
+.chip-accent { border-color: rgba(47, 85, 102, 0.25); background: var(--accent-soft); color: var(--accent-strong); }
 .chip-spark { border-color: rgba(184, 145, 0, 0.35); background: var(--spark-soft); color: var(--spark-ink); }
 .chip-danger { border-color: rgba(214, 73, 61, 0.3); background: var(--red-soft); color: var(--red-strong); }
 
@@ -1503,7 +1503,7 @@ button.stat-tile:hover:not(:disabled) { background: var(--panel-2); border-color
 .match-result { display: grid; gap: 8px; margin-top: 4px; }
 .match-summary { margin: 0; color: var(--text-soft); font-size: 12px; }
 .match-row { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
-.match-row.matched { border-color: rgba(0, 88, 163, 0.35); background: var(--accent-soft); }
+.match-row.matched { border-color: rgba(47, 85, 102, 0.35); background: var(--accent-soft); }
 .match-row.agent_filtered, .match-row.disabled { opacity: 0.55; }
 .match-row-head { display: flex; justify-content: space-between; font-size: 13px; }
 .match-row-head span { color: var(--muted); font-size: 11px; font-weight: 700; }

@@ -73,7 +73,8 @@ docker compose up -d --build
 访问前端：
 
 ```text
-http://localhost
+http://localhost          学生端首页与对话
+http://localhost/studio   工作室后台
 ```
 
 如果只想暴露前端端口，可改 `FRONTEND_PORT`，默认仍可通过 `80` 统一入口访问。

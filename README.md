@@ -12,7 +12,7 @@ The AI assistant runs the studio's front desk:
 - explains payment and refund policies and **estimates refundable amounts**
 - hands over to a human advisor when a request needs one — personalised school selection, essay editing, admission judgements
 
-The founders use the console to follow up on leads, maintain prices and Skills, and review evaluation results.
+Students learn about the five countries and the services on the public site and chat with the assistant there; the founders use the studio console to follow up on leads, maintain prices and Skills, and review evaluation results.
 
 ## Highlights
 
@@ -31,7 +31,7 @@ The founders use the console to follow up on leads, maintain prices and Skills, 
 
 ```text
 backend/    Python backend: FastAPI + multi-agent + RAG + Skills + business catalog + evaluation
-frontend/   Vue console: chat / leads / services & pricing / Skills / knowledge base / evaluation
+frontend/   Vue: student site and chat (/), studio console (/studio: chat debugging / leads / pricing / Skills / knowledge base / evaluation)
 docs/       change log and roadmap
 ```
 
@@ -54,7 +54,8 @@ docker compose up -d --build
 
 | Entry | URL |
 |---|---|
-| Console | http://localhost (change the port with `FRONTEND_PORT` in `.env`) |
+| Student site | http://localhost (change the port with `FRONTEND_PORT` in `.env`) |
+| Studio console | http://localhost/studio |
 | API docs | http://localhost/api/docs or http://localhost:8000/docs |
 | Prometheus | http://localhost:9090 |
 
@@ -64,7 +65,7 @@ After the first build you can start and stop the `goeuroops` project from the Co
 
 | What changed | How to apply it |
 |---|---|
-| `backend/skills/` | Mounted into the container; call `POST /skills/reload` or click "Reload" in the console |
+| `backend/skills/` | Mounted into the container; call `POST /skills/reload` or click "Reload" in the studio console |
 | `backend/business/` (prices, policies, country data) | Mounted; run `docker compose restart backend` — the knowledge-base seed is rebuilt automatically when its content version changes |
 | Any other `backend/` or `frontend/` code | Run `docker compose up -d --build` again |
 
