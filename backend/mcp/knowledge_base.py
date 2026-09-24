@@ -47,9 +47,11 @@ class KnowledgeBase:
         chroma_port: int = 8000,
         chroma_path: str = "./data/chroma",
     ):
-        # 优先连接独立 ChromaDB 服务（服务端内置 embedding 模型，客户端无需下载）
+        # 优先连接独立 ChromaDB 服务；chroma_host 为空时直接用进程内嵌入式（小内存部署省掉一个容器）
         self._use_server = False
         try:
+            if not chroma_host:
+                raise ConnectionError("未配置 CHROMA_HOST")
             # HttpClient 默认也会初始化 ChromaDB telemetry；显式关闭避免 posthog 兼容性错误日志。
             self._client = chromadb.HttpClient(
                 host=chroma_host,

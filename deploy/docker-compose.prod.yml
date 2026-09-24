@@ -6,6 +6,8 @@
 #   - 后端、前端不再直接暴露端口，只能经 Caddy 访问
 #   - 对话接口有每日上限（GOEUROOPS_DAILY_CHAT_LIMIT）
 #   - Prometheus 默认不启动（小内存机器上省 120MB），需要时加 --profile monitoring
+#   - 向量改用远端 API（硅基流动 bge-large-zh-v1.5），ChromaDB 改为后端进程内嵌入式：
+#     后端常驻内存从约 355MB 降到约 115MB，并省掉约 210MB 的 chromadb 容器
 
 services:
   caddy:
@@ -32,12 +34,21 @@ services:
     ports: !reset []
     environment:
       GOEUROOPS_DAILY_CHAT_LIMIT: ${GOEUROOPS_DAILY_CHAT_LIMIT:-200}
-      # 小内存机器：减少 glibc 内存碎片、向量推理只用 1 个线程
+      GOEUROOPS_EMBEDDING_PROVIDER: api
+      GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:?在 .env 里设置 SILICONFLOW_API_KEY（向量 API）}
+      CHROMA_HOST: ""
+      # 小内存机器：减少 glibc 内存碎片
       MALLOC_ARENA_MAX: "2"
       OMP_NUM_THREADS: "1"
-    # 超出上限时只重启后端容器，不会拖垮整台机器（之前内存耗尽时连 SSH 都进不去）
-    mem_limit: 1200m
-    memswap_limit: 1800m
+    depends_on: !reset
+      redis:
+        condition: service_healthy
+    # 超出上限时只重启后端容器，不会拖垮整台机器
+    mem_limit: 600m
+    memswap_limit: 900m
+
+  chromadb:
+    profiles: ["chroma-server"]
 
   prometheus:
     profiles: ["monitoring"]

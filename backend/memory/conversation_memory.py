@@ -104,8 +104,10 @@ class MemoryManager:
 
         self._redis = redis.from_url(redis_url, decode_responses=True)
 
-        # ChromaDB：优先连接独立服务（docker compose 模式），连不上则降级为本地嵌入式
+        # ChromaDB：优先连接独立服务（docker compose 模式），连不上或 chroma_host 为空时用本地嵌入式
         try:
+            if not chroma_host:
+                raise ConnectionError("未配置 CHROMA_HOST")
             # HttpClient 默认也会初始化 ChromaDB telemetry；显式关闭避免 posthog 兼容性错误日志。
             chroma = chromadb.HttpClient(
                 host=chroma_host,

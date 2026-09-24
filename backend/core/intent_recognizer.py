@@ -490,7 +490,16 @@ class IntentRecognizer:
             return
 
         all_texts = [t for cat in missing for t in _TEMPLATES[cat]]
-        vecs = [await self._embed_text(text) for text in all_texts]
+        vecs = None
+        semantic = self._semantic_embedder()
+        if semantic is not None and hasattr(semantic, "embed_queries"):
+            # 远端 API：一次批量编码全部模板，而不是逐条请求
+            try:
+                vecs = await asyncio.to_thread(semantic.embed_queries, all_texts)
+            except Exception as ex:
+                logger.warning(f"批量编码意图模板失败，逐条编码: {ex}")
+        if vecs is None:
+            vecs = [await self._embed_text(text) for text in all_texts]
         idx = 0
         for cat in missing:
             n = len(_TEMPLATES[cat])
@@ -509,6 +518,8 @@ class IntentRecognizer:
         semantic = self._semantic_embedder()
         if semantic is not None:
             try:
+                if hasattr(semantic, "embed_queries"):  # 远端 API：别阻塞事件循环
+                    return await asyncio.to_thread(semantic.embed_query, text)
                 return semantic.embed_query(text)
             except Exception as ex:
                 logger.warning(f"中文向量模型编码失败，使用字符 n-gram 兜底: {ex}")
