@@ -21,6 +21,7 @@ services:
       STUDIO_PASSWORD_HASH: ${STUDIO_PASSWORD_HASH:?在 .env 里设置 STUDIO_PASSWORD_HASH，见 deploy/DEPLOY.md}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/sites:/etc/caddy/sites:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

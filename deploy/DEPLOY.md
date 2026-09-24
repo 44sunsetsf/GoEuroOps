@@ -92,3 +92,7 @@ dc restart backend           # 改了 backend/business/ 后生效
 ## 换成正式域名
 
 域名 A 记录指向服务器 IP，然后把 `.env` 里的 `SITE_ADDRESS` 改成域名，执行 `dc up -d caddy`。
+
+## 同一台机器上再放一个项目
+
+Caddy 会加载 `deploy/sites/*.caddy`。其他项目把自己的服务接到 `goeuroops_default` 网络上，再在这里放一个站点配置即可共用 HTTPS，例如 Vparser 的部署说明见它仓库里的 `deploy/DEPLOY.md`。这些 `.caddy` 文件含口令哈希，已在 `.gitignore` 里排除。

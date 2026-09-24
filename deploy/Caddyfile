@@ -10,3 +10,7 @@
 
 	reverse_proxy frontend:80
 }
+
+# 同一台机器上的其他项目（例如 Vparser）把站点配置放进 deploy/sites/*.caddy 即可，
+# 共用这一个 Caddy 和证书；这些文件带口令哈希，只放在服务器上，不提交。
+import /etc/caddy/sites/*.caddy
