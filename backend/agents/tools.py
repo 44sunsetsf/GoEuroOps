@@ -318,11 +318,19 @@ def build_handoff_tool(lead_store: Optional[LeadStore]) -> AgentToolSpec:
     async def create_handoff_summary(req: Request, args: Dict[str, Any]) -> Dict[str, Any]:
         summary = build_handoff_summary(req, str(args.get("reason", "需要顾问继续跟进")))
         ticket_id = None
+        deduplicated = False
         if lead_store is not None:
-            ticket = await lead_store.create(summary, lead_type="handoff")
+            ticket = await lead_store.create_handoff(summary)
             ticket_id = ticket["id"]
-            _count_lead("handoff")
-        return {**summary, "ticket_id": ticket_id, "sensitive_data_required": False}
+            deduplicated = bool(ticket.get("deduplicated"))
+            if not deduplicated:
+                _count_lead("handoff")
+        return {
+            **summary,
+            "ticket_id": ticket_id,
+            "deduplicated": deduplicated,
+            "sensitive_data_required": False,
+        }
 
     return make_tool(
         "create_handoff_summary",

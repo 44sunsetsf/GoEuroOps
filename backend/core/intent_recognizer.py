@@ -123,6 +123,16 @@ _INTENT_GROUPS: Dict[IntentCategory, IntentCategory] = {
     IntentCategory.HUMAN_HANDOFF: IntentCategory.ESCALATION,
 }
 
+
+
+def _group_of(intent: IntentCategory) -> IntentCategory:
+    return _INTENT_GROUPS.get(intent, intent)
+
+
+# 分歧检测阈值：向量和关键词两路都达到时，才允许否决 LLM。
+_CONFLICT_MIN_EMB = 0.6
+_CONFLICT_MIN_PAT = 0.5
+
 # 紧急关键词
 _URGENCY_KEYWORDS = {
     UrgencyLevel.CRITICAL: ["紧急", "emergency", "urgent", "asap", "立刻"],
@@ -337,12 +347,18 @@ class IntentRecognizer:
             IntentCategory.ACCOUNT:    ["联系方式", "邮箱", "微信号", "手机号"],
         }
 
-        best_cat, best_score = self._best_pattern_match(msg, specific_patterns)
-        if best_cat != IntentCategory.OTHER:
-            return {"intent": best_cat, "confidence": best_score}
+        # 记录消息里出现过关键词的所有意图大类，供分歧检测判断"LLM 选的领域有没有任何字面证据"。
+        groups = {
+            _group_of(cat)
+            for patterns in (specific_patterns, generic_patterns)
+            for cat, kws in patterns.items()
+            if any(_keyword_in(kw, msg) for kw in kws)
+        }
 
-        best_cat, best_score = self._best_pattern_match(msg, generic_patterns)
-        return {"intent": best_cat, "confidence": best_score}
+        best_cat, best_score = self._best_pattern_match(msg, specific_patterns)
+        if best_cat == IntentCategory.OTHER:
+            best_cat, best_score = self._best_pattern_match(msg, generic_patterns)
+        return {"intent": best_cat, "confidence": best_score, "groups": groups}
 
     # ── 投票合并 ──────────────────────────────────────────────────────────────
 
@@ -370,16 +386,58 @@ class IntentRecognizer:
             conf = result.get("confidence", 0.0)
             scores[cat] = scores.get(cat, 0.0) + w * conf
 
-        best = max(scores, key=scores.get)  # type: ignore
-        best_score = scores[best]
+        # 第一层：按意图大类汇总。"费用"和"退款"属于同一领域，分数应该合在一起和其他领域比，
+        # 否则同领域的票被拆散，可能输给另一个单独得分更高的意图。
+        group_scores: Dict[IntentCategory, float] = {}
+        for cat, s in scores.items():
+            g = _group_of(cat)
+            group_scores[g] = group_scores.get(g, 0.0) + s
+        best_group = max(group_scores, key=group_scores.get)  # type: ignore
+        confidence = min(1.0, group_scores[best_group])
+
+        # 分歧检测：向量和关键词两路确定性信号一致指向另一个领域时，
+        # 即便 LLM 很自信也不直接采信，降为低置信 OTHER，交给澄清追问。
+        if self._deterministic_conflict(emb, pat, best_group):
+            source_scores["conflict"] = 1.0
+            return IntentCategory.OTHER, min(confidence, self.threshold - 0.05), source_scores
+
+        # 第二层：在胜出的大类内部选细分意图。
+        members = {cat: s for cat, s in scores.items() if _group_of(cat) == best_group}
+        best = max(members, key=members.get)  # type: ignore
         pat_intent = pat.get("intent", IntentCategory.OTHER)
         pat_conf = float(pat.get("confidence", 0.0) or 0.0)
-        if best in _GENERIC_INTENTS and pat_intent in _SPECIFIC_INTENTS and pat_conf >= 0.5 and best_score < 0.8:
+        # 关键词细化只允许在同一大类内进行，不能把"留学咨询"改写成"退款"这种跨领域结果。
+        if (
+            best in _GENERIC_INTENTS
+            and pat_intent in _SPECIFIC_INTENTS
+            and _group_of(pat_intent) == best_group
+            and pat_conf >= 0.5
+            and confidence < 0.8
+        ):
             source_scores["refined_by_pattern"] = pat_conf
-            return pat_intent, max(best_score, pat_conf), source_scores
-        if best_score < self.threshold:
-            return IntentCategory.OTHER, best_score, source_scores
-        return best, best_score, source_scores
+            return pat_intent, max(confidence, pat_conf), source_scores
+
+        if confidence < self.threshold:
+            return IntentCategory.OTHER, confidence, source_scores
+        return best, confidence, source_scores
+
+    @staticmethod
+    def _deterministic_conflict(emb: Dict, pat: Dict, chosen_group: IntentCategory) -> bool:
+        """向量与关键词是否一致指向另一个领域、两路信号都足够强，且消息里没有 LLM 所选领域的任何关键词。"""
+        emb_intent = emb.get("intent", IntentCategory.OTHER)
+        pat_intent = pat.get("intent", IntentCategory.OTHER)
+        if IntentCategory.OTHER in (emb_intent, pat_intent):
+            return False
+        det_group = _group_of(emb_intent)
+        if det_group != _group_of(pat_intent) or det_group == chosen_group:
+            return False
+        # 消息里也出现了 LLM 所选领域的关键词，说明可能是复合问题，不算分歧。
+        if chosen_group in pat.get("groups", ()):
+            return False
+        return (
+            float(emb.get("confidence", 0.0) or 0.0) >= _CONFLICT_MIN_EMB
+            and float(pat.get("confidence", 0.0) or 0.0) >= _CONFLICT_MIN_PAT
+        )
 
     # ── 实体提取 ──────────────────────────────────────────────────────────────
 

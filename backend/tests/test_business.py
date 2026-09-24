@@ -179,3 +179,25 @@ def test_lead_store_memory_fallback_roundtrip():
         assert stats["by_status"]["contacted"] == 1
 
     asyncio.run(run())
+
+
+def test_handoff_is_idempotent_per_open_conversation():
+    async def run():
+        store = LeadStore()
+        base = {"user_id": "u1", "conv_id": "c1", "reason": "用户要求真人顾问", "last_message": "转人工"}
+        first = await store.create_handoff(base)
+        second = await store.create_handoff({**base, "last_message": "怎么还没人联系我"})
+        other_conv = await store.create_handoff({**base, "conv_id": "c2"})
+
+        assert first["deduplicated"] is False
+        assert second["deduplicated"] is True and second["id"] == first["id"]
+        assert second["followups"][-1]["message"] == "怎么还没人联系我"
+        assert other_conv["id"] != first["id"]
+        assert len(await store.list(lead_type="handoff")) == 2
+
+        # 顾问关单后，同一会话再要求真人会开新单
+        await store.update(first["id"], status="closed")
+        reopened = await store.create_handoff(base)
+        assert reopened["deduplicated"] is False and reopened["id"] != first["id"]
+
+    asyncio.run(run())

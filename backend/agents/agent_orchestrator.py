@@ -695,14 +695,17 @@ class EscalationAgent(BaseAgent):
         }.get(intent, f"紧急度 {req.urgency.name if req.urgency else 'UNKNOWN'} 需要顾问尽快跟进")
 
         ticket_id = None
+        deduplicated = False
         tool_traces: List[Dict[str, Any]] = []
         if self._lead_store is not None:
             tool_t0 = time.monotonic()
             try:
-                ticket = await self._lead_store.create(build_handoff_summary(req, reason), lead_type="handoff")
+                ticket = await self._lead_store.create_handoff(build_handoff_summary(req, reason))
                 ticket_id = ticket["id"]
-                from core.metrics import LEADS_CREATED
-                LEADS_CREATED.labels(type="handoff").inc()
+                deduplicated = bool(ticket.get("deduplicated"))
+                if not deduplicated:
+                    from core.metrics import LEADS_CREATED
+                    LEADS_CREATED.labels(type="handoff").inc()
                 success, error = True, ""
             except Exception as ex:
                 logger.warning("交接单写入失败: %s", ex)
@@ -712,6 +715,7 @@ class EscalationAgent(BaseAgent):
                 "tool_name": "create_handoff_summary",
                 "tool_use_id": None,
                 "input": {"reason": reason},
+                "deduplicated": deduplicated,
                 "success": success,
                 "result_success": success,
                 "latency_ms": round((time.monotonic() - tool_t0) * 1000, 1),
@@ -721,7 +725,10 @@ class EscalationAgent(BaseAgent):
             })
 
         studio = get_catalog().studio
-        lines = ["我已经把你的问题转交给工作室顾问。", ""]
+        if deduplicated:
+            lines = ["这个会话已经有一张交接单在顾问那里跟进，我把你刚才的消息补充进去了，不会重复排队。", ""]
+        else:
+            lines = ["我已经把你的问题转交给工作室顾问。", ""]
         if ticket_id:
             lines.append(f"- 交接单编号：{ticket_id}")
         lines.append(f"- 转交原因：{reason}")
@@ -838,6 +845,23 @@ _CONSULTING_COLLAB_KWS = ["留学", "申请", "硕士", "研究生", "选校", "
                           "瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧"]
 _BILLING_KWS = ["退款", "退钱", "定金", "尾款", "发票", "付款", "多付", "refund", "invoice"]
 _GENERAL_KWS = ["进度", "第几轮", "你们是", "工作室", "联系方式", "帮助"]
+
+
+def _service_terms() -> List[str]:
+    """业务目录里的服务名、交付物名和"申请退款"这类费用短语，按长度降序，保证先去掉长词。"""
+    from business.catalog import get_catalog
+
+    terms = {"选校报告", "申请退款", "申请发票", "申请开票", "申请退还"}
+    for service in get_catalog().services:
+        terms.add(service.name.lower())
+        terms.update(d.lower() for d in getattr(service, "deliverables", None) or [])
+    return sorted(terms, key=len, reverse=True)
+
+
+def _strip_service_terms(msg: str) -> str:
+    for term in _service_terms():
+        msg = msg.replace(term, " ")
+    return msg
 
 class AgentOrchestrator:
     """
@@ -1331,7 +1355,9 @@ class AgentOrchestrator:
         msg = req.message.lower()
         targets: List[AgentType] = []
 
-        if req.intent in _CONSULTING_INTENTS or any(kw in msg for kw in _CONSULTING_COLLAB_KWS):
+        # 服务名、交付物（"选校报告"）和费用短语（"申请退款"）不是在问留学本身，扫描前去掉
+        consult_msg = _strip_service_terms(msg)
+        if req.intent in _CONSULTING_INTENTS or any(kw in consult_msg for kw in _CONSULTING_COLLAB_KWS):
             targets.append(AgentType.CONSULTING)
         if req.intent in _BILLING_INTENTS or any(kw in msg for kw in _BILLING_KWS):
             targets.append(AgentType.BILLING)

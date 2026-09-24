@@ -330,3 +330,32 @@ def test_skill_selection_is_reported_and_reference_tool_exposed(tmp_path):
     assert "规则正文" in client.calls[0]["system"]
     assert "read_skill_reference" in {tool["name"] for tool in client.calls[0]["tools"]}
     assert manager.summary()["skills"][0]["stats"]["hits"] == 1
+
+
+def test_escalation_does_not_open_duplicate_tickets():
+    from business.lead_store import LeadStore
+
+    store = LeadStore()
+    agent = EscalationAgent(FakeClient(), "test-model")
+    agent.set_lead_store(store)
+
+    first = asyncio.run(agent.handle(make_request(intent=IntentCategory.HUMAN_HANDOFF, message="转人工")))
+    second = asyncio.run(agent.handle(make_request(intent=IntentCategory.HUMAN_HANDOFF, message="还没人联系我")))
+
+    tickets = asyncio.run(store.list(lead_type="handoff"))
+    assert len(tickets) == 1
+    assert tickets[0]["id"] in first.content and tickets[0]["id"] in second.content
+    assert "不会重复排队" in second.content
+    assert second.tool_traces[0]["deduplicated"] is True
+
+
+def test_deliverable_name_does_not_pull_in_consulting_agent():
+    orch = AgentOrchestrator.__new__(AgentOrchestrator)
+    orch._pool = {t: [object()] for t in AgentType}
+    req = make_request(message="我想申请退款，选校报告还没交付", intent=IntentCategory.REFUND, entities={})
+    targets = orch._collaboration_targets(req)
+    assert AgentType.CONSULTING not in targets
+    assert AgentType.BILLING in targets
+
+    composite = make_request(message="想问问瑞典怎么选校，另外定金能退吗", intent=IntentCategory.REFUND, entities={})
+    assert AgentType.CONSULTING in orch._collaboration_targets(composite)

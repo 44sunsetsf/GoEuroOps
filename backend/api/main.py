@@ -620,6 +620,8 @@ async def add_knowledge(body: BatchDocInput):
     count = await kb.add_documents_async([
         {"title": d.title, "content": d.content, "domain": d.domain} for d in body.documents
     ])
+    # 知识库变了，旧的检索缓存可能不含新文档，立即失效而不是等 TTL
+    _tool_manager.invalidate_cache("knowledge_search")
     total = await kb.doc_count_async()
     return {"message": f"成功导入 {count} 个文档片段", "added_chunks": count, "total_chunks": total}
 
@@ -669,6 +671,7 @@ async def upload_knowledge(file: UploadFile = File(...), domain: Optional[str] =
                 doc.setdefault("domain", domain)
 
     count = await kb.add_documents_async(docs)
+    _tool_manager.invalidate_cache("knowledge_search")
     total = await kb.doc_count_async()
     return {
         "message": f"文件 {filename} 导入成功",

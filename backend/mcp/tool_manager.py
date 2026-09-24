@@ -439,6 +439,24 @@ class MCPToolManager:
 
     # ── 缓存 ──────────────────────────────────────────────────────────────────
 
+    def invalidate_cache(self, tool_name: Optional[str] = None) -> int:
+        """清空工具缓存（默认全部，传 tool_name 只清该工具）。返回清掉的条数。
+
+        知识库写入后调用，保证新文档立即可检索，而不是等 TTL 过期。
+        """
+        if tool_name is None:
+            removed = len(self._cache)
+            self._cache.clear()
+        else:
+            prefix = f"{tool_name}:"
+            keys = [k for k in self._cache if k.startswith(prefix)]
+            for k in keys:
+                del self._cache[k]
+            removed = len(keys)
+        if removed:
+            logger.info(f"工具缓存已失效: tool={tool_name or '*'} removed={removed}")
+        return removed
+
     def _cache_key(self, name: str, params: Dict, rerank_top_k: int = 0) -> str:
         payload = {"params": params, "rerank_top_k": rerank_top_k}
         return f"{name}:{hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()}"

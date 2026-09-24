@@ -33,6 +33,9 @@ _PASSPORT_RE = re.compile(r"(?<![A-Za-z0-9])[EeGgPp]\d{8}(?![A-Za-z0-9])")
 
 _KEY_PREFIX = "goeuroops:lead:"
 _INDEX_KEY = "goeuroops:leads"
+# 交接单去重：这些状态下视为"顾问还在跟进"，同一会话不再新建
+_OPEN_STATUSES = ("new", "contacted")
+_MAX_FOLLOWUPS = 10
 
 
 def mask_contact(value: str) -> str:
@@ -151,6 +154,34 @@ class LeadStore:
             mask_contact(str(lead.get("contact", ""))),
         )
         return lead
+
+    async def create_handoff(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """写入交接单，同一会话已有未关闭的交接单时不重复建单。
+
+        重复的转人工请求（用户连发"转人工"、或隐私请求后又追问）只追加到原交接单的
+        followups 里，顾问看到的仍是一张单子。返回的交接单带 deduplicated 标记。
+        """
+        user_id, conv_id = data.get("user_id"), data.get("conv_id")
+        if user_id and conv_id:
+            for lead in await self.list(lead_type="handoff", limit=500):
+                if (
+                    lead.get("user_id") == user_id
+                    and lead.get("conv_id") == conv_id
+                    and lead.get("status") in _OPEN_STATUSES
+                ):
+                    followups = list(lead.get("followups", []))
+                    followups.append({
+                        "at": datetime.now(timezone.utc).isoformat(),
+                        "reason": data.get("reason", ""),
+                        "message": data.get("last_message", ""),
+                    })
+                    lead["followups"] = followups[-_MAX_FOLLOWUPS:]
+                    lead["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    await self._save(lead)
+                    logger.info("交接单去重: conv=%s 追加到 %s", conv_id, lead["id"])
+                    return {**lead, "deduplicated": True}
+        lead = await self.create(data, lead_type="handoff")
+        return {**lead, "deduplicated": False}
 
     async def list(
         self,
