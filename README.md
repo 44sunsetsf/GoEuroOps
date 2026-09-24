@@ -1,81 +1,85 @@
-# GoEuroOps 留学业务智能运营中枢
+<p align="right"><a href="README.zh-CN.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/lang-dark.svg"><img alt="EN | 中文 — switch to Chinese" src="docs/images/lang-light.svg" width="112"></picture></a></p>
 
-「指北 · Nordic CS Master Studio」的多 Agent 运营中枢。指北是由几位在瑞典读 CS 的留学生创办的咨询工作室，只做瑞典、德国、荷兰、芬兰、丹麦的英语授课计算机硕士申请。
+# GoEuroOps — an AI operations hub for a study-abroad studio
 
-AI 助手负责工作室的前台工作：
+The multi-agent operations hub behind **Zhibei (指北) · Nordic CS Master Studio**, a consultancy started by a few students doing CS in Sweden. The studio focuses on one thing: applications to English-taught CS master's programmes in Sweden, Germany, the Netherlands, Finland and Denmark.
 
-- 回答五国 CS 硕士的公开知识问题
-- 介绍服务，并按公开规则**计算报价**
-- 在用户同意后**登记咨询线索**
-- 解释付款和退款政策，**估算可退金额**
-- 遇到个性化选校、文书修改、录取判断这类需要顾问的请求时，交接给真人顾问
+The AI assistant runs the studio's front desk:
 
-创始人在控制台里跟进线索、维护价目和 Skills、查看评测结果。
+- answers public questions about CS master's programmes in the five countries
+- introduces the services and **calculates quotes** from the published pricing rules
+- **records consultation leads** once the user agrees
+- explains payment and refund policies and **estimates refundable amounts**
+- hands over to a human advisor when a request needs one — personalised school selection, essay editing, admission judgements
 
-## 技术要点
+The founders use the console to follow up on leads, maintain prices and Skills, and review evaluation results.
 
-| 模块 | 做法 |
+## Highlights
+
+| Module | Approach |
 |---|---|
-| 意图识别 | LLM few-shot + 本地向量 + 关键词三路融合，15 个工作室业务意图 |
-| 多 Agent 编排 | 前台接待 / 留学咨询 / 费用售后 / 转顾问，复合问题并行协作后合并 |
-| 意图门控 RAG | 知识类意图与意图识别**并行**做投机预取，省掉一轮工具调用；问候、投诉、隐私不检索 |
-| 知识库 | ChromaDB + bge-small-zh 中文向量（ONNX）+ 字面覆盖混合打分；种子由业务目录生成并带版本 |
-| Skills v2 | 多信号路由（意图 / 关键词 / 语义样例 / 会话粘性）、渐进式披露、版本与命中统计、每个 Skill 自带回归用例 |
-| 业务目录 | `business/catalog.yaml` 统一定义服务、价格、优惠、退款规则；报价和退款由代码确定性计算 |
-| 评测 | 意图准确率、Skill 路由准确率、按场景校准的五维 LLM-as-Judge（含边界合规）、工具调用检查、门控 A/B |
-| 观测 | 每次回答带 Skill 命中、门控决策和工具调用明细；Prometheus 指标 |
+| Intent recognition | Three signals fused — LLM few-shot, local embeddings and keywords — across 15 studio-specific intents |
+| Multi-agent orchestration | Front desk / study consulting / billing & after-sales / human handover; compound questions are handled in parallel and merged |
+| Intent-gated RAG | Knowledge intents trigger a speculative prefetch **in parallel** with intent recognition, saving a tool-call round trip; greetings, complaints and privacy questions skip retrieval |
+| Knowledge base | ChromaDB + bge-small-zh Chinese embeddings (ONNX) with hybrid lexical-coverage scoring; seed documents are generated from the business catalog and versioned |
+| Skills v2 | Multi-signal routing (intent / keywords / semantic examples / conversation stickiness), progressive disclosure, versions and hit statistics; every Skill ships its own regression cases |
+| Business catalog | `business/catalog.yaml` defines services, prices, discounts and refund rules in one place; quotes and refunds are computed deterministically in code |
+| Evaluation | Intent accuracy, Skill-routing accuracy, a scenario-calibrated five-dimension LLM-as-Judge (including boundary compliance), tool-call checks, gating A/B |
+| Observability | Every answer carries its Skill hits, gating decision and tool-call details; Prometheus metrics |
 
-## 目录结构
+## Repository layout
 
 ```text
-backend/    Python 后端：FastAPI + 多 Agent + RAG + Skills + 业务目录 + 评测
-frontend/   Vue 控制台：对话 / 线索 / 服务价目 / Skills / 知识库 / 评测
-docs/       变更记录
+backend/    Python backend: FastAPI + multi-agent + RAG + Skills + business catalog + evaluation
+frontend/   Vue console: chat / leads / services & pricing / Skills / knowledge base / evaluation
+docs/       change log and roadmap
 ```
 
-- [backend/README.md](backend/README.md)：后端架构、接口、配置
-- [backend/skills/README.md](backend/skills/README.md)：Skill 编写规范
-- [backend/wiki/Skills与意图门控RAG.md](backend/wiki/Skills与意图门控RAG.md)：核心设计说明
-- [docs/CHANGELOG-2026-09.md](docs/CHANGELOG-2026-09.md)：变更记录
-- [docs/ROADMAP-commercial.md](docs/ROADMAP-commercial.md)：商用化差距评估与优化计划
+- [backend/README.md](backend/README.md): backend architecture, API, configuration
+- [backend/skills/README.md](backend/skills/README.md): how to write a Skill
+- [backend/wiki/Skills与意图门控RAG.md](backend/wiki/Skills与意图门控RAG.md): core design notes
+- [docs/CHANGELOG-2026-09.md](docs/CHANGELOG-2026-09.md): change log
+- [docs/ROADMAP-commercial.md](docs/ROADMAP-commercial.md): gap analysis and plan towards production use
 
-## 快速开始
+The documents above are written in Chinese.
 
-在项目根目录一条命令启动全部服务（后端、前端、Redis、ChromaDB、Prometheus）：
+## Quick start
+
+Start every service (backend, frontend, Redis, ChromaDB, Prometheus) from the project root with one command:
 
 ```bash
-cp .env.example .env   # 填入 ANTHROPIC_API_KEY（或兼容 Anthropic 协议的第三方模型，如 DeepSeek）
+cp .env.example .env   # set ANTHROPIC_API_KEY (or any Anthropic-compatible provider, e.g. DeepSeek)
 docker compose up -d --build
 ```
 
-| 入口 | 地址 |
+| Entry | URL |
 |---|---|
-| 控制台 | http://localhost（端口可用 `.env` 里的 `FRONTEND_PORT` 修改） |
-| API 文档 | http://localhost/api/docs 或 http://localhost:8000/docs |
+| Console | http://localhost (change the port with `FRONTEND_PORT` in `.env`) |
+| API docs | http://localhost/api/docs or http://localhost:8000/docs |
 | Prometheus | http://localhost:9090 |
 
-首次构建后，可以直接在 Docker Desktop 的 Containers 页面对 `goeuroops` 项目点击启动或停止。
+After the first build you can start and stop the `goeuroops` project from the Containers page in Docker Desktop.
 
-**哪些改动需要重建镜像**
+**What needs a rebuild**
 
-| 改了什么 | 怎么生效 |
+| What changed | How to apply it |
 |---|---|
-| `backend/skills/` | 已挂载进容器，改完调用 `POST /skills/reload` 或在控制台点「重新加载」 |
-| `backend/business/`（价格、政策、五国资料） | 已挂载，改完执行 `docker compose restart backend`；知识库种子会按内容版本自动重建 |
-| 其他 `backend/` 或 `frontend/` 代码 | 需要重新执行 `docker compose up -d --build` |
+| `backend/skills/` | Mounted into the container; call `POST /skills/reload` or click "Reload" in the console |
+| `backend/business/` (prices, policies, country data) | Mounted; run `docker compose restart backend` — the knowledge-base seed is rebuilt automatically when its content version changes |
+| Any other `backend/` or `frontend/` code | Run `docker compose up -d --build` again |
 
-**本地开发前端（热更新）**：保持后端容器运行，然后执行：
+**Frontend development with hot reload** — keep the backend container running, then:
 
 ```bash
-cd frontend && npm install && npm run dev   # http://localhost:5173，自动代理到 localhost:8000
+cd frontend && npm install && npm run dev   # http://localhost:5173, proxied to localhost:8000
 ```
 
-**跑后端测试**：
+**Backend tests**:
 
 ```bash
 cd backend && pip install -r requirements.txt pytest && python -m pytest -q
 ```
 
-## 技术栈
+## Tech stack
 
-FastAPI · Anthropic 兼容 LLM API（可切换 DeepSeek 等）· ChromaDB · fastembed（bge-small-zh）· Redis · Prometheus · Vue 3 + Vite
+FastAPI · Anthropic-compatible LLM API (DeepSeek and others work too) · ChromaDB · fastembed (bge-small-zh) · Redis · Prometheus · Vue 3 + Vite
