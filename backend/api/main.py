@@ -399,6 +399,7 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     意图识别交给编排器内部完成，这样知识库预取才能和意图识别并行。
     """
     from agents.agent_orchestrator import Request as OrcReq
+    from core import chat_log
     from memory.conversation_memory import MsgRole
 
     mem_ctx = await _memory.get_context(req.user_id, conv_id, query=req.message)
@@ -421,7 +422,7 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     # 异步更新用户画像（不阻塞响应）
     asyncio.create_task(_memory.update_profile(req.user_id, conv_id))
 
-    return ChatResponse(
+    response = ChatResponse(
         conv_id=conv_id,
         request_id=result.request_id,
         response=result.response,
@@ -446,6 +447,9 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
         skills_applied=result.skills_applied,
         rag_gate=result.rag_gate,
     )
+    # 站长后台按访客查看对话：记下这一轮问答（失败不影响回答）
+    await chat_log.record(req.user_id, conv_id, req.message, response)
+    return response
 
 
 async def _check_quota() -> None:
@@ -454,12 +458,14 @@ async def _check_quota() -> None:
 
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
+async def chat(req: ChatRequest, response: Response):
     """主对话接口（一次性返回）。"""
     if _orchestrator is None or _memory is None:
         raise HTTPException(503, "服务未就绪")
     await _check_quota()
-    return await _run_chat(req, req.conv_id or str(uuid.uuid4()))
+    conv_id = req.conv_id or str(uuid.uuid4())
+    response.headers["X-Conv-Id"] = conv_id    # 网关日志据此把对话和访客会话对上
+    return await _run_chat(req, conv_id)
 
 
 def _sse(event: str, data: Any) -> str:
@@ -522,6 +528,7 @@ async def chat_stream(req: ChatRequest):
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
+            "X-Conv-Id": conv_id,
         },
     )
 
