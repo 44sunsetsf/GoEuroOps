@@ -40,6 +40,7 @@ docs/       change log and roadmap
 - [backend/wiki/Skills与意图门控RAG.md](backend/wiki/Skills与意图门控RAG.md): core design notes
 - [docs/CHANGELOG-2026-09.md](docs/CHANGELOG-2026-09.md): change log
 - [docs/ROADMAP-commercial.md](docs/ROADMAP-commercial.md): gap analysis and plan towards production use
+- [docs/WORKFLOW.md](docs/WORKFLOW.md): how a change goes from request to production (testing, deployment, verification)
 
 The documents above are written in Chinese.
 
