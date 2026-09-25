@@ -295,3 +295,24 @@ a { color: inherit; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* 工作室后台入口：常驻左下角，说明作品的主体在后台 */
+.studio-badge {
+  position: fixed; left: 20px; bottom: 20px; z-index: 30;
+  display: flex; align-items: center; gap: 14px; max-width: min(420px, calc(100vw - 40px));
+  padding: 14px 18px; border-radius: 14px; text-decoration: none;
+  background: rgba(22, 35, 42, 0.92); color: #f4f6f5; backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px -18px rgba(13, 24, 31, 0.55), inset 0 0 0 1px rgba(242, 194, 101, 0.35);
+  transition: transform 250ms, box-shadow 250ms;
+}
+.studio-badge:hover { transform: translateY(-2px); box-shadow: 0 22px 44px -18px rgba(13, 24, 31, 0.6), inset 0 0 0 1px var(--glow); }
+.studio-badge svg { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--glow); stroke-width: 1.6; }
+.studio-badge-text { display: grid; gap: 2px; min-width: 0; }
+.studio-badge-text b { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+.studio-badge-text small { font-size: 12.5px; line-height: 1.45; color: rgba(244, 246, 245, 0.7); }
+.studio-badge-go { flex: none; font-size: 18px; color: var(--glow); transition: transform 250ms; }
+.studio-badge:hover .studio-badge-go { transform: translateX(3px); }
+@media (max-width: 640px) {
+  .studio-badge { left: 12px; right: 12px; bottom: 12px; padding: 11px 14px; }
+  .studio-badge-text small { display: none; }
+}

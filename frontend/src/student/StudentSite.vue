@@ -111,6 +111,16 @@
       </div>
     </footer>
 
+    <!-- 作品说明：这里只是学生端，作品的主体是工作室后台（智能运营中枢），入口要让人看得见 -->
+    <a class="studio-badge" href="/studio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" /></svg>
+      <span class="studio-badge-text">
+        <b>智能运营中枢</b>
+        <small>这个作品的主体在后台：线索、价目、Skills、知识库、评测 · 需口令</small>
+      </span>
+      <span class="studio-badge-go" aria-hidden="true">→</span>
+    </a>
+
     <ChatPanel :open="chatOpen" :prompt="chatPrompt" @close="chatOpen = false" />
   </div>
 </template>
