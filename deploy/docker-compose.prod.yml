@@ -29,6 +29,9 @@ services:
       GOEUROOPS_ADDRESS: ${GOEUROOPS_ADDRESS:-${SITE_ADDRESS}}
       STUDIO_USER: ${STUDIO_USER:-studio}
       STUDIO_PASSWORD_HASH: ${STUDIO_PASSWORD_HASH:?在 .env 里设置 STUDIO_PASSWORD_HASH，见 deploy/DEPLOY.md}
+      # 同机个人主页的站长后台（/admin）；不用时留空即可
+      OWNER_USER: ${OWNER_USER:-}
+      OWNER_PASSWORD_HASH: ${OWNER_PASSWORD_HASH:-}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./deploy/sites:/etc/caddy/sites:ro

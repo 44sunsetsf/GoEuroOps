@@ -1,7 +1,8 @@
 # 学生端首页、静态资源、对话和价目接口公开；其余一律要口令：
 # /studio 后台、/api/docs、评测、知识库写入、线索等。
 # 访问日志：记录来源 IP、时间、路径、状态码，便于知道面试官有没有打开过；
-# 去掉请求头（口令、Cookie 不落盘），按 10MB 轮转、保留 90 天。查看方式见 deploy/DEPLOY.md。
+# 去掉口令和 Cookie 这类敏感请求头，保留 User-Agent 和 Referer 以便区分真人与爬虫；按 10MB 轮转、保留 90 天。
+# 查看方式见 deploy/DEPLOY.md。
 (access_log) {
 	log {
 		output file /data/logs/{args[0]}-access.log {
@@ -10,7 +11,9 @@
 			roll_keep_for 2160h
 		}
 		format filter {
-			request>headers delete
+			request>headers>Authorization delete
+			request>headers>Proxy-Authorization delete
+			request>headers>Cookie delete
 			request>uri query {
 				replace key REDACTED
 			}
