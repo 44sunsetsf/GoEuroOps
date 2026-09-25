@@ -32,6 +32,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from anthropic import AsyncAnthropic
+from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 
@@ -256,7 +257,7 @@ class EndToEndEvaluator:
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        client = AsyncAnthropic(**kwargs)
+        client = track(AsyncAnthropic(**kwargs), "evaluation")
 
         self._orchestrator     = orchestrator
         self._judge            = LLMJudge(client, model)

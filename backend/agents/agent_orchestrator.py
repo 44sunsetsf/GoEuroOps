@@ -35,6 +35,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 OnDelta = Callable[[str], Awaitable[None]]
 
 from anthropic import AsyncAnthropic
+from core.llm_usage import track
 
 from agents.tools import (
     AgentToolSpec,
@@ -902,7 +903,7 @@ class AgentOrchestrator:
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        client = AsyncAnthropic(**kwargs)
+        client = track(AsyncAnthropic(**kwargs), "agents")
 
         self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model)
         self._skill_manager = skill_manager

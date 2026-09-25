@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional
 import chromadb
 import redis.asyncio as redis
 from anthropic import AsyncAnthropic
+from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 
@@ -99,7 +100,7 @@ class MemoryManager:
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        self._client = AsyncAnthropic(**kwargs)
+        self._client = track(AsyncAnthropic(**kwargs), "memory")
         self._model  = model
 
         self._redis = redis.from_url(redis_url, decode_responses=True)

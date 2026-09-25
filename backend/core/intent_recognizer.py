@@ -21,6 +21,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from anthropic import AsyncAnthropic
+from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 from core.text_embedding import cosine, hashed_ngram_embedding
@@ -184,7 +185,7 @@ class IntentRecognizer:
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        self.client    = AsyncAnthropic(**kwargs)
+        self.client    = track(AsyncAnthropic(**kwargs), "intent")
         self.model     = model
         self.threshold = confidence_threshold
         # 本地字符 n-gram 向量始终可用；如果未来客户端暴露 embeddings 资源，
