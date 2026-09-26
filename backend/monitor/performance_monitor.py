@@ -203,8 +203,8 @@ class PerformanceMonitor:
                     logger.warning(f"异常检测 [{agent_key}] {metric}={value:.3f} z={anomaly['z_score']}")
 
             # 阈值告警
-            self._check_threshold("agent_success_rate", sr, agent_key)
-            self._check_threshold("agent_avg_ms", ms, agent_key)
+            self._check_threshold("agent_success_rate", sr, agent_key, samples=s.get("total"))
+            self._check_threshold("agent_avg_ms", ms, agent_key, samples=s.get("total"))
 
             # Prometheus
             if "agent_success_rate" in self._prom:
@@ -219,8 +219,8 @@ class PerformanceMonitor:
             ms = s["avg_latency_ms"]
             cf = s["consecutive_fails"]
 
-            self._check_threshold("tool_success_rate", sr, tool_name)
-            self._check_threshold("tool_avg_ms", ms, tool_name)
+            self._check_threshold("tool_success_rate", sr, tool_name, samples=s.get("total"))
+            self._check_threshold("tool_avg_ms", ms, tool_name, samples=s.get("total"))
 
             if "tool_success_rate" in self._prom:
                 self._prom["tool_success_rate"].labels(tool=tool_name).set(sr)
@@ -250,25 +250,45 @@ class PerformanceMonitor:
             penalty += min(0.4, (avg_ms - 3000) / 10000)
         return min(penalty, 0.9)
 
-    def _check_threshold(self, metric: str, value: float, label: str) -> None:
+    # 样本太少时比率没有意义：第一次调用失败，成功率就是 0%，会立刻误报
+    MIN_SAMPLES = 5
+
+    def _check_threshold(self, metric: str, value: float, label: str, samples: Optional[int] = None) -> None:
+        """
+        每个指标最多一条未解决的告警：越过阈值时新建（并推送 Webhook），恢复正常后自动标记为已解决。
+        以前每个采集周期都会追加一条，而且永远不会解决，恢复后告警仍然挂着。
+        """
         if metric not in self.THRESHOLDS:
+            return
+        if samples is not None and samples < self.MIN_SAMPLES:
             return
         threshold, severity, operator = self.THRESHOLDS[metric]
         triggered = (operator == "less_than" and value < threshold) or \
                     (operator == "greater_than" and value > threshold)
-        if triggered:
-            alert = Alert(
-                severity=severity,
-                metric=f"{metric}:{label}",
-                message=f"{label} 的 {metric} = {value:.3f}，阈值 {threshold}",
-                value=value,
-                threshold=threshold,
-            )
-            self._alerts.append(alert)
-            logger.warning(f"[{severity.value.upper()}] {alert.message}")
-            # 异步发送 Webhook（不阻塞采集循环）
-            if self._webhook:
-                asyncio.create_task(self._send_webhook(alert))
+        key = f"{metric}:{label}"
+        open_alert = next((a for a in self._alerts if a.metric == key and not a.resolved), None)
+        if not triggered:
+            if open_alert is not None:
+                open_alert.resolved = True
+                logger.info(f"告警恢复：{key} = {value:.3f}")
+            return
+        if open_alert is not None:
+            open_alert.value = value       # 仍在告警中：只更新当前值，不重复告警
+            open_alert.message = f"{label} 的 {metric} = {value:.3f}，阈值 {threshold}"
+            return
+        alert = Alert(
+            severity=severity,
+            metric=key,
+            message=f"{label} 的 {metric} = {value:.3f}，阈值 {threshold}",
+            value=value,
+            threshold=threshold,
+        )
+        self._alerts.append(alert)
+        del self._alerts[:-200]            # 只保留最近 200 条历史
+        logger.warning(f"[{severity.value.upper()}] {alert.message}")
+        # 异步发送 Webhook（不阻塞采集循环）
+        if self._webhook:
+            asyncio.create_task(self._send_webhook(alert))
 
     def _generate_routing_suggestions(self, agent_stats: Dict[str, Any]) -> None:
         """
