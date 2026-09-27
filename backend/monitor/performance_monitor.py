@@ -114,7 +114,11 @@ class PerformanceMonitor:
     THRESHOLDS = {
         "agent_success_rate":  (0.90, Severity.ERROR,   "less_than"),
         "tool_success_rate":   (0.95, Severity.WARNING,  "less_than"),
-        "agent_avg_ms":        (3000, Severity.WARNING,  "greater_than"),
+        # 延迟看用户等到第一个字的时间。整段生成时间随回答长度变化，知识类回答
+        # 两三百个 token 就要四五秒，用 3 秒卡它会一直告警；只给它一个宽松的上限，
+        # 用来发现模型卡住或误开了思考模式这类问题。
+        "agent_first_ms":      (3000, Severity.WARNING,  "greater_than"),
+        "agent_avg_ms":        (15000, Severity.WARNING, "greater_than"),
         "tool_avg_ms":         (5000, Severity.ERROR,    "greater_than"),
     }
 
@@ -190,6 +194,8 @@ class PerformanceMonitor:
         agent_stats = self._orchestrator.get_stats()
         tool_stats  = self._tool_manager.get_stats()
         routing_penalties: Dict[str, float] = {}
+        # 建议每轮按当前数据重新生成：以前是只增不减，指标恢复后建议还一直挂着
+        self._suggestions = []
 
         # ── Agent 指标 ────────────────────────────────────────────────────────
         for agent_key, s in agent_stats.items():
@@ -205,6 +211,7 @@ class PerformanceMonitor:
             # 阈值告警
             self._check_threshold("agent_success_rate", sr, agent_key, samples=s.get("total"))
             self._check_threshold("agent_avg_ms", ms, agent_key, samples=s.get("total"))
+            self._check_threshold("agent_first_ms", s.get("avg_first_ms", 0.0), agent_key, samples=s.get("streamed", 0))
 
             # Prometheus
             if "agent_success_rate" in self._prom:

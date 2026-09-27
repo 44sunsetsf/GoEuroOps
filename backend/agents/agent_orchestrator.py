@@ -104,6 +104,10 @@ class AgentStats:
     total:     int   = 0
     success:   int   = 0
     total_ms:  float = 0.0
+    # 流式输出时用户看到第一个字的耗时。回答写多长由问题决定，整段生成时间会随之变长，
+    # 用户实际等待的是第一个字，所以延迟告警看这个值。
+    first_count:    int   = 0
+    first_total_ms: float = 0.0
     monitor_penalty: float = 0.0
 
     @property
@@ -113,6 +117,14 @@ class AgentStats:
     @property
     def avg_ms(self) -> float:
         return self.total_ms / self.total if self.total else 0.0
+
+    @property
+    def avg_first_ms(self) -> float:
+        return self.first_total_ms / self.first_count if self.first_count else 0.0
+
+    def first_output(self, t0: float) -> None:
+        self.first_count += 1
+        self.first_total_ms += (time.monotonic() - t0) * 1000
 
     def routing_score(self) -> float:
         """路由评分：成功率高、延迟低的 Agent 得分高。"""
@@ -279,6 +291,15 @@ class BaseAgent:
         self._last_tools_used = []
         self._last_tool_traces = []
         self._last_skills = []
+        if on_delta is not None:
+            forward, seen = on_delta, False
+
+            async def on_delta(text: str) -> None:
+                nonlocal seen
+                if not seen:
+                    seen = True
+                    self.stats.first_output(t0)
+                await forward(text)
         try:
             content = await self._call_llm(req, on_delta=on_delta)
             ms = (time.monotonic() - t0) * 1000
@@ -744,6 +765,7 @@ class EscalationAgent(BaseAgent):
         ]
         content = "\n".join(lines)
         if on_delta is not None:
+            self.stats.first_output(t0)
             await on_delta(content)
         ms = (time.monotonic() - t0) * 1000
         self.stats.success += 1
@@ -1426,6 +1448,8 @@ class AgentOrchestrator:
                     "total":        agent.stats.total,
                     "success_rate": round(agent.stats.success_rate, 3),
                     "avg_ms":       round(agent.stats.avg_ms, 1),
+                    "streamed":     agent.stats.first_count,
+                    "avg_first_ms": round(agent.stats.avg_first_ms, 1),
                     "monitor_penalty": round(agent.stats.monitor_penalty, 3),
                     "routing_score": round(agent.stats.routing_score(), 3),
                     "role": agent.profile.role,
