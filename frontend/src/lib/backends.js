@@ -22,6 +22,10 @@ export function backendMeta(settings) {
   }
 }
 
+export async function requestSession(settings) {
+  return requestJson(backendMeta(settings).baseUrl, '/session')
+}
+
 export async function requestHealth(settings) {
   return requestJson(backendMeta(settings).baseUrl, '/health')
 }

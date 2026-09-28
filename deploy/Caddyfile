@@ -16,6 +16,7 @@
 			request>headers>Cookie delete
 			request>uri query {
 				replace key REDACTED
+				replace guest REDACTED
 			}
 		}
 	}
@@ -27,12 +28,39 @@
 	encode zstd gzip
 	import access_log goeuroops
 
-	@private not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog
-	basic_auth @private {
-		{$STUDIO_USER} {$STUDIO_PASSWORD_HASH}
-	}
+	# route 里的指令按书写顺序执行，访客判断必须在 basic_auth 之前
+	route {
+		# 访客身份只能由这里加上：先删掉外部请求自带的同名请求头，防止伪造
+		request_header -X-Studio-Role
 
-	reverse_proxy frontend:80
+		# 演示访客（面试官等）：打开 /studio?guest=<口令> 写入 30 天 Cookie，之后免密码只读访问后台。
+		# 只读和打码由后端按 X-Studio-Role 执行（backend/api/demo_guard.py）。
+		@guest_enter {
+			path /studio /studio/
+			query guest={$GOEUROOPS_GUEST_KEY}
+		}
+		handle @guest_enter {
+			header Set-Cookie "goe_guest={$GOEUROOPS_GUEST_KEY}; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=Lax"
+			redir * /studio 302
+		}
+
+		# 带访客 Cookie、且没有走站长密码登录的请求标记为访客
+		@guest {
+			header_regexp guest Cookie (^|;\s*)goe_guest={$GOEUROOPS_GUEST_KEY}(;|$)
+			not header Authorization *
+		}
+		request_header @guest X-Studio-Role guest
+
+		@private {
+			not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog
+			not header X-Studio-Role guest
+		}
+		basic_auth @private {
+			{$STUDIO_USER} {$STUDIO_PASSWORD_HASH}
+		}
+
+		reverse_proxy frontend:80
+	}
 }
 
 # 同一台机器上的其他项目（例如 Vparser、个人主页）把站点配置放进 deploy/sites/*.caddy 即可，

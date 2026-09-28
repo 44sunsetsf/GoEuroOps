@@ -29,6 +29,10 @@
       </div>
     </header>
 
+    <div v-if="readonly" class="demo-banner" role="note">
+      演示模式 · 只读：可以试对话、看线索（联系方式已打码）、Skills、知识库检索、监控和评测结果；写入知识库、修改线索和运行评测只对站长开放。
+    </div>
+
     <div v-if="toast" class="toast" role="status">{{ toast }}</div>
 
     <section v-if="activeView === 'chat'" class="page page-chat">
@@ -291,17 +295,17 @@
           </label>
           <label><span>内容</span><textarea v-model="docContent" rows="7" placeholder="输入院校更新、FAQ 或内部说明"></textarea></label>
           <div class="side-actions">
-            <button @click="submitKnowledge" :disabled="busy || !docTitle.trim() || !docContent.trim()">添加文档</button>
-            <label class="upload-button">上传文件<input type="file" accept=".txt,.md,.json" @change="handleUpload" /></label>
+            <button @click="submitKnowledge" :disabled="readonly || busy || !docTitle.trim() || !docContent.trim()" :title="readonly ? '演示模式只读，这个操作只对站长开放' : ''">添加文档</button>
+            <label class="upload-button" :class="{ disabled: readonly }" :title="readonly ? '演示模式只读，这个操作只对站长开放' : ''">上传文件<input type="file" accept=".txt,.md,.json" :disabled="readonly" @change="handleUpload" /></label>
           </div>
         </section>
       </div>
 
     </section>
 
-    <LeadsView v-else-if="activeView === 'leads'" :settings="settings" @toast="showToast" />
+    <LeadsView v-else-if="activeView === 'leads'" :settings="settings" :readonly="readonly" @toast="showToast" />
     <CatalogView v-else-if="activeView === 'catalog'" :settings="settings" />
-    <SkillsView v-else-if="activeView === 'skills'" :settings="settings" @toast="showToast" />
+    <SkillsView v-else-if="activeView === 'skills'" :settings="settings" :readonly="readonly" @toast="showToast" />
 
     <section v-else class="page page-evaluation">
       <div class="page-heading">
@@ -314,7 +318,7 @@
             <input type="checkbox" v-model="compareRagGate" />
             <span>RAG 门控对照实验（多调用一轮 LLM）</span>
           </label>
-          <button @click="runEvaluation" :disabled="busy">{{ busy ? '运行中...' : '运行评测' }}</button>
+          <button @click="runEvaluation" :disabled="readonly || busy" :title="readonly ? '演示模式只读：运行评测会大量调用模型，只对站长开放' : ''">{{ busy ? '运行中...' : '运行评测' }}</button>
         </div>
       </div>
 
@@ -389,6 +393,7 @@ import {
   requestKnowledgeStats,
   requestMonitor,
   requestSearch,
+  requestSession,
   requestToolTrace,
   runEvaluation as requestEvaluation,
   saveSettings,
@@ -433,6 +438,7 @@ const messages = ref([])
 const draft = ref('')
 const busy = ref(false)
 const healthOk = ref(false)
+const readonly = ref(false)   // 演示访客：后端 /session 返回 readonly=true
 const healthLabel = ref('未检查')
 const statusText = ref('')
 const knowledgeCount = ref('-')
@@ -471,6 +477,7 @@ watch(() => lastResponse.value?.latencyMs, (target) => {
   if (typeof target === 'number' && target > 0) animateLatency(target)
 })
 onMounted(() => {
+  requestSession(settings).then((s) => { readonly.value = Boolean(s?.readonly) }).catch(() => {})
   refreshConsole()
   updateSidebarHeight()
   if (typeof ResizeObserver !== 'undefined') {

@@ -71,15 +71,16 @@
         <p v-if="lead.last_message" class="lead-quote">“{{ lead.last_message }}”</p>
 
         <footer class="lead-actions">
-          <select :value="lead.status" @change="save(lead, { status: $event.target.value })">
+          <select :value="lead.status" :disabled="readonly" @change="save(lead, { status: $event.target.value })">
             <option v-for="item in LEAD_STATUS" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
           <input
             v-model="notes[lead.id]"
+            :disabled="readonly"
             placeholder="跟进备注，例如：已加微信，约周四 20:00（北京时间）"
             @keydown.enter="save(lead, { notes: notes[lead.id] || '' })"
           />
-          <button class="quiet-button" @click="save(lead, { notes: notes[lead.id] || '' })">保存备注</button>
+          <button class="quiet-button" :disabled="readonly" :title="readonly ? '演示模式只读，这个操作只对站长开放' : ''" @click="save(lead, { notes: notes[lead.id] || '' })">保存备注</button>
         </footer>
       </article>
     </div>
@@ -104,7 +105,7 @@ import {
   label
 } from '../lib/labels'
 
-const props = defineProps({ settings: { type: Object, required: true } })
+const props = defineProps({ settings: { type: Object, required: true }, readonly: { type: Boolean, default: false } })
 const emit = defineEmits(['toast'])
 
 const leads = ref([])

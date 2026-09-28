@@ -29,6 +29,8 @@ services:
       GOEUROOPS_ADDRESS: ${GOEUROOPS_ADDRESS:-${SITE_ADDRESS}}
       STUDIO_USER: ${STUDIO_USER:-studio}
       STUDIO_PASSWORD_HASH: ${STUDIO_PASSWORD_HASH:?在 .env 里设置 STUDIO_PASSWORD_HASH，见 deploy/DEPLOY.md}
+      # 演示访客链接的口令（/studio?guest=<口令>），必须设置：为空时任何人都能进访客模式
+      GOEUROOPS_GUEST_KEY: ${GOEUROOPS_GUEST_KEY:?在 .env 里设置 GOEUROOPS_GUEST_KEY，例如 openssl rand -hex 16}
       # 同机个人主页的站长后台（/admin）；不用时留空即可
       OWNER_USER: ${OWNER_USER:-}
       OWNER_PASSWORD_HASH: ${OWNER_PASSWORD_HASH:-}
@@ -52,6 +54,8 @@ services:
     ports: !reset []
     environment:
       GOEUROOPS_DAILY_CHAT_LIMIT: ${GOEUROOPS_DAILY_CHAT_LIMIT:-200}
+      # 公开演示每天的模型费用上限（元），超出后当天的对话返回 429
+      GOEUROOPS_DAILY_COST_LIMIT: ${GOEUROOPS_DAILY_COST_LIMIT:-3}
       GOEUROOPS_EMBEDDING_PROVIDER: api
       GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:?在 .env 里设置 SILICONFLOW_API_KEY（向量 API）}
       CHROMA_HOST: ""

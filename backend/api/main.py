@@ -22,11 +22,15 @@ if _ROOT not in sys.path:
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
+
+from api.demo_guard import (
+    COST_LIMIT_MESSAGE, GUEST_READONLY_MESSAGE, cost_exceeded, cost_limit, guest_write_allowed, is_guest, mask_pii,
+)
 
 load_dotenv()
 
@@ -269,7 +273,22 @@ class RecentToolTracesResponse(BaseModel):
     items: List[Dict[str, Any]] = Field(default_factory=list)
 
 
+@app.middleware("http")
+async def _guest_guard(request: Request, call_next):
+    """演示访客只读：白名单以外的写操作直接拒绝（规则见 api/demo_guard.py）。"""
+    if is_guest(request.headers) and not guest_write_allowed(request.method, request.url.path):
+        return JSONResponse({"detail": GUEST_READONLY_MESSAGE}, status_code=403)
+    return await call_next(request)
+
+
 # ── 路由 ──────────────────────────────────────────────────────────────────────
+@app.get("/session")
+async def session_info(request: Request):
+    """当前访问者的身份：guest（演示只读）或 owner（站长）。前端据此显示提示、禁用写操作。"""
+    guest = is_guest(request.headers)
+    return {"role": "guest" if guest else "owner", "readonly": guest, "daily_cost_limit": cost_limit() or None}
+
+
 @app.get("/health")
 async def health():
     if _orchestrator is None:
@@ -304,7 +323,7 @@ class SkillMatchInput(BaseModel):
 
 
 @app.post("/skills/match", tags=["Skills"])
-async def match_skills(body: SkillMatchInput):
+async def match_skills(body: SkillMatchInput, request: Request):
     """
     命中测试（干跑）：给一句话，返回每个 Skill 的得分明细和最终会注入哪些。
 
@@ -314,6 +333,8 @@ async def match_skills(body: SkillMatchInput):
         raise HTTPException(503, "Skills 未初始化")
     intent, intent_group, intent_confidence = body.intent, None, None
     if intent is None and _orchestrator is not None:
+        if is_guest(request.headers):
+            await _check_quota()   # 现场意图识别要调用模型，访客的调用计入每日额度
         result = await _orchestrator.recognize_intent(body.message, history=body.history)
         intent, intent_group, intent_confidence = result.intent.value, result.intent_group, result.confidence
     report = _skill_manager.match_report(
@@ -369,11 +390,13 @@ class LeadUpdateInput(BaseModel):
 
 
 @app.get("/leads", tags=["线索"], dependencies=[Depends(_require_admin)])
-async def list_leads(status: Optional[str] = None, type: Optional[str] = None, limit: int = 100):
-    """咨询线索与转顾问交接单列表（按时间倒序）。"""
+async def list_leads(request: Request, status: Optional[str] = None, type: Optional[str] = None, limit: int = 100):
+    """咨询线索与转顾问交接单列表（按时间倒序）。演示访客看到的联系方式是打码的。"""
     if _lead_store is None:
         raise HTTPException(503, "线索库未初始化")
     items = await _lead_store.list(status=status, lead_type=type, limit=limit)
+    if is_guest(request.headers):
+        items = [mask_pii(item) for item in items]
     return {"items": items, "stats": await _lead_store.stats()}
 
 
@@ -453,6 +476,8 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
 
 
 async def _check_quota() -> None:
+    if await cost_exceeded():
+        raise HTTPException(429, COST_LIMIT_MESSAGE)
     if _quota is not None and not await _quota.consume():
         raise HTTPException(429, "今天的体验名额已经用完了，明天再来看看吧。")
 
@@ -542,11 +567,13 @@ async def monitor_summary():
 
 
 @app.get("/trace/tool/{request_id}", response_model=ToolTraceResponse)
-async def get_tool_trace(request_id: str):
+async def get_tool_trace(request_id: str, request: Request):
     """查看某次请求的工具调用明细。"""
     if _orchestrator is None:
         raise HTTPException(503, "服务未就绪")
     trace = _orchestrator.get_tool_trace(request_id)
+    if trace is not None and is_guest(request.headers):
+        trace = mask_pii(trace)
     return ToolTraceResponse(
         request_id=request_id,
         found=trace is not None,
@@ -555,11 +582,14 @@ async def get_tool_trace(request_id: str):
 
 
 @app.get("/trace/tools", response_model=RecentToolTracesResponse)
-async def list_recent_tool_traces(limit: int = 20):
+async def list_recent_tool_traces(request: Request, limit: int = 20):
     """查看最近 N 次请求的工具调用明细。"""
     if _orchestrator is None:
         raise HTTPException(503, "服务未就绪")
-    return RecentToolTracesResponse(items=_orchestrator.get_recent_tool_traces(limit=limit))
+    items = _orchestrator.get_recent_tool_traces(limit=limit)
+    if is_guest(request.headers):
+        items = mask_pii(items)
+    return RecentToolTracesResponse(items=items)
 
 
 @app.get("/metrics")
@@ -569,13 +599,15 @@ async def prometheus_metrics():
 
 
 @app.post("/search")
-async def search(query: str, top_k: int = 5, domain: Optional[str] = None):
+async def search(request: Request, query: str, top_k: int = 5, domain: Optional[str] = None):
     """
     演示检索优化链路：查询改写 → 并行召回 → 去重 → 相关性重排/过滤 → Top-K。
     展示 MCP 工具调用的核心亮点。domain 可选，用于验证按 Agent 领域隔离检索的效果。
     """
     if _tool_manager is None:
         raise HTTPException(503, "服务未就绪")
+    if is_guest(request.headers):
+        await _check_quota()   # 查询改写要调用模型，访客的调用计入每日额度
     result = await _tool_manager.search_with_rewrite("knowledge_search", query, top_k=top_k, domain=domain)
     return {"query": query, "results": result.data, "reranked": result.reranked, "success": result.success, "error": result.error}
 

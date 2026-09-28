@@ -10,7 +10,7 @@
       </div>
       <div class="heading-actions">
         <button class="quiet-button" @click="runEvals" :disabled="busy">运行命中回归</button>
-        <button @click="reload" :disabled="busy">重新加载</button>
+        <button @click="reload" :disabled="readonly || busy" :title="readonly ? '演示模式只读，这个操作只对站长开放' : ''">重新加载</button>
       </div>
     </div>
 
@@ -112,7 +112,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { matchSkills, reloadSkills, requestSkillDetail, requestSkills, runSkillEvals } from '../lib/backends'
 import { AGENT_LABELS, INTENT_LABELS, formatTime, label } from '../lib/labels'
 
-const props = defineProps({ settings: { type: Object, required: true } })
+const props = defineProps({ settings: { type: Object, required: true }, readonly: { type: Boolean, default: false } })
 const emit = defineEmits(['toast'])
 
 const STATUS_TEXT = {

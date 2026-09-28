@@ -6,8 +6,9 @@
 
 | 风险 | 保护 |
 |---|---|
-| 有人反复调用对话接口，消耗模型 API 额度 | 每个 IP 每分钟最多 6 次（nginx）；全站每天最多 `GOEUROOPS_DAILY_CHAT_LIMIT` 次（默认 200，按北京时间重置） |
+| 有人反复调用对话接口，消耗模型 API 额度 | 每个 IP 每分钟最多 6 次（nginx）；全站每天最多 `GOEUROOPS_DAILY_CHAT_LIMIT` 次（默认 200）；当天模型费用估算超过 `GOEUROOPS_DAILY_COST_LIMIT` 元（默认 3）后停止对话，均按北京时间重置 |
 | 后台、评测、知识库写入被任意访问 | 除学生端首页、对话和价目接口外，全部要口令（Caddy basic auth） |
+| 面试官没有口令，看不到后台 | 演示访客链接 `/studio?guest=<GOEUROOPS_GUEST_KEY>`：写入 30 天 Cookie，只读浏览后台；写操作 403，线索和 trace 里的联系方式打码；访客的 Skill 命中测试和检索计入每日额度（`backend/api/demo_guard.py`）。换口令即可让旧链接失效 |
 | 后端端口被直接访问 | 只有 Caddy 对外开放 80/443，后端和前端容器不暴露端口 |
 
 ## 服务器要求
@@ -55,6 +56,9 @@ STUDIO_USER=studio
 # 第 3 步的输出；必须用单引号，否则哈希里的 $ 会被 compose 当成变量
 STUDIO_PASSWORD_HASH='$2a$14$...'
 GOEUROOPS_DAILY_CHAT_LIMIT=200
+GOEUROOPS_DAILY_COST_LIMIT=3
+# 演示访客链接的口令：openssl rand -hex 16
+GOEUROOPS_GUEST_KEY=...
 # 向量 API（硅基流动）：生产环境不在本机跑向量模型，省内存
 SILICONFLOW_API_KEY=你的硅基流动 key
 EOF
