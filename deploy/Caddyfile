@@ -35,9 +35,11 @@
 
 		# 演示访客（面试官等）：打开 /studio?guest=<口令> 写入 30 天 Cookie，之后免密码只读访问后台。
 		# 只读和打码由后端按 X-Studio-Role 执行（backend/api/demo_guard.py）。
+		# 口令为空或太短时整个访客通道失效（例如容器没重建、没拿到 GOEUROOPS_GUEST_KEY 环境变量）
 		@guest_enter {
 			path /studio /studio/
 			query guest={$GOEUROOPS_GUEST_KEY}
+			expression `size("{$GOEUROOPS_GUEST_KEY}") >= 16`
 		}
 		handle @guest_enter {
 			header Set-Cookie "goe_guest={$GOEUROOPS_GUEST_KEY}; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=Lax"
@@ -47,6 +49,7 @@
 		# 带访客 Cookie、且没有走站长密码登录的请求标记为访客
 		@guest {
 			header_regexp guest Cookie (^|;\s*)goe_guest={$GOEUROOPS_GUEST_KEY}(;|$)
+			expression `size("{$GOEUROOPS_GUEST_KEY}") >= 16`
 			not header Authorization *
 		}
 		request_header @guest X-Studio-Role guest
