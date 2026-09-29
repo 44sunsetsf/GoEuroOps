@@ -501,19 +501,22 @@ class BaseAgent:
             f"输出要求：{'；'.join(self.profile.output_contract)}\n"
             f"升级条件：{'；'.join(self.profile.handoff_conditions) or '无，按通用接待规则处理'}\n"
             f"允许的数据/工具范围：{'、'.join(self.profile.tool_scope) or '仅使用当前请求上下文'}\n"
-            "不要声称执行了未提供的查询、修改或退款操作；缺少证据时明确说明需要核验。\n"
-            "回答语言与用户最近一条消息一致：用户用英文提问就用英文回答，用中文就用中文；院校、服务名等专有名词可保留原文。"
+            "不要声称执行了未提供的查询、修改或退款操作；缺少证据时明确说明需要核验。"
         )
-        base_prompt = f"{self.system_prompt}{profile_prompt}"
-        if self._skill_manager is None:
-            return base_prompt
-        if selection is not None:
-            skill_prompt = selection.prompt
-        else:
-            skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
-        if not skill_prompt:
-            return base_prompt
-        return f"{base_prompt}\n\n[动态 Skills]\n{skill_prompt}"
+        prompt = f"{self.system_prompt}{profile_prompt}"
+        if self._skill_manager is not None:
+            if selection is not None:
+                skill_prompt = selection.prompt
+            else:
+                skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
+            if skill_prompt:
+                prompt = f"{prompt}\n\n[动态 Skills]\n{skill_prompt}"
+        # 放在最后：参考资料和 Skills 都是中文，语言要求写在前面会被淹没
+        return (
+            f"{prompt}\n\n[回答语言]\n"
+            "看用户最近一条消息：用英文提问就必须整段用英文回答（含标题和要点），即使参考资料是中文，"
+            "并把资料内容翻译成英文；用中文提问就用中文。院校名、服务名可保留原文。"
+        )
 
     def _build_role_packet(self, req: Request) -> str:
         """给子 Agent 的确定性输入包；子类可补充领域字段。"""
