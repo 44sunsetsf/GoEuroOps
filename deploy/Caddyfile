@@ -33,6 +33,20 @@
 		# 访客身份只能由这里加上：先删掉外部请求自带的同名请求头，防止伪造
 		request_header -X-Studio-Role
 
+		# 站长入口 /studio/owner：无论浏览器带没带访客 Cookie，都要求输入密码；通过后清掉访客 Cookie 再进后台。
+		# 不这样的话，带着访客 Cookie 的浏览器访问 /studio 会直接以访客身份进入，永远不会弹出密码框。
+		@owner_enter path /studio/owner /studio/owner/
+		# handle 里的指令会被 Caddy 重排（redir 排在 basic_auth 前面，密码就被跳过了），所以要再包一层 route 保持书写顺序
+		handle @owner_enter {
+			route {
+				basic_auth {
+					{$STUDIO_USER} {$STUDIO_PASSWORD_HASH}
+				}
+				header Set-Cookie "goe_guest=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"
+				redir * /studio 302
+			}
+		}
+
 		# 演示访客（面试官等）：打开 /studio?guest=<口令> 写入 30 天 Cookie，之后免密码只读访问后台。
 		# 只读和打码由后端按 X-Studio-Role 执行（backend/api/demo_guard.py）。
 		# 口令为空或太短时整个访客通道失效（例如容器没重建、没拿到 GOEUROOPS_GUEST_KEY 环境变量）

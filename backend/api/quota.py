@@ -13,8 +13,10 @@ _TZ = timezone(timedelta(hours=8))
 
 
 class DailyQuota:
-    def __init__(self, limit: int, redis_url: Optional[str] = None, redis_client: Any = None):
+    def __init__(self, limit: int, redis_url: Optional[str] = None, redis_client: Any = None,
+                 key_prefix: str = _KEY_PREFIX):
         self.limit = max(0, limit)
+        self._key_prefix = key_prefix
         self._redis = redis_client
         if self._redis is None and redis_url:
             try:
@@ -35,7 +37,7 @@ class DailyQuota:
         day = self._today(now)
         if self._redis is not None:
             try:
-                key = _KEY_PREFIX + day
+                key = self._key_prefix + day
                 count = await self._redis.incr(key)
                 if count == 1:
                     await self._redis.expire(key, 2 * 86400)

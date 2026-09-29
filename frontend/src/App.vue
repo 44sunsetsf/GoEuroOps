@@ -1,5 +1,5 @@
 <template>
-  <main :class="['app-shell', `app-shell-${activeView}`, { 'app-shell-scroll': activeView !== 'chat' }]">
+  <main :class="['app-shell', `app-shell-${activeView}`, { 'app-shell-scroll': activeView !== 'chat', 'app-shell-demo': readonly }]">
     <header class="topbar">
       <a class="brand" href="#" aria-label="后台首页" @click.prevent="activeView = 'chat'">
         <span class="brand-mark">北</span>
@@ -30,7 +30,8 @@
     </header>
 
     <div v-if="readonly" class="demo-banner" role="note">
-      演示模式 · 只读：可以试对话、看线索（联系方式已打码）、Skills、知识库检索、监控和评测结果；写入知识库、修改线索和运行评测只对站长开放。
+      <span>演示模式 · 只读：可以试对话、看线索（联系方式已打码）、Skills、知识库检索，也可以运行内置评测；写入知识库、修改线索、重载 Skills 只对站长开放。</span>
+      <a href="/studio/owner">站长登录</a>
     </div>
 
     <div v-if="toast" class="toast" role="status">{{ toast }}</div>
@@ -315,10 +316,10 @@
         </div>
         <div class="heading-actions">
           <label class="toggle">
-            <input type="checkbox" v-model="compareRagGate" />
+            <input type="checkbox" v-model="compareRagGate" :disabled="readonly" />
             <span>RAG 门控对照实验（多调用一轮 LLM）</span>
           </label>
-          <button @click="runEvaluation" :disabled="readonly || busy" :title="readonly ? '演示模式只读：运行评测会大量调用模型，只对站长开放' : ''">{{ busy ? '运行中...' : '运行评测' }}</button>
+          <button @click="runEvaluation" :disabled="busy" :title="readonly ? '演示模式：只跑内置用例，每天次数有限，不会覆盖站长的评测基线' : ''">{{ busy ? '运行中...' : '运行评测' }}</button>
         </div>
       </div>
 
@@ -713,7 +714,8 @@ async function runEvaluation() {
     showToast('评测完成')
   } catch (error) {
     statusText.value = error.message
-    showToast('评测运行失败')
+    const limited = /429/.test(error.message) ? error.message.match(/"detail":"([^"]+)"/)?.[1] : ''
+    showToast(limited || '评测运行失败')
   } finally { busy.value = false }
 }
 

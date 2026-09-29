@@ -29,3 +29,23 @@ def test_falls_back_to_memory_when_redis_fails():
     quota = DailyQuota(limit=1, redis_client=Broken())
     assert asyncio.run(quota.consume()) is True
     assert asyncio.run(quota.consume()) is False
+
+
+def test_separate_key_prefix_counts_separately():
+    class FakeRedis:
+        def __init__(self):
+            self.keys = {}
+
+        async def incr(self, key):
+            self.keys[key] = self.keys.get(key, 0) + 1
+            return self.keys[key]
+
+        async def expire(self, key, ttl):
+            pass
+
+    r = FakeRedis()
+    chat = DailyQuota(limit=5, redis_client=r)
+    evals = DailyQuota(limit=5, redis_client=r, key_prefix="goeuroops:quota:guest_eval:")
+    asyncio.run(chat.consume())
+    asyncio.run(evals.consume())
+    assert sorted(k.rsplit(":", 1)[0] for k in r.keys) == ["goeuroops:quota:chat", "goeuroops:quota:guest_eval"]

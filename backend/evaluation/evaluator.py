@@ -277,6 +277,7 @@ class EndToEndEvaluator:
         dialog_cases:    Optional[List[Dict[str, Any]]] = None,
         include_skill_evals: bool = True,
         compare_rag_gate: bool = False,
+        save_baseline: bool = True,
     ) -> EvalReport:
         """
         运行完整评测。
@@ -379,7 +380,8 @@ class EndToEndEvaluator:
             results=results,
         )
         self._history.append(report)
-        self._save_baseline(report)
+        if save_baseline:
+            self._save_baseline(report)
         return report
 
     async def _evaluate_dialog_case(self, case: Dict[str, Any], case_idx: int) -> List[EvalResult]:

@@ -58,6 +58,8 @@ _evaluator    = None
 _skill_manager = None
 _lead_store   = None
 _quota        = None
+_guest_eval_quota = None
+_guest_eval_lock  = asyncio.Lock()
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -76,6 +78,7 @@ def _anthropic_cfg() -> Dict[str, Any]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _lead_store, _quota
+    global _guest_eval_quota
 
     print(BANNER, flush=True)
 
@@ -119,6 +122,13 @@ async def lifespan(app: FastAPI):
     _quota = DailyQuota(
         limit=int(os.getenv("GOEUROOPS_DAILY_CHAT_LIMIT", "0") or 0),
         redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
+    )
+
+    # 演示访客每天可运行内置评测的次数（GOEUROOPS_GUEST_EVAL_LIMIT，默认 5）
+    _guest_eval_quota = DailyQuota(
+        limit=int(os.getenv("GOEUROOPS_GUEST_EVAL_LIMIT", "5") or 0),
+        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        key_prefix="goeuroops:quota:guest_eval:",
     )
 
     # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
@@ -745,10 +755,26 @@ async def knowledge_stats():
 
 
 @app.post("/eval/run")
-async def run_eval(body: Optional[EvalRunInput] = None):
-    """运行内置评测用例，返回评测报告。"""
+async def run_eval(request: Request, body: Optional[EvalRunInput] = None):
+    """运行内置评测用例，返回评测报告。
+
+    演示访客也能运行，但只跑内置用例、不做 RAG 对照、不覆盖站长的基线，每天有次数上限，同一时间只跑一个。
+    """
     if _evaluator is None:
         raise HTTPException(503, "服务未就绪")
+    if is_guest(request.headers):
+        if await cost_exceeded():
+            raise HTTPException(429, COST_LIMIT_MESSAGE)
+        if _guest_eval_lock.locked():
+            raise HTTPException(429, "已经有一个评测在运行，请一两分钟后再试。")
+        if _guest_eval_quota is not None and not await _guest_eval_quota.consume():
+            raise HTTPException(429, "今天演示模式的评测次数已经用完了，明天再来看看吧。")
+        async with _guest_eval_lock:
+            return await _run_eval(None, save_baseline=False)
+    return await _run_eval(body)
+
+
+async def _run_eval(body: Optional[EvalRunInput], save_baseline: bool = True) -> Dict[str, Any]:
     from evaluation.evaluator import DEFAULT_DIALOG_CASES, DEFAULT_INTENT_CASES, IntentTestCase
 
     if body and body.intent_cases is not None:
@@ -776,6 +802,7 @@ async def run_eval(body: Optional[EvalRunInput] = None):
         dialog_cases=dialog_cases,
         include_skill_evals=body.include_skill_evals if body else True,
         compare_rag_gate=body.compare_rag_gate if body else False,
+        save_baseline=save_baseline,
     )
     return {
         "pass_rate":       report.pass_rate,

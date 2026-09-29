@@ -8,7 +8,7 @@
 |---|---|
 | 有人反复调用对话接口，消耗模型 API 额度 | 每个 IP 每分钟最多 6 次（nginx）；全站每天最多 `GOEUROOPS_DAILY_CHAT_LIMIT` 次（默认 200）；当天模型费用估算超过 `GOEUROOPS_DAILY_COST_LIMIT` 元（默认 3）后停止对话，均按北京时间重置 |
 | 后台、评测、知识库写入被任意访问 | 除学生端首页、对话和价目接口外，全部要口令（Caddy basic auth） |
-| 面试官没有口令，看不到后台 | 演示访客链接 `/studio?guest=<GOEUROOPS_GUEST_KEY>`：写入 30 天 Cookie，只读浏览后台；写操作 403，线索和 trace 里的联系方式打码；访客的 Skill 命中测试和检索计入每日额度（`backend/api/demo_guard.py`）。换口令即可让旧链接失效 |
+| 面试官没有口令，看不到后台 | 演示访客链接 `/studio?guest=<GOEUROOPS_GUEST_KEY>`：写入 30 天 Cookie，只读浏览后台；写操作 403，线索和 trace 里的联系方式打码；访客的 Skill 命中测试和检索计入每日额度（`backend/api/demo_guard.py`）。换口令即可让旧链接失效；访客也能运行内置评测（只跑内置用例、每天 `GOEUROOPS_GUEST_EVAL_LIMIT` 次（默认 5）、同时只跑一个、不覆盖站长的基线）。站长入口是 `/studio/owner`：无论浏览器有没有访客 Cookie 都要求输入密码，通过后清掉访客 Cookie |
 | 后端端口被直接访问 | 只有 Caddy 对外开放 80/443，后端和前端容器不暴露端口 |
 
 ## 服务器要求
