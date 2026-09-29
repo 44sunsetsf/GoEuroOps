@@ -501,7 +501,8 @@ class BaseAgent:
             f"输出要求：{'；'.join(self.profile.output_contract)}\n"
             f"升级条件：{'；'.join(self.profile.handoff_conditions) or '无，按通用接待规则处理'}\n"
             f"允许的数据/工具范围：{'、'.join(self.profile.tool_scope) or '仅使用当前请求上下文'}\n"
-            "不要声称执行了未提供的查询、修改或退款操作；缺少证据时明确说明需要核验。"
+            "不要声称执行了未提供的查询、修改或退款操作；缺少证据时明确说明需要核验。\n"
+            "回答语言与用户最近一条消息一致：用户用英文提问就用英文回答，用中文就用中文；院校、服务名等专有名词可保留原文。"
         )
         base_prompt = f"{self.system_prompt}{profile_prompt}"
         if self._skill_manager is None:

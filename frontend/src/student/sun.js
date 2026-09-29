@@ -1,6 +1,8 @@
 // Sun position and sky colour for Stockholm, where the studio is based.
 // Low-precision solar formulas (good to ~0.5°), plenty for painting a sky.
 
+import { t } from '../lib/i18n.js'
+
 export const STOCKHOLM = { lat: 59.3293, lon: 18.0686, tz: 'Europe/Stockholm' }
 
 const RAD = Math.PI / 180
@@ -62,10 +64,10 @@ export function dayLight(y, m, d) {
 }
 
 export function phaseOf(elevation) {
-  if (elevation >= 6) return '白昼'
-  if (elevation >= -4) return '金色时刻'
-  if (elevation >= -8) return '蓝调时刻'
-  return '夜晚'
+  if (elevation >= 6) return t('白昼')
+  if (elevation >= -4) return t('金色时刻')
+  if (elevation >= -8) return t('蓝调时刻')
+  return t('夜晚')
 }
 
 // ── Sky palette, keyed by solar elevation ─────────────────────────────────

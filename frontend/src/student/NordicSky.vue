@@ -75,25 +75,26 @@
 
     <div class="sky-clock" aria-live="polite">
       <div class="clock-read">
-        <strong>斯德哥尔摩 {{ clock }}</strong>
+        <strong>{{ t('斯德哥尔摩') }} {{ clock }}</strong>
         <span>{{ phase }}</span>
       </div>
       <p class="clock-note">{{ caption }}</p>
       <div class="clock-controls">
-        <div class="clock-modes" role="group" aria-label="选择日子">
-          <button v-for="m in MODES" :key="m.id" type="button" :aria-pressed="mode === m.id" @click="setMode(m.id)">{{ m.label }}</button>
+        <div class="clock-modes" role="group" :aria-label="t('选择日子')">
+          <button v-for="m in MODES" :key="m.id" type="button" :aria-pressed="mode === m.id" @click="setMode(m.id)">{{ t(m.label) }}</button>
         </div>
         <label class="clock-slider">
-          <span class="visually-hidden">拖动查看一天里的光线</span>
+          <span class="visually-hidden">{{ t('拖动查看一天里的光线') }}</span>
           <input type="range" min="0" max="1439" step="1" :value="Math.round(minutes)" @input="scrub(+$event.target.value)" />
         </label>
-        <button v-if="mode === 'today' && frozen" type="button" class="clock-reset" @click="resume">回到此刻</button>
+        <button v-if="mode === 'today' && frozen" type="button" class="clock-reset" @click="resume">{{ t('回到此刻') }}</button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { t } from '../lib/i18n.js'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { dayLight, formatClock, lightLevel, mix, phaseOf, skyColors, stockholmDate, stockholmParts, sunPosition } from './sun'
 
@@ -155,14 +156,14 @@ const clock = computed(() => formatClock(minutes.value))
 const phase = computed(() => phaseOf(position.value.elevation))
 const caption = computed(() => {
   const { sunrise, sunset, daylight } = sun.value
-  const hours = daylight ? `${Math.floor(daylight / 60)} 小时 ${daylight % 60} 分` : ''
+  const hours = daylight ? t('{h} 小时 {m} 分', { h: Math.floor(daylight / 60), m: daylight % 60 }) : ''
   if (mode.value === 'midsummer') {
-    return `夏至这天，太阳 ${formatClock(sunset)} 才落下，${formatClock(sunrise)} 又升起来。午夜的天空只是一层淡蓝。`
+    return t('夏至这天，太阳 {set} 才落下，{rise} 又升起来。午夜的天空只是一层淡蓝。', { set: formatClock(sunset), rise: formatClock(sunrise) })
   }
   if (mode.value === 'midwinter') {
-    return `冬至这天，日照只有 ${hours}，下午 ${Math.floor(sunset / 60) - 12} 点多天就黑了。瑞典人用蜡烛和 fika 过冬。`
+    return t('冬至这天，日照只有 {hours}，下午 {pm} 点多天就黑了。瑞典人用蜡烛和 fika 过冬。', { hours, pm: Math.floor(sunset / 60) - 12 })
   }
-  return `今天日出 ${formatClock(sunrise)}，日落 ${formatClock(sunset)}，日照 ${hours}。`
+  return t('今天日出 {rise}，日落 {set}，日照 {hours}。', { rise: formatClock(sunrise), set: formatClock(sunset), hours })
 })
 
 function animateTo(target) {

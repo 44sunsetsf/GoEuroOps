@@ -1,3 +1,5 @@
+import { t } from './i18n.js'
+
 const DEFAULT_BASE_URL = runtimeConfig().apiUrl || import.meta.env.VITE_API_URL || '/api'
 
 export function createInitialSettings() {
@@ -123,7 +125,7 @@ export async function streamChat(settings, message, { onToken, onDone, onError }
       } else if (parsed.event === 'done') {
         await onDone?.(normalizeChatResponse(parsed.data))
       } else if (parsed.event === 'error') {
-        await onError?.(new Error(parsed.data?.message || '流式请求失败'))
+        await onError?.(new Error(parsed.data?.message || t('流式请求失败')))
       }
     }
   }

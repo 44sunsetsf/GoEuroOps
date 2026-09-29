@@ -4,45 +4,45 @@
       <aside class="chat-panel" role="dialog" aria-modal="true" aria-labelledby="chat-title" @keydown.esc="$emit('close')">
         <header class="chat-head">
           <div>
-            <h2 id="chat-title">问问指北</h2>
-            <p>AI 助手先回答。涉及个人选校、文书和录取判断，会交给在瑞典的顾问。</p>
+            <h2 id="chat-title">{{ t('问问指北') }}</h2>
+            <p>{{ t('AI 助手先回答。涉及个人选校、文书和录取判断，会交给在瑞典的顾问。') }}</p>
           </div>
-          <button type="button" class="chat-close" aria-label="关闭对话" @click="$emit('close')">
+          <button type="button" class="chat-close" :aria-label="t('关闭对话')" @click="$emit('close')">
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
           </button>
         </header>
 
         <div ref="list" class="chat-list">
           <div v-if="!messages.length" class="chat-welcome">
-            <p>你好，我是指北的 AI 助手。可以问我五国的申请时间、语言要求、学费，也可以了解我们的服务和价格。</p>
+            <p>{{ t('你好，我是指北的 AI 助手。可以问我五国的申请时间、语言要求、学费，也可以了解我们的服务和价格。') }}</p>
             <div class="chat-starters">
-              <button v-for="q in STARTERS" :key="q" type="button" @click="send(q)">{{ q }}</button>
+              <button v-for="q in STARTERS" :key="q" type="button" @click="send(t(q))">{{ t(q) }}</button>
             </div>
           </div>
 
           <article v-for="m in messages" :key="m.id" :class="['bubble', m.role]">
-            <div v-if="m.role === 'assistant' && m.pending && !m.content" class="bubble-wait" aria-label="正在回答">
+            <div v-if="m.role === 'assistant' && m.pending && !m.content" class="bubble-wait" :aria-label="t('正在回答')">
               <span></span><span></span><span></span>
             </div>
             <div v-else-if="m.role === 'assistant'" class="bubble-md" v-html="renderMarkdown(m.content)"></div>
             <p v-else>{{ m.content }}</p>
-            <p v-if="m.handoff" class="bubble-note">已转给顾问，工作日 24 小时内会联系你。</p>
+            <p v-if="m.handoff" class="bubble-note">{{ t('已转给顾问，工作日 24 小时内会联系你。') }}</p>
             <p v-if="m.failed" class="bubble-note is-error">{{ m.failed }}</p>
           </article>
         </div>
 
         <form class="chat-compose" @submit.prevent="send()">
-          <label class="visually-hidden" for="chat-input">输入你的问题</label>
+          <label class="visually-hidden" for="chat-input">{{ t('输入你的问题') }}</label>
           <textarea
             id="chat-input"
             ref="input"
             v-model="draft"
             rows="1"
-            placeholder="比如：我想申请 KTH，需要准备什么？"
+            :placeholder="t('比如：我想申请 KTH，需要准备什么？')"
             @keydown.enter.exact.prevent="send()"
             @input="grow"
           ></textarea>
-          <button type="submit" :disabled="busy || !draft.trim()">发送</button>
+          <button type="submit" :disabled="busy || !draft.trim()">{{ t('发送') }}</button>
         </form>
       </aside>
     </div>
@@ -50,6 +50,7 @@
 </template>
 
 <script setup>
+import { t } from '../lib/i18n.js'
 import { nextTick, reactive, ref, watch } from 'vue'
 import { streamChat } from '../lib/backends'
 import { renderMarkdown } from '../lib/markdown'
@@ -91,9 +92,9 @@ function persist() {
 
 function failureText(error) {
   const message = String(error?.message || '')
-  if (message.includes('名额')) return '今天的体验名额已经用完了，明天再来看看吧。'
-  if (message.startsWith('429')) return '发得有点快了，歇一分钟再问吧。'
-  return '没有连上指北的服务。检查网络后再发一次试试。'
+  if (message.includes('名额')) return t('今天的体验名额已经用完了，明天再来看看吧。')
+  if (message.startsWith('429')) return t('发得有点快了，歇一分钟再问吧。')
+  return t('没有连上指北的服务。检查网络后再发一次试试。')
 }
 
 function grow() {

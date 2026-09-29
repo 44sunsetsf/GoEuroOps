@@ -2,11 +2,11 @@
   <section class="page page-scroll page-leads">
     <div class="page-heading">
       <div class="heading-copy">
-        <h1>线索</h1>
-        <p>助手在对话里登记的咨询线索（用户同意后才会登记）和转顾问交接单。顾问在这里跟进状态、写备注。</p>
+        <h1>{{ t('线索') }}</h1>
+        <p>{{ t('助手在对话里登记的咨询线索（用户同意后才会登记）和转顾问交接单。顾问在这里跟进状态、写备注。') }}</p>
       </div>
       <div class="heading-actions">
-        <button class="quiet-button" @click="load" :disabled="loading">{{ loading ? '加载中' : '刷新' }}</button>
+        <button class="quiet-button" @click="load" :disabled="loading">{{ loading ? t('加载中') : t('刷新') }}</button>
       </div>
     </div>
 
@@ -18,26 +18,26 @@
         @click="setStatus(item.value)"
       >
         <strong>{{ item.count }}</strong>
-        <span>{{ item.label }}</span>
+        <span>{{ t(item.label) }}</span>
       </button>
       <div class="stat-tile stat-tile-static">
         <strong>{{ stats.by_type?.handoff ?? 0 }}</strong>
-        <span>转顾问单</span>
+        <span>{{ t('转顾问单') }}</span>
       </div>
     </div>
 
     <div class="toolbar-line">
       <div class="segmented">
-        <button :class="{ active: filters.type === '' }" @click="setType('')">全部</button>
-        <button :class="{ active: filters.type === 'lead' }" @click="setType('lead')">咨询线索</button>
-        <button :class="{ active: filters.type === 'handoff' }" @click="setType('handoff')">转顾问</button>
+        <button :class="{ active: filters.type === '' }" @click="setType('')">{{ t('全部') }}</button>
+        <button :class="{ active: filters.type === 'lead' }" @click="setType('lead')">{{ t('咨询线索') }}</button>
+        <button :class="{ active: filters.type === 'handoff' }" @click="setType('handoff')">{{ t('转顾问') }}</button>
       </div>
-      <span class="toolbar-note">存储：{{ stats.backend === 'redis' ? 'Redis（持久化）' : stats.backend === 'memory' ? '内存（Redis 不可用，重启会丢失）' : '-' }}</span>
+      <span class="toolbar-note">{{ t('存储：') }}{{ stats.backend === 'redis' ? t('Redis（持久化）') : stats.backend === 'memory' ? t('内存（Redis 不可用，重启会丢失）') : '-' }}</span>
     </div>
 
     <div v-if="error" class="inline-error">
       {{ error }}
-      <span v-if="error.includes('401')">请在「对话」页右侧的连接配置里填写 Admin Token。</span>
+      <span v-if="error.includes('401')">{{ t('请在「对话」页右侧的连接配置里填写 Admin Token。') }}</span>
     </div>
 
     <div v-if="leads.length" class="lead-list">
@@ -45,7 +45,7 @@
         <header class="lead-head">
           <div class="lead-title">
             <span :class="['type-badge', lead.type]">{{ label(LEAD_TYPE_LABELS, lead.type) }}</span>
-            <strong>{{ lead.name || lead.user_id || '未留称呼' }}</strong>
+            <strong>{{ lead.name || lead.user_id || t('未留称呼') }}</strong>
             <code>{{ lead.id }}</code>
           </div>
           <span class="lead-time">{{ formatTime(lead.created_at) }}</span>
@@ -56,43 +56,44 @@
             <dt>{{ label(CHANNEL_LABELS, lead.contact_channel) }}</dt>
             <dd>
               <span class="mono">{{ revealed[lead.id] ? lead.contact : mask(lead.contact) }}</span>
-              <button class="link-button tiny" @click="toggleReveal(lead.id)">{{ revealed[lead.id] ? '隐藏' : '显示' }}</button>
+              <button class="link-button tiny" @click="toggleReveal(lead.id)">{{ revealed[lead.id] ? t('隐藏') : t('显示') }}</button>
             </dd>
           </div>
-          <div v-if="lead.countries?.length"><dt>目标国家</dt><dd>{{ lead.countries.join('、') }}</dd></div>
-          <div v-if="lead.stage"><dt>阶段</dt><dd>{{ label(STAGE_LABELS, lead.stage) }}</dd></div>
-          <div v-if="lead.target_intake"><dt>入学</dt><dd>{{ lead.target_intake }}</dd></div>
-          <div v-if="lead.interested_services?.length"><dt>意向服务</dt><dd>{{ lead.interested_services.join('、') }}</dd></div>
-          <div v-if="lead.preferred_time"><dt>方便时间</dt><dd>{{ lead.preferred_time }}</dd></div>
-          <div v-if="lead.reason"><dt>转交原因</dt><dd>{{ lead.reason }}</dd></div>
-          <div v-if="lead.intent"><dt>意图</dt><dd>{{ label(INTENT_LABELS, lead.intent) }}</dd></div>
+          <div v-if="lead.countries?.length"><dt>{{ t('目标国家') }}</dt><dd>{{ lead.countries.join('、') }}</dd></div>
+          <div v-if="lead.stage"><dt>{{ t('阶段') }}</dt><dd>{{ label(STAGE_LABELS, lead.stage) }}</dd></div>
+          <div v-if="lead.target_intake"><dt>{{ t('入学') }}</dt><dd>{{ lead.target_intake }}</dd></div>
+          <div v-if="lead.interested_services?.length"><dt>{{ t('意向服务') }}</dt><dd>{{ lead.interested_services.join('、') }}</dd></div>
+          <div v-if="lead.preferred_time"><dt>{{ t('方便时间') }}</dt><dd>{{ lead.preferred_time }}</dd></div>
+          <div v-if="lead.reason"><dt>{{ t('转交原因') }}</dt><dd>{{ lead.reason }}</dd></div>
+          <div v-if="lead.intent"><dt>{{ t('意图') }}</dt><dd>{{ label(INTENT_LABELS, lead.intent) }}</dd></div>
         </dl>
         <p v-if="lead.background" class="lead-quote">{{ lead.background }}</p>
         <p v-if="lead.last_message" class="lead-quote">“{{ lead.last_message }}”</p>
 
         <footer class="lead-actions">
           <select :value="lead.status" :disabled="readonly" @change="save(lead, { status: $event.target.value })">
-            <option v-for="item in LEAD_STATUS" :key="item.value" :value="item.value">{{ item.label }}</option>
+            <option v-for="item in LEAD_STATUS" :key="item.value" :value="item.value">{{ t(item.label) }}</option>
           </select>
           <input
             v-model="notes[lead.id]"
             :disabled="readonly"
-            placeholder="跟进备注，例如：已加微信，约周四 20:00（北京时间）"
+            :placeholder="t('跟进备注，例如：已加微信，约周四 20:00（北京时间）')"
             @keydown.enter="save(lead, { notes: notes[lead.id] || '' })"
           />
-          <button class="quiet-button" :disabled="readonly" :title="readonly ? '演示模式只读，这个操作只对站长开放' : ''" @click="save(lead, { notes: notes[lead.id] || '' })">保存备注</button>
+          <button class="quiet-button" :disabled="readonly" :title="readonly ? t('演示模式只读，这个操作只对站长开放') : ''" @click="save(lead, { notes: notes[lead.id] || '' })">{{ t('保存备注') }}</button>
         </footer>
       </article>
     </div>
     <div v-else-if="!loading && !error" class="evaluation-empty">
       <div class="empty-symbol">◇</div>
-      <h2>暂时没有线索</h2>
-      <p>在对话里说"我想预约，微信是 xxx"，助手征得同意后会登记到这里。</p>
+      <h2>{{ t('暂时没有线索') }}</h2>
+      <p>{{ t('在对话里说"我想预约，微信是 xxx"，助手征得同意后会登记到这里。') }}</p>
     </div>
   </section>
 </template>
 
 <script setup>
+import { t } from '../lib/i18n.js'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { requestLeads, updateLead } from '../lib/backends'
 import {
@@ -117,7 +118,7 @@ const loading = ref(false)
 const error = ref('')
 
 const statusTabs = computed(() => [
-  { value: '', label: '全部', count: stats.value.total ?? 0 },
+  { value: '', label: t('全部'), count: stats.value.total ?? 0 },
   ...LEAD_STATUS.map((item) => ({ ...item, count: stats.value.by_status?.[item.value] ?? 0 }))
 ])
 
@@ -158,10 +159,10 @@ async function save(lead, patch) {
   try {
     const updated = await updateLead(props.settings, lead.id, patch)
     Object.assign(lead, updated)
-    emit('toast', '已保存')
+    emit('toast', t('已保存'))
     if (patch.status) load()
   } catch (err) {
-    emit('toast', `保存失败：${err.message}`)
+    emit('toast', t('保存失败：{m}', { m: err.message }))
   }
 }
 </script>

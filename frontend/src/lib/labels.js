@@ -1,4 +1,5 @@
-// 后端枚举值 → 界面文案
+// 后端枚举值 → 界面文案（值是中文，label() 取值时按当前语言翻译）
+import { lang, t } from './i18n.js'
 
 export const AGENT_LABELS = {
   general: '前台接待',
@@ -70,17 +71,17 @@ export const CATEGORY_LABELS = {
 }
 
 export function label(map, value) {
-  return map[value] || value || '-'
+  return t(map[value] || value || '-')
 }
 
 export function formatTime(iso) {
   if (!iso) return '-'
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleString(lang.value === 'zh' ? 'zh-CN' : 'en-GB', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 export function money(value) {
   const number = Number(value || 0)
-  return number === 0 ? '免费' : `¥${number.toLocaleString('zh-CN')}`
+  return number === 0 ? t('免费') : `¥${number.toLocaleString('en-US')}`
 }
