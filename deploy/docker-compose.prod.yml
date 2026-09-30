@@ -35,8 +35,8 @@ services:
       OWNER_USER: ${OWNER_USER:-}
       OWNER_PASSWORD_HASH: ${OWNER_PASSWORD_HASH:-}
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./deploy/sites:/etc/caddy/sites:ro
+      # 挂整个目录而不是单个 Caddyfile：单文件挂载在 git pull 换了文件之后，容器里看到的还是旧内容
+      - ./deploy:/etc/caddy:ro
       # 同机静态站点的文件（例如个人主页），不设时为空目录
       - ${CADDY_STATIC_DIR:-./deploy/static}:/srv:ro
       - caddy-data:/data

@@ -78,10 +78,28 @@ docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --b
 
 ## 更新
 
+在自己电脑的仓库根目录运行（先提交并推送）：
+
 ```bash
-cd ~/goeuroops && git pull
-docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+deploy/deploy.sh            # 上次部署之后改了哪部分就部署哪部分
+deploy/deploy.sh rollback   # 换回上一次部署前的镜像
 ```
+
+脚本在本机构建前端、在服务器上给基础镜像叠一层代码、只重建改动的容器，然后等健康检查并从公网访问一次；
+不通过就自动回滚。服务器内存小（1.6 GiB），不要在上面执行 `up -d --build`。
+
+### 完整构建
+
+`backend/requirements.txt`、任一 Dockerfile 或前端 nginx 配置变了，叠一层代码不够，脚本会停下来。这时在本机交叉构建镜像再传上去，
+并把它定为新的基础镜像：
+
+```bash
+docker buildx build --platform linux/amd64 --target production -t goeuroops-backend:latest --load ./backend
+docker save goeuroops-backend:latest | gzip | ssh admin@47.84.60.190 'gunzip | docker load && docker tag goeuroops-backend:latest goeuroops-backend:base'
+ssh admin@47.84.60.190 'cd ~/goeuroops && git pull && git rev-parse HEAD > .deployed && docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --no-build --no-deps backend'
+```
+
+前端同理，把 `backend` 换成 `frontend`，去掉 `--target production`。
 
 ## 常用操作
 
