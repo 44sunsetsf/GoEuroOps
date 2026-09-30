@@ -76,9 +76,25 @@ docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --b
 - `/`：学生端首页，公开
 - `/studio`：工作室后台，浏览器会弹出用户名和密码
 
+## 改代码到上线的流程
+
+`main` 分支开了保护：不能直接推送，必须通过 Pull Request，且 CI 的三项检查（backend、frontend、deploy-files）全部通过才能合并。
+
+```bash
+git checkout -b 改动名                 # 在新分支上改
+git commit ...; git push -u origin 改动名
+gh pr create --fill                    # 提 PR，CI 自动开始跑（约半分钟）
+gh pr checks --watch                   # 看结果
+gh pr merge --squash --delete-branch   # 全绿后合并，并删掉这个分支
+git checkout main && git pull          # 回到 main，拉到合并后的版本
+deploy/deploy.sh                       # 然后再部署
+```
+
+紧急情况需要绕过：到 GitHub 仓库的 Settings → Branches 临时取消保护，处理完再打开。
+
 ## 更新
 
-在自己电脑的仓库根目录运行（先提交并推送）：
+在自己电脑的仓库根目录运行（先合并到 main 并 `git pull`）：
 
 ```bash
 deploy/deploy.sh            # 上次部署之后改了哪部分就部署哪部分
