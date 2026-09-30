@@ -66,6 +66,9 @@ git fetch -q origin
 commit=$(git rev-parse HEAD)
 [ "$commit" = "$(git rev-parse origin/main)" ] || die "本地 main 和 origin/main 不一致，先 git push"
 
+[ -z "$(remote 'git status --porcelain --untracked-files=no')" ] \
+  || die "服务器上的仓库有直接改过、没进 git 的文件。先确认这些改动是否要保留：ssh $HOST 'cd ~/$REMOTE_DIR && git diff'"
+
 deployed=$(remote "cat .deployed 2>/dev/null || git rev-parse HEAD")
 say "上次部署 ${deployed:0:7} → 这次 ${commit:0:7}"
 
