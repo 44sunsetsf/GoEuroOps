@@ -4,7 +4,7 @@ RAG 知识库 —— 基于 ChromaDB 的真实检索实现。
 功能：
   1. 文档导入：将文本切片后存入 ChromaDB（自动生成 Embedding）
   2. 语义检索：根据 query 从知识库中检索最相关的文档片段
-  3. 与 MCP 工具框架集成：作为 knowledge_search 工具的真实 handler
+  3. 与检索工具管理器集成：作为 knowledge_search 工具的真实 handler
 
 ChromaDB 在这里的角色：
   - memory/ 中用于存储对话记忆（情景记忆 + 用户画像）
@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 import chromadb
 
 from core.text_embedding import ngram_profile
-from mcp.embeddings import get_shared_embedding_function
+from retrieval.embeddings import get_shared_embedding_function
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class KnowledgeBase:
     """
     基于 ChromaDB 的 RAG 知识库。
 
-    向量模型默认使用 bge-small-zh-v1.5（见 mcp/embeddings.py），在客户端编码后写入
+    向量模型默认使用 bge-small-zh-v1.5（见 retrieval/embeddings.py），在客户端编码后写入
     ChromaDB；检索时向量召回 + 字面覆盖度混合打分。模型不可用时退回 ChromaDB
     默认的 all-MiniLM-L6-v2。
     """
@@ -197,13 +197,13 @@ class KnowledgeBase:
         """异步获取文档片段数量。"""
         return await asyncio.to_thread(self._collection.count)
 
-    # ── MCP 工具 handler ─────────────────────────────────────────────────────
+    # ── 检索工具 handler ─────────────────────────────────────────────────────
 
     async def search_handler(self, params: Dict[str, Any], context: Any) -> List[Dict]:
         """
-        作为 MCP 工具的 handler 注册。
+        作为检索工具的 handler 注册。
 
-        MCPToolManager.register(Tool(
+        RetrievalManager.register(Tool(
             name="knowledge_search",
             handler=kb.search_handler,
             ...

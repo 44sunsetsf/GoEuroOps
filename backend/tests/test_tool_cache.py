@@ -1,14 +1,14 @@
 """工具缓存：知识库写入后立即失效，而不是等 TTL。"""
 import asyncio
 
-from mcp.tool_manager import MCPToolManager, Tool
+from retrieval.manager import RetrievalManager, Tool
 
 
 def make_manager(docs):
     async def search(params, context):
         return [d for d in docs if params["query"] in d]
 
-    manager = MCPToolManager(api_key="test")
+    manager = RetrievalManager(api_key="test")
     manager.register(Tool(
         name="knowledge_search",
         description="test",

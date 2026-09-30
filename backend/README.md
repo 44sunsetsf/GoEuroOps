@@ -79,9 +79,9 @@ core/intent_recognizer.py      三路融合意图识别与实体抽取
 core/rag_gate.py               意图门控 RAG 与投机预取
 core/skill_loader.py           Skills v2：加载、校验、多信号路由、渐进式披露、统计、回归
 core/text_embedding.py         本地字符 n-gram 向量（意图识别与 Skill 语义匹配共用）
-mcp/knowledge_base.py          ChromaDB 知识库（bge-small-zh 向量 + 字面覆盖混合打分）
-mcp/embeddings.py              中文向量模型加载（fastembed / ONNX）
-mcp/tool_manager.py            工具层：缓存、熔断、查询改写、LLM 重排
+retrieval/knowledge_base.py    ChromaDB 知识库（bge-small-zh 向量 + 字面覆盖混合打分）
+retrieval/embeddings.py        中文向量模型加载（fastembed / ONNX）
+retrieval/manager.py            检索治理层：缓存、熔断、降级、查询改写、LLM 重排
 memory/conversation_memory.py  Redis + ChromaDB 分层记忆
 evaluation/evaluator.py        端到端评测
 skills/                        业务规范（编写规范见 skills/README.md）

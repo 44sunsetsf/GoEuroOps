@@ -86,8 +86,8 @@ async def lifespan(app: FastAPI):
     from api.quota import DailyQuota
     from core.intent_recognizer import IntentRecognizer
     from evaluation.evaluator import EndToEndEvaluator
-    from mcp.knowledge_base import KnowledgeBase
-    from mcp.tool_manager import MCPToolManager, Tool
+    from retrieval.knowledge_base import KnowledgeBase
+    from retrieval.manager import RetrievalManager, Tool
     from memory.conversation_memory import MemoryManager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
@@ -154,8 +154,8 @@ async def lifespan(app: FastAPI):
         model=cfg["model"],
     )
 
-    # MCP 工具管理器 + RAG 知识库（基于 ChromaDB 的真实检索）
-    _tool_manager = MCPToolManager(
+    # 检索工具管理器 + RAG 知识库（基于 ChromaDB 的真实检索）
+    _tool_manager = RetrievalManager(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
@@ -612,7 +612,7 @@ async def prometheus_metrics():
 async def search(request: Request, query: str, top_k: int = 5, domain: Optional[str] = None):
     """
     演示检索优化链路：查询改写 → 并行召回 → 去重 → 相关性重排/过滤 → Top-K。
-    展示 MCP 工具调用的核心亮点。domain 可选，用于验证按 Agent 领域隔离检索的效果。
+    展示检索工具治理（改写、重排、缓存）的效果。domain 可选，用于验证按 Agent 领域隔离检索的效果。
     """
     if _tool_manager is None:
         raise HTTPException(503, "服务未就绪")
