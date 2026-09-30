@@ -46,7 +46,7 @@ jobs:
         run: bash -n deploy/deploy.sh deploy/who-visited.sh
       - name: compose 配置（用占位的环境变量）
         run: |
-          export SITE_ADDRESS=example.test STUDIO_PASSWORD_HASH=x GOEUROOPS_GUEST_KEY=0123456789abcdef SILICONFLOW_API_KEY=x
+          export ANTHROPIC_API_KEY=x SITE_ADDRESS=example.test STUDIO_PASSWORD_HASH=x GOEUROOPS_GUEST_KEY=0123456789abcdef SILICONFLOW_API_KEY=x
           docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml config --quiet
       - name: Caddyfile 语法（服务器上的私有站点配置不在仓库里，这里只校验主配置）
         run: |
