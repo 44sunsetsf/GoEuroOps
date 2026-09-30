@@ -540,7 +540,7 @@ class IntentRecognizer:
         if self._semantic is _UNSET:
             self._semantic = None
             if os.getenv("GOEUROOPS_INTENT_EMBEDDING", "bge").strip().lower() != "ngram":
-                from mcp.embeddings import get_shared_embedding_function
+                from retrieval.embeddings import get_shared_embedding_function
 
                 self._semantic = get_shared_embedding_function()
         return self._semantic

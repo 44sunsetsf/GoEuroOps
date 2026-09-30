@@ -1,5 +1,5 @@
 """
-亮点：MCP 工具调用框架
+亮点：检索工具治理层（知识库检索的缓存、熔断、降级与重排）
 
 核心问题：工具调用出错（检索不全、召回不好）怎么优化？
 
@@ -24,6 +24,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from anthropic import AsyncAnthropic
 from core.llm_usage import track
+from tooling.breaker import CircuitBreaker, CircuitState
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 
@@ -31,12 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 # ── 数据结构 ──────────────────────────────────────────────────────────────────
-
-class CircuitState(Enum):
-    CLOSED    = "closed"     # 正常
-    OPEN      = "open"       # 熔断，拒绝请求
-    HALF_OPEN = "half_open"  # 探测恢复
-
 
 @dataclass
 class ToolResult:
@@ -69,44 +64,6 @@ class ToolStats:
 
 # ── 熔断器 ────────────────────────────────────────────────────────────────────
 
-class CircuitBreaker:
-    """
-    三态熔断器：CLOSED → OPEN → HALF_OPEN → CLOSED
-
-    连续失败 failure_threshold 次后打开；
-    打开 recovery_s 秒后进入 HALF_OPEN 探测；
-    探测成功则关闭，失败则重新打开。
-    """
-
-    def __init__(self, failure_threshold: int = 5, recovery_s: float = 60.0):
-        self.threshold   = failure_threshold
-        self.recovery_s  = recovery_s
-        self.state       = CircuitState.CLOSED
-        self.fail_count  = 0
-        self.opened_at:  Optional[float] = None
-
-    def allow(self) -> bool:
-        if self.state == CircuitState.CLOSED:
-            return True
-        if self.state == CircuitState.OPEN:
-            if time.monotonic() - self.opened_at >= self.recovery_s:  # type: ignore
-                self.state = CircuitState.HALF_OPEN
-                return True
-            return False
-        return True  # HALF_OPEN：放行一次探测
-
-    def record_success(self) -> None:
-        self.fail_count = 0
-        self.state = CircuitState.CLOSED
-
-    def record_failure(self) -> None:
-        self.fail_count += 1
-        if self.fail_count >= self.threshold:
-            self.state     = CircuitState.OPEN
-            self.opened_at = time.monotonic()
-            logger.warning(f"熔断器打开（连续失败 {self.fail_count} 次）")
-
-
 # ── 工具定义 ──────────────────────────────────────────────────────────────────
 
 @dataclass
@@ -125,11 +82,11 @@ class Tool:
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker, init=False)
 
 
-# ── MCP 工具管理器 ────────────────────────────────────────────────────────────
+# ── 检索工具管理器 ────────────────────────────────────────────────────────────
 
-class MCPToolManager:
+class RetrievalManager:
     """
-    MCP 工具调用框架。
+    检索工具的治理层：缓存、超时、熔断、降级，以及查询改写和 LLM 重排。
 
     核心优化链路（针对检索类工具）：
       用户查询 → 查询改写（多角度子查询）→ 并行召回 → 结果重排 → 返回 Top-K

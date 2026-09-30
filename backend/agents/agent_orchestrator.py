@@ -45,11 +45,14 @@ from agents.tools import (
     consulting_tools,
     escalation_tools,
     general_tools,
-    make_tool,
+    make_model_tool,
 )
 from business.catalog import get_catalog
 from business.lead_store import LeadStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
+from tooling.amount_guard import AmountGrounding, AmountGuard
+from tooling.gateway import get_gateway, validate_args
+from tooling.schemas import ReadSkillReferenceArgs
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
 
@@ -231,6 +234,7 @@ class BaseAgent:
         self._last_skills: List[Dict[str, Any]] = []
         self._shared_tools: Dict[str, AgentToolSpec] = {}
         self._lead_store: Optional[LeadStore] = None
+        self._gateway = get_gateway()
 
     def set_lead_store(self, lead_store: Optional[LeadStore]) -> None:
         self._lead_store = lead_store
@@ -270,15 +274,11 @@ class BaseAgent:
                     str(args.get("skill", "")), str(args.get("file", "")), allowed_skill_ids=allowed
                 )
 
-            tools["read_skill_reference"] = make_tool(
+            tools["read_skill_reference"] = make_model_tool(
                 "read_skill_reference",
                 "读取本轮已命中 Skill 的参考资料（话术库、FAQ、案例等），skill 和 file 取自 Skill 说明中列出的资料目录。",
-                {
-                    "skill": {"type": "string", "description": "Skill id"},
-                    "file": {"type": "string", "description": "参考资料文件名，如 objection_handling.md"},
-                },
+                ReadSkillReferenceArgs,
                 read_skill_reference,
-                required=["skill", "file"],
             )
         return tools
 
@@ -356,6 +356,20 @@ class BaseAgent:
         tools = self._tools_for(req, selection)
         tools_used: List[str] = []
         tool_traces: List[Dict[str, Any]] = []
+
+        # 金额护栏：回复里的人民币金额必须能在本轮依据里找到（工具结果、用户原话、背景、知识库、Skill、价目表）
+        grounding = AmountGrounding()
+        grounding.add_many(m["content"] for m in messages if isinstance(m["content"], str))
+        grounding.add_text(system_prompt)
+        grounding.add_json(req.history)
+        grounding.add_json(get_catalog().model_dump())
+        guard = AmountGuard(grounding)
+
+        async def guarded_delta(text: str) -> None:
+            safe = guard.feed(text)
+            if safe and on_delta is not None:
+                await on_delta(safe)
+
         for _ in range(3):
             request_kwargs: Dict[str, Any] = {
                 "model": self._model,
@@ -374,12 +388,30 @@ class BaseAgent:
                     }
                     for spec in tools.values()
                 ]
-            content_blocks = await self._complete(request_kwargs, on_delta)
+            content_blocks = await self._complete(request_kwargs, guarded_delta if on_delta is not None else None)
+            if on_delta is not None:
+                tail = guard.flush()
+                if tail:
+                    await on_delta(tail)
             tool_uses = [block for block in content_blocks if self._block_type(block) == "tool_use"]
             if not tool_uses:
+                text = guard.sanitize(extract_text_content(content_blocks))
+                if guard.violations:
+                    tool_traces.append({
+                        "agent_type": self.agent_type.value,
+                        "tool_name": "amount_guard",
+                        "tool_use_id": "",
+                        "input": {"violations": [v.to_dict() for v in guard.violations]},
+                        "success": True,
+                        "result_success": False,
+                        "latency_ms": 0.0,
+                        "cached": False,
+                        "reranked": False,
+                        "error": f"回复里的金额没有依据：{sorted({a for v in guard.violations for a in v.amounts})}（模式 {guard.mode}）",
+                    })
                 self._last_tools_used = tools_used
                 self._last_tool_traces = tool_traces
-                return extract_text_content(content_blocks)
+                return text
 
             messages.append({"role": "assistant", "content": content_blocks})
             tool_results = []
@@ -388,39 +420,32 @@ class BaseAgent:
                 tool_use_id = self._block_value(block, "id")
                 args = self._block_value(block, "input") or {}
                 spec = tools.get(name)
-                tool_t0 = time.monotonic()
-                call_success = True
-                result_success: Optional[bool] = None
-                error_text = ""
                 if spec is None:
-                    call_success = False
-                    result: Any = {"success": False, "error": f"工具不在 {self.agent_type.value} Agent 白名单中"}
-                    error_text = result["error"]
+                    error_text = f"工具不在 {self.agent_type.value} Agent 白名单中"
+                    result: Any = {"success": False, "error": error_text}
+                    call_success, result_success, kind, tool_latency_ms, truncated = False, None, "not_allowed", 0.0, False
+                    self._gateway.record_rejected("not_allowed")
                 else:
-                    try:
-                        self._validate_tool_input(spec, args)
-                        result = spec.handler(req, args)
-                        if inspect.isawaitable(result):
-                            result = await result
+                    outcome = await self._gateway.call(spec, req, args)
+                    result, call_success, kind = outcome.result, outcome.ok, outcome.kind
+                    error_text, result_success = outcome.error, outcome.result_success
+                    tool_latency_ms, truncated = outcome.latency_ms, outcome.truncated
+                    if call_success:
                         tools_used.append(name)
-                        if isinstance(result, dict) and "success" in result:
-                            result_success = bool(result.get("success"))
-                    except Exception as ex:
-                        call_success = False
-                        logger.warning("Agent 工具 %s 执行失败: %s", name, ex)
-                        error_text = str(ex)
-                        result = {"success": False, "error": error_text}
-                tool_latency_ms = (time.monotonic() - tool_t0) * 1000
                 if not error_text and isinstance(result, dict):
                     error_text = str(result.get("error", "") or "")
+                grounding.add_json(result)
                 tool_traces.append(
                     {
                         "agent_type": self.agent_type.value,
                         "tool_name": name,
                         "tool_use_id": tool_use_id,
-                        "input": dict(args),
+                        "input": dict(args) if isinstance(args, dict) else {"raw": str(args)[:200]},
                         "success": call_success,
                         "result_success": result_success,
+                        "outcome": kind,
+                        "side_effect": spec.policy.side_effect if spec is not None else None,
+                        "truncated": truncated,
                         "latency_ms": round(tool_latency_ms, 1),
                         "cached": bool(result.get("cached")) if isinstance(result, dict) else False,
                         "reranked": bool(result.get("reranked")) if isinstance(result, dict) else False,
@@ -474,21 +499,7 @@ class BaseAgent:
 
     @staticmethod
     def _validate_tool_input(spec: AgentToolSpec, args: Any) -> None:
-        if not isinstance(args, dict):
-            raise ValueError("工具参数必须是 JSON 对象")
-        schema = spec.input_schema
-        for field_name in schema.get("required", []):
-            if field_name not in args:
-                raise ValueError(f"缺少必需参数: {field_name}")
-        properties = schema.get("properties", {})
-        unknown = set(args) - set(properties)
-        if unknown and schema.get("additionalProperties") is False:
-            raise ValueError(f"不允许的工具参数: {', '.join(sorted(unknown))}")
-        type_map = {"string": str, "number": (int, float), "integer": int, "boolean": bool}
-        for key, value in args.items():
-            expected = properties.get(key, {}).get("type")
-            if expected in type_map and not isinstance(value, type_map[expected]):
-                raise ValueError(f"参数 {key} 类型错误，期望 {expected}")
+        validate_args(spec, args)
 
     def _build_system_prompt(self, req: Request, selection: Any = None) -> str:
         """把角色契约和动态 Skills 拼入 system prompt。"""

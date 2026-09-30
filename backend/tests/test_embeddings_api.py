@@ -2,7 +2,7 @@ import json
 
 import httpx
 
-from mcp.embeddings import BGE_ZH_QUERY_PREFIX, ApiEmbedFunction
+from retrieval.embeddings import BGE_ZH_QUERY_PREFIX, ApiEmbedFunction
 
 
 def _fake_api(calls):

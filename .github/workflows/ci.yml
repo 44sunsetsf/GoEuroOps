@@ -21,6 +21,22 @@ jobs:
       - run: pip install -r requirements.txt pytest
       - run: python -m pytest -q
 
+  # 只读 MCP 入口：mcp SDK 需要更新的 starlette，和后端固定的 fastapi 冲突，所以单独装依赖、单独跑
+  mcp-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-mcp.txt
+      - run: pip install -r requirements-mcp.txt pytest
+      - run: python -m pytest -q tests/test_mcp_server.py
+
   # 前端：能构建就说明没有语法错误、缺失的文件或写错的导入（中英双语改动后尤其需要）
   frontend:
     runs-on: ubuntu-latest

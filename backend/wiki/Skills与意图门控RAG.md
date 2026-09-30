@@ -84,7 +84,7 @@ t=意图完成 → 路由确定主 Agent 的 domain
       → on_demand / off：全部取消
 ```
 
-预取走 `MCPToolManager.search_fast`，不做 LLM 改写和重排，但仍然经过缓存、熔断和降级。模型主动调用的 `search_knowledge_base` 仍然走完整链路：改写 → 并行召回 → 去重 → LLM 重排。
+预取走 `RetrievalManager.search_fast`，不做 LLM 改写和重排，但仍然经过缓存、熔断和降级。模型主动调用的 `search_knowledge_base` 仍然走完整链路：改写 → 并行召回 → 去重 → LLM 重排。
 
 ### 4. 检索质量：中文向量模型 + 混合打分
 
