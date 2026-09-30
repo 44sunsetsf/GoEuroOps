@@ -101,7 +101,7 @@ fi
 say "要部署：${targets[*]}"
 
 # ── 2–3. 叠一层代码，生成新镜像 ─────────────────────────────────────────────────
-remote "rm -rf $WORK && mkdir -p $WORK"
+remote "rm -rf $WORK && mkdir -p $WORK/fe"
 for svc in "${targets[@]}"; do
   # 第一次用本脚本：把当前镜像定为基础镜像，以后每次都从它叠一层，镜像不会越叠越大
   remote "docker image inspect goeuroops-$svc:base >/dev/null 2>&1 || docker tag goeuroops-$svc:latest goeuroops-$svc:base"
@@ -109,15 +109,15 @@ for svc in "${targets[@]}"; do
     frontend)
       say "本机构建前端"
       [ -d frontend/node_modules ] || npm --prefix frontend ci --silent
-      npm --prefix frontend run build --silent
+      npm --prefix frontend run build --silent >/dev/null
       rsync -a --delete frontend/dist/ "$HOST:$WORK/fe/dist/"
       remote "printf 'FROM goeuroops-frontend:base\nRUN rm -rf /usr/share/nginx/html/*\nCOPY dist/ /usr/share/nginx/html/\n' > $WORK/fe/Dockerfile \
-              && docker build -q -t goeuroops-frontend:new $WORK/fe >/dev/null"
+              && docker build -q -t goeuroops-frontend:new $WORK/fe >/dev/null 2>&1"
       ;;
     backend)
       say "用服务器上的代码叠出后端镜像"
       remote "printf 'FROM goeuroops-backend:base\nUSER root\nRUN find /app -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name config -exec rm -rf {} +\nCOPY --chown=echomind:echomind . /app\nUSER echomind\n' > $WORK/Dockerfile.backend \
-              && docker build -q -t goeuroops-backend:new -f $WORK/Dockerfile.backend backend >/dev/null"
+              && docker build -q -t goeuroops-backend:new -f $WORK/Dockerfile.backend backend >/dev/null 2>&1"
       ;;
     *) die "不认识的部署目标：$svc（可选 backend、frontend）" ;;
   esac
@@ -128,9 +128,11 @@ for svc in "${targets[@]}"; do
   remote "docker tag goeuroops-$svc:latest goeuroops-$svc:prev && docker tag goeuroops-$svc:new goeuroops-$svc:latest && docker rmi goeuroops-$svc:new >/dev/null"
 done
 say "重建容器：${targets[*]}"
-remote "$DC up -d --no-build --no-deps ${targets[*]}" 2>&1 | grep -E 'Started|Recreated|Error' || true
+# 从这里开始线上已经换成新镜像：后面任何一步失败都走回滚，不能直接退出
+started=ok
+remote "$DC up -d --no-build --no-deps ${targets[*]}" >/dev/null 2>&1 || started=failed
 
-if wait_healthy && smoke; then
+if [ "$started" = ok ] && wait_healthy && smoke; then
   remote "echo $commit > .deployed; docker image prune -f >/dev/null; rm -rf $WORK"
   say "部署完成：${commit:0:7} 已上线，$SITE 正常。回滚用 deploy/deploy.sh rollback"
 else
