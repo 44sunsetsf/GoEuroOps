@@ -1,0 +1,52 @@
+name: Deploy
+
+# 手动触发：GitHub 页面 Actions → Deploy → Run workflow，或 gh workflow run deploy.yml -f target=auto
+# 在 GitHub 的机器上运行 deploy/deploy.sh：构建在这里做，服务器只接收成品。
+# 不会自动触发，上线时机由你决定。
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 部署什么（auto = 上次部署之后改了哪部分就部署哪部分）
+        type: choice
+        default: auto
+        options: [auto, backend, frontend, "backend frontend", rollback]
+
+# 同一时间只允许一次部署
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # 登录服务器的密钥只存在 production 环境里，且该环境只允许 main 分支使用
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # 脚本要用 git diff 对比上次部署的提交
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: 准备 SSH（密钥和服务器指纹）
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY" || { echo "production 环境里没有 DEPLOY_SSH_KEY"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: 部署
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          if [ "$TARGET" = auto ]; then TARGET=""; fi
+          bash deploy/deploy.sh $TARGET
