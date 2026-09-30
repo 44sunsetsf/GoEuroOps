@@ -2,6 +2,8 @@
 
 # GoEuroOps — an AI operations hub for a study-abroad studio
 
+[![CI](https://github.com/44sunsetsf/GoEuroOps/actions/workflows/ci.yml/badge.svg)](https://github.com/44sunsetsf/GoEuroOps/actions/workflows/ci.yml)
+
 The multi-agent operations hub behind **Zhibei (指北) · Nordic CS Master Studio**, a consultancy started by a few students doing CS in Sweden. The studio focuses on one thing: applications to English-taught CS master's programmes in Sweden, Germany, the Netherlands, Finland and Denmark.
 
 The AI assistant runs the studio's front desk:

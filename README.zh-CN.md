@@ -2,6 +2,8 @@
 
 # GoEuroOps 留学业务智能运营中枢
 
+[![CI](https://github.com/44sunsetsf/GoEuroOps/actions/workflows/ci.yml/badge.svg)](https://github.com/44sunsetsf/GoEuroOps/actions/workflows/ci.yml)
+
 「指北 · Nordic CS Master Studio」的多 Agent 运营中枢。指北是由几位在瑞典读 CS 的留学生创办的咨询工作室，只做瑞典、德国、荷兰、芬兰、丹麦的英语授课计算机硕士申请。
 
 AI 助手负责工作室的前台工作：

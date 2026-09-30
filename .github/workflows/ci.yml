@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # 后端：装依赖，跑全部单元测试（不需要真的 Redis 或模型 API，测试里用的是假的替身）
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest -q
+
+  # 前端：能构建就说明没有语法错误、缺失的文件或写错的导入（中英双语改动后尤其需要）
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  # 部署相关文件：脚本语法、compose 配置能解析、Caddyfile 语法正确
+  deploy-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 脚本语法
+        run: bash -n deploy/deploy.sh deploy/who-visited.sh
+      - name: compose 配置（用占位的环境变量）
+        run: |
+          export SITE_ADDRESS=example.test STUDIO_PASSWORD_HASH=x GOEUROOPS_GUEST_KEY=0123456789abcdef SILICONFLOW_API_KEY=x
+          docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml config --quiet
+      - name: Caddyfile 语法（服务器上的私有站点配置不在仓库里，这里只校验主配置）
+        run: |
+          HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext ci-placeholder)
+          docker run --rm -v "$PWD/deploy:/etc/caddy:ro" \
+            -e GOEUROOPS_ADDRESS=example.test -e SITE_ADDRESS=example.test -e STUDIO_USER=studio \
+            -e STUDIO_PASSWORD_HASH="$HASH" -e GOEUROOPS_GUEST_KEY=0123456789abcdef \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
