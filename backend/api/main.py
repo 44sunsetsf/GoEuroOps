@@ -602,6 +602,13 @@ async def list_recent_tool_traces(request: Request, limit: int = 20):
     return RecentToolTracesResponse(items=items)
 
 
+@app.get("/tools/stats")
+async def tool_stats():
+    """每个 Agent 工具的调用次数、各类结果（ok / invalid_args / timeout / error / circuit_open）、平均和最大耗时、熔断状态。"""
+    from tooling.gateway import get_gateway
+    return {"tools": get_gateway().stats()}
+
+
 @app.get("/metrics")
 async def prometheus_metrics():
     """Prometheus 指标入口。"""

@@ -17,7 +17,12 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from business.catalog import CATEGORY_LABELS, get_catalog, get_countries
 from business.lead_store import CHANNEL_LABELS, STAGES, LeadStore, mask_contact, validate_lead_input
-from business.pricing import REFUND_STAGES, calculate_refund, quote_bundle
+from business.pricing import calculate_refund, quote_bundle
+from tooling.gateway import ToolPolicy
+from tooling.schemas import (
+    CompareAmountsArgs, CountryArgs, HandoffArgs, InspectContextArgs, LeadArgs, NoArgs, PaymentFieldsArgs,
+    QuoteArgs, QuoteResult, RefundArgs, RefundResult, SearchKnowledgeArgs, ServiceOfferingArgs, schema_for,
+)
 
 if TYPE_CHECKING:
     from agents.agent_orchestrator import Request
@@ -26,14 +31,44 @@ if TYPE_CHECKING:
 AgentToolHandler = Callable[["Request", Dict[str, Any]], Union[Any, Awaitable[Any]]]
 
 
+# 执行策略：纯本地计算用默认值；依赖外部服务的工具单独声明
+READ_POLICY = ToolPolicy(timeout_s=2.0, side_effect="read")
+WRITE_POLICY = ToolPolicy(timeout_s=5.0, side_effect="write", breaker=True)       # 依赖 Redis，连续失败要快速失败
+SEARCH_POLICY = ToolPolicy(timeout_s=25.0, side_effect="external")                # 检索管理器自带缓存、熔断和降级
+
+
 @dataclass(frozen=True)
 class AgentToolSpec:
-    """Agent 可见工具的定义和执行函数。"""
+    """Agent 可见工具：名字、说明、给模型看的 JSON Schema、处理函数，以及网关用的校验模型和执行策略。"""
 
     name: str
     description: str
     input_schema: Dict[str, Any]
     handler: AgentToolHandler
+    input_model: Optional[Any] = None       # Pydantic 入参模型；有它就用它校验
+    output_model: Optional[Any] = None      # Pydantic 返回值模型；金额类工具用来检查业务不变量
+    policy: ToolPolicy = READ_POLICY
+
+
+def make_model_tool(
+    name: str,
+    description: str,
+    input_model: Any,
+    handler: AgentToolHandler,
+    *,
+    output_model: Optional[Any] = None,
+    policy: ToolPolicy = READ_POLICY,
+) -> AgentToolSpec:
+    """创建工具：入参用 Pydantic 定义，发给模型的 JSON Schema 和校验都由它生成。"""
+    return AgentToolSpec(
+        name=name,
+        description=description,
+        input_schema=schema_for(input_model),
+        handler=handler,
+        input_model=input_model,
+        output_model=output_model,
+        policy=policy,
+    )
 
 
 def make_tool(
@@ -43,7 +78,7 @@ def make_tool(
     handler: AgentToolHandler,
     required: Optional[List[str]] = None,
 ) -> AgentToolSpec:
-    """创建带 JSON Schema 的 Agent 工具。"""
+    """创建带手写 JSON Schema 的工具（没有 Pydantic 模型时用；新工具请用 make_model_tool）。"""
     return AgentToolSpec(
         name=name,
         description=description,
@@ -218,23 +253,12 @@ def build_lead_tool(lead_store: Optional[LeadStore]) -> AgentToolSpec:
             "timezone_note": catalog.studio.timezone_note,
         }
 
-    return make_tool(
+    return make_model_tool(
         "create_consultation_lead",
         "在用户明确同意后登记咨询线索，交给工作室顾问跟进。只收集必要信息，禁止收集证件号、成绩单原件、密码等。",
-        {
-            "name": {"type": "string", "description": "用户希望的称呼"},
-            "contact_channel": {"type": "string", "enum": list(CHANNEL_LABELS), "description": "联系渠道：wechat / email / phone"},
-            "contact": {"type": "string", "description": "对应渠道的联系方式"},
-            "countries": {"type": "array", "items": {"type": "string"}, "description": "目标国家"},
-            "stage": {"type": "string", "enum": list(STAGES), "description": "所处阶段：exploring 了解中 / preparing 准备中 / applying 申请中 / admitted 已录取"},
-            "target_intake": {"type": "string", "description": "计划入学时间，如 2027 秋"},
-            "interested_services": {"type": "array", "items": {"type": "string"}, "description": "意向服务 SKU"},
-            "background": {"type": "string", "description": "用户主动提供的背景摘要（专业、均分区间、语言成绩等），不要包含证件号"},
-            "preferred_time": {"type": "string", "description": "方便沟通的时间（注明时区）"},
-            "consent": {"type": "boolean", "description": "用户是否明确同意由顾问联系，必须为 true"},
-        },
+        LeadArgs,
         create_consultation_lead,
-        required=["name", "contact_channel", "contact", "consent"],
+        policy=WRITE_POLICY,
     )
 
 
@@ -332,11 +356,12 @@ def build_handoff_tool(lead_store: Optional[LeadStore]) -> AgentToolSpec:
             "sensitive_data_required": False,
         }
 
-    return make_tool(
+    return make_model_tool(
         "create_handoff_summary",
         "生成交给工作室顾问的结构化交接单，并写入线索面板供顾问跟进。",
-        {"reason": {"type": "string", "description": "需要转顾问的原因"}},
+        HandoffArgs,
         create_handoff_summary,
+        policy=WRITE_POLICY,
     )
 
 
@@ -381,15 +406,12 @@ def build_shared_rag_tools(tool_manager: Any, domain: Optional[str] = None) -> D
         }
 
     return {
-        "search_knowledge_base": make_tool(
+        "search_knowledge_base": make_model_tool(
             "search_knowledge_base",
             "检索工作室知识库（服务、政策、五国申请资料、FAQ），返回最相关的文档片段。",
-            {
-                "query": {"type": "string", "description": "用户问题或检索关键词"},
-                "top_k": {"type": "integer", "description": "返回结果条数"},
-            },
+            SearchKnowledgeArgs,
             search_knowledge_base,
-            required=["query"],
+            policy=SEARCH_POLICY,
         )
     }
 
@@ -398,22 +420,22 @@ def build_shared_rag_tools(tool_manager: Any, domain: Optional[str] = None) -> D
 
 def general_tools() -> Dict[str, AgentToolSpec]:
     return {
-        "inspect_request_context": make_tool(
+        "inspect_request_context": make_model_tool(
             "inspect_request_context",
             "查看当前请求的意图、紧急度、实体和上下文可用性；不查询外部业务系统。",
-            {"focus": {"type": "string", "description": "希望关注的业务方向"}},
+            InspectContextArgs,
             inspect_request_context,
         ),
-        "suggest_required_fields": make_tool(
+        "suggest_required_fields": make_model_tool(
             "suggest_required_fields",
             "根据当前意图建议下一轮只需向用户补充的字段。",
-            {},
+            NoArgs,
             suggest_required_fields,
         ),
-        "get_studio_profile": make_tool(
+        "get_studio_profile": make_model_tool(
             "get_studio_profile",
             "获取工作室基本信息：品牌、所在地与时差、响应时效、服务覆盖范围和预约流程。",
-            {},
+            NoArgs,
             get_studio_profile,
         ),
     }
@@ -421,44 +443,24 @@ def general_tools() -> Dict[str, AgentToolSpec]:
 
 def consulting_tools(lead_store: Optional[LeadStore] = None) -> Dict[str, AgentToolSpec]:
     return {
-        "lookup_country_admissions_overview": make_tool(
+        "lookup_country_admissions_overview": make_model_tool(
             "lookup_country_admissions_overview",
             "查询瑞典/德国/荷兰/芬兰/丹麦 CS 硕士的参考资料：申请平台、时间窗口、申请费、学费、语言要求、代表项目、居留许可、奖学金和官网链接。为整理的参考数据，不代表实时官方信息。",
-            {"country": {"type": "string", "description": "国家名，中英文均可，如 瑞典 / Germany"}},
+            CountryArgs,
             lookup_country_admissions_overview,
-            required=["country"],
         ),
-        "lookup_service_offering": make_tool(
+        "lookup_service_offering": make_model_tool(
             "lookup_service_offering",
             "查询工作室服务与公开价格。不传参数返回全部服务价目概览；传 sku 返回该服务的完整内容、交付物、轮次和时效；传 category 返回某类服务。",
-            {
-                "sku": {"type": "string", "description": "服务 SKU，如 selection_full / essay_pack_3 / full_journey"},
-                "category": {"type": "string", "enum": list(CATEGORY_LABELS), "description": "服务类别"},
-            },
+            ServiceOfferingArgs,
             lookup_service_offering,
         ),
-        "quote_service_bundle": make_tool(
+        "quote_service_bundle": make_model_tool(
             "quote_service_bundle",
             "按价目表和公开优惠规则计算报价明细（小计、优惠、应付、定金）。任何涉及具体金额或折扣的回答都必须调用此工具，禁止自行计算或承诺额外优惠。",
-            {
-                "items": {
-                    "type": "array",
-                    "description": "服务清单",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "sku": {"type": "string"},
-                            "qty": {"type": "integer"},
-                        },
-                        "required": ["sku"],
-                    },
-                },
-                "early_bird": {"type": "boolean", "description": "用户是否计划在早鸟截止前签约"},
-                "group_size": {"type": "integer", "description": "一起报名的人数（含本人）"},
-                "referral": {"type": "boolean", "description": "是否由老学员推荐"},
-            },
+            QuoteArgs,
             quote_service_bundle,
-            required=["items"],
+            output_model=QuoteResult,
         ),
         "create_consultation_lead": build_lead_tool(lead_store),
     }
@@ -466,40 +468,30 @@ def consulting_tools(lead_store: Optional[LeadStore] = None) -> Dict[str, AgentT
 
 def billing_tools() -> Dict[str, AgentToolSpec]:
     return {
-        "check_payment_fields": make_tool(
+        "check_payment_fields": make_model_tool(
             "check_payment_fields",
             "检查付款/退款核验字段（合同号、金额、时间、渠道）是否齐全；不连接收款系统。",
-            {"payment_channel": {"type": "string", "description": "付款渠道，例如微信支付、支付宝、银行转账"}},
+            PaymentFieldsArgs,
             check_payment_fields,
         ),
-        "calculate_refund": make_tool(
+        "calculate_refund": make_model_tool(
             "calculate_refund",
             "按退款政策估算可退金额。stage：not_started 未启动 / in_progress 进行中 / delivered 已交付。结果仅为估算，需顾问核验协议后确认。",
-            {
-                "sku": {"type": "string", "description": "服务 SKU"},
-                "amount_paid": {"type": "number", "description": "已付金额（元）"},
-                "stage": {"type": "string", "enum": list(REFUND_STAGES)},
-                "completed_rounds": {"type": "integer", "description": "文书类已完成的修改轮次"},
-                "progress_percent": {"type": "number", "description": "套餐类服务的进度百分比（由顾问确认）"},
-            },
+            RefundArgs,
             calculate_refund_tool,
-            required=["sku", "amount_paid", "stage"],
+            output_model=RefundResult,
         ),
-        "get_payment_policy": make_tool(
+        "get_payment_policy": make_model_tool(
             "get_payment_policy",
             "获取付款方式、定金规则、退款政策和发票政策原文。",
-            {},
+            NoArgs,
             get_payment_policy,
         ),
-        "compare_amounts": make_tool(
+        "compare_amounts": make_model_tool(
             "compare_amounts",
             "计算用户明确提供的两笔金额差值；不判断是否多付，也不执行退款。",
-            {
-                "amount_a": {"type": "number", "description": "第一笔金额"},
-                "amount_b": {"type": "number", "description": "第二笔金额"},
-            },
+            CompareAmountsArgs,
             compare_amounts,
-            required=["amount_a", "amount_b"],
         ),
     }
 

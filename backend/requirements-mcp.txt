@@ -1,0 +1,6 @@
+# 只读 MCP 入口（mcp_server.py）的依赖。
+# 和 requirements.txt 分开：mcp SDK 要求更新的 starlette，和后端固定的 fastapi 版本冲突，
+# 所以它只在本地或单独的环境里运行，不进后端镜像，也不占服务器内存。
+mcp>=1.9,<2          # 用 from mcp.server.fastmcp import FastMCP；2.x 里 FastMCP 改名为 MCPServer
+pydantic>=2.10
+pyyaml>=6.0
