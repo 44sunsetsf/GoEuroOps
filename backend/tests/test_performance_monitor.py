@@ -78,7 +78,7 @@ def test_agent_records_time_to_first_output():
     agent.stats = AgentStats()
     agent._needs_escalation = lambda content: False
 
-    async def fake_llm(req, on_delta=None):
+    async def fake_llm(req, on_delta=None, run=None):
         for t in ("你好", "，这里是回答"):
             await on_delta(t)
         return "你好，这里是回答"

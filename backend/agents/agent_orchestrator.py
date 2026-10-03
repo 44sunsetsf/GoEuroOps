@@ -210,6 +210,19 @@ class RoutingDecision:
 
 # ── 基础 Agent ────────────────────────────────────────────────────────────────
 
+@dataclass
+class _RunRecord:
+    """一次 handle() 调用的执行记录。
+
+    Agent 实例在所有并发请求之间共享，所以这些按请求变化的数据不能挂在 self 上，
+    否则两个请求交错 await 时会互相覆盖 trace。
+    """
+
+    tools_used: List[str] = field(default_factory=list)
+    tool_traces: List[Dict[str, Any]] = field(default_factory=list)
+    skills: List[Dict[str, Any]] = field(default_factory=list)
+
+
 class BaseAgent:
     """所有 Agent 的基类，封装 LLM 调用、角色契约和统计。"""
 
@@ -229,9 +242,6 @@ class BaseAgent:
         self._model  = self.profile.model or model
         self._skill_manager = skill_manager
         self.stats   = AgentStats()
-        self._last_tools_used: List[str] = []
-        self._last_tool_traces: List[Dict[str, Any]] = []
-        self._last_skills: List[Dict[str, Any]] = []
         self._shared_tools: Dict[str, AgentToolSpec] = {}
         self._lead_store: Optional[LeadStore] = None
         self._gateway = get_gateway()
@@ -288,9 +298,7 @@ class BaseAgent:
     async def handle(self, req: Request, on_delta: Optional[OnDelta] = None) -> AgentResponse:
         t0 = time.monotonic()
         self.stats.total += 1
-        self._last_tools_used = []
-        self._last_tool_traces = []
-        self._last_skills = []
+        run = _RunRecord()
         if on_delta is not None:
             forward, seen = on_delta, False
 
@@ -301,7 +309,7 @@ class BaseAgent:
                     self.stats.first_output(t0)
                 await forward(text)
         try:
-            content = await self._call_llm(req, on_delta=on_delta)
+            content = await self._call_llm(req, on_delta=on_delta, run=run)
             ms = (time.monotonic() - t0) * 1000
             self.stats.success += 1
             self.stats.total_ms += ms
@@ -312,9 +320,9 @@ class BaseAgent:
                 success=True,
                 latency_ms=ms,
                 escalate=escalate,
-                tools_used=list(self._last_tools_used),
-                tool_traces=list(self._last_tool_traces),
-                skills_applied=list(self._last_skills),
+                tools_used=list(run.tools_used),
+                tool_traces=list(run.tool_traces),
+                skills_applied=list(run.skills),
             )
         except Exception as ex:
             ms = (time.monotonic() - t0) * 1000
@@ -325,11 +333,14 @@ class BaseAgent:
                 content="抱歉，处理您的请求时出现问题，请稍后重试。",
                 success=False,
                 latency_ms=ms,
-                tool_traces=list(self._last_tool_traces),
-                skills_applied=list(self._last_skills),
+                tool_traces=list(run.tool_traces),
+                skills_applied=list(run.skills),
             )
 
-    async def _call_llm(self, req: Request, on_delta: Optional[OnDelta] = None) -> str:
+    async def _call_llm(
+        self, req: Request, on_delta: Optional[OnDelta] = None, run: Optional[_RunRecord] = None,
+    ) -> str:
+        run = run if run is not None else _RunRecord()
         def _clean(s: str) -> str:
             return s.encode("utf-8", errors="ignore").decode("utf-8")
 
@@ -351,11 +362,11 @@ class BaseAgent:
         messages.append({"role": "user", "content": _clean(req.message)})
 
         selection = self._select_skills(req)
-        self._last_skills = selection.applied() if selection is not None else []
+        run.skills = selection.applied() if selection is not None else []
         system_prompt = self._build_system_prompt(req, selection)
         tools = self._tools_for(req, selection)
-        tools_used: List[str] = []
-        tool_traces: List[Dict[str, Any]] = []
+        tools_used = run.tools_used          # 边执行边写进 run，出异常时 handle() 也能拿到已有的 trace
+        tool_traces = run.tool_traces
 
         # 金额护栏：回复里的人民币金额必须能在本轮依据里找到（工具结果、用户原话、背景、知识库、Skill、价目表）
         grounding = AmountGrounding()
@@ -409,8 +420,6 @@ class BaseAgent:
                         "reranked": False,
                         "error": f"回复里的金额没有依据：{sorted({a for v in guard.violations for a in v.amounts})}（模式 {guard.mode}）",
                     })
-                self._last_tools_used = tools_used
-                self._last_tool_traces = tool_traces
                 return text
 
             messages.append({"role": "assistant", "content": content_blocks})
@@ -459,8 +468,6 @@ class BaseAgent:
                 })
             messages.append({"role": "user", "content": tool_results})
 
-        self._last_tools_used = tools_used
-        self._last_tool_traces = tool_traces
         raise RuntimeError(f"{self.agent_type.value} 工具调用超过最大轮数")
 
     async def _complete(

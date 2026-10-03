@@ -359,3 +359,66 @@ def test_deliverable_name_does_not_pull_in_consulting_agent():
 
     composite = make_request(message="想问问瑞典怎么选校，另外定金能退吗", intent=IntentCategory.REFUND, entities={})
     assert AgentType.CONSULTING in orch._collaboration_targets(composite)
+
+
+def test_concurrent_requests_on_shared_agent_keep_their_own_records():
+    """同一个 Agent 实例同时处理两个请求时，各自的 Skill 记录和工具轨迹不能串。
+
+    Agent 在编排器里是单例，所有请求共用；按请求变化的记录必须跟着请求走。
+    旧实现把命中的 Skill 在调模型之前就挂在 self 上，另一个请求一进来就把它覆盖了。
+    """
+    tool_for = {"问瑞典": ("lookup_country_admissions_overview", {"country": "瑞典"}),
+                "问服务": ("lookup_service_offering", {})}
+
+    class Selection:
+        def __init__(self, message):
+            self.message = message
+            self.skill_ids = [f"skill-{message}"]
+            self.prompt = ""
+            self.has_references = False
+
+        def applied(self):
+            return [{"id": f"skill-{self.message}"}]
+
+    class SkillManager:
+        def select(self, message, agent_type, **kwargs):
+            return Selection(message)
+
+        def record(self, selection, agent_type):
+            pass
+
+    class InterleavingClient:
+        def __init__(self):
+            self.arrived = 0
+            self.both_in = asyncio.Event()
+            owner = self
+
+            class Messages:
+                async def create(inner, **kwargs):
+                    msg = kwargs["messages"][-1]["content"]
+                    if isinstance(msg, str):              # 第一轮：等两个请求都进来再返回，制造交错
+                        owner.arrived += 1
+                        if owner.arrived == 2:
+                            owner.both_in.set()
+                        await owner.both_in.wait()
+                        name, args = tool_for[msg]
+                        block = type("B", (), {"type": "tool_use", "id": f"id-{name}", "name": name, "input": args})()
+                        return type("R", (), {"content": [block]})()
+                    text = type("T", (), {"type": "text", "text": "好的"})()
+                    return type("R", (), {"content": [text]})()
+
+            self.messages = Messages()
+
+    agent = ConsultingAgent(InterleavingClient(), "test-model", SkillManager())
+
+    async def both():
+        return await asyncio.gather(
+            agent.handle(make_request(message="问瑞典")),
+            agent.handle(make_request(message="问服务")),
+        )
+
+    a, b = asyncio.run(both())
+    assert a.skills_applied == [{"id": "skill-问瑞典"}]
+    assert b.skills_applied == [{"id": "skill-问服务"}]
+    assert [t["tool_name"] for t in a.tool_traces] == ["lookup_country_admissions_overview"]
+    assert [t["tool_name"] for t in b.tool_traces] == ["lookup_service_offering"]
