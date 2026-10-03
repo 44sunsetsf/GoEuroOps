@@ -47,7 +47,7 @@ docker run --rm caddy:2-alpine caddy hash-password --plaintext '你的后台密�
 ```bash
 cat > .env <<'EOF'
 ANTHROPIC_API_KEY=你的 key
-ANTHROPIC_MODEL=deepseek-v4-pro
+ANTHROPIC_MODEL=deepseek-v4-flash
 ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic
 
 # 没有域名时用 sslip.io：把服务器 IP 写在前面即可，Caddy 会自动申请证书
