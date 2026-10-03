@@ -1,0 +1,653 @@
+{
+ "results": {
+  "old": [
+   {
+    "cat": "multi_hop",
+    "q": "What did Caroline research?",
+    "gold": "Adoption agencies",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 159,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What career path has Caroline decided to persue?",
+    "gold": "counseling or mental health for Transgender people",
+    "answer": "心理咨询与心理健康",
+    "correct": true,
+    "ctx_chars": 158,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What books has Melanie read?",
+    "gold": "\"Nothing is Impossible\", \"Charlotte's Web\"",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 251,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What did Melanie paint recently?",
+    "gold": "sunset",
+    "answer": "horse",
+    "correct": false,
+    "ctx_chars": 223,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What kind of art does Caroline make?",
+    "gold": "abstract art",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 202,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What are Melanie's pets' names?",
+    "gold": "Oliver, Luna, Bailey",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 220,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What musical artists/bands has Melanie seen?",
+    "gold": "Summer Sounds, Matt Patterson",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 218,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What book did Melanie read from Caroline's suggestion?",
+    "gold": "\"Becoming Nicole\"",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 230,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline go to the LGBTQ support group?",
+    "gold": "7 May 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 159,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline give a speech at a school?",
+    "gold": "The week before 9 June 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 187,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie sign up for a pottery class?",
+    "gold": "2 July 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 266,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline go to the LGBTQ conference?",
+    "gold": "10 July 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 159,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie go camping in June?",
+    "gold": "The week before 27 June 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 258,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline join a new activist group?",
+    "gold": "The Tuesday before 20 July 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 159,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline apply to adoption agencies?",
+    "gold": "The week of 23 August 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 230,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie go to the park?",
+    "gold": "27 August 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 261,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "What fields would Caroline be likely to pursue in her educaton?",
+    "gold": "Psychology, counseling certification",
+    "answer": "Counseling and mental health",
+    "correct": true,
+    "ctx_chars": 187,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline still want to pursue counseling as a career if she hadn't received support growing up?",
+    "gold": "Likely no",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 215,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline likely have Dr. Seuss books on her bookshelf?",
+    "gold": "Yes, since she collects classic children's books",
+    "answer": "Yes",
+    "correct": true,
+    "ctx_chars": 256,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline pursue writing as a career option?",
+    "gold": "LIkely no; though she likes reading, she wants to be a counselor",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 208,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be considered a member of the LGBTQ community?",
+    "gold": "Likely no, she does not refer to herself as part of it",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 195,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be more interested in going to a national park or a theme park?",
+    "gold": "National park; she likes the outdoors",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 253,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be considered an ally to the transgender community?",
+    "gold": "Yes, she is supportive",
+    "answer": "Yes",
+    "correct": true,
+    "ctx_chars": 179,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "What would Caroline's political leaning likely be?",
+    "gold": "Liberal",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 133,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "What did the charity race raise awareness for?",
+    "gold": "mental health",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 203,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "How long have Mel and her husband been married?",
+    "gold": "Mel and her husband have been married for 5 years.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 237,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What was discussed in the LGBTQ+ counseling workshop?",
+    "gold": "therapeutic methods and how to best work with trans people",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 208,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "What are the new shoes that Melanie got used for?",
+    "gold": "Running",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 266,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "What do sunflowers represent according to Caroline?",
+    "gold": "warmth and happiness",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 178,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "Why did Melanie choose to use colors and patterns in her pottery project?",
+    "gold": "She wanted to catch the eye and make people smile.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 265,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "Which  classical musicians does Melanie enjoy listening to?",
+    "gold": "Bach and Mozart",
+    "answer": "Bach and Mozart",
+    "correct": true,
+    "ctx_chars": 236,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What kind of painting did Caroline share with Melanie on October 13, 2023?",
+    "gold": "An abstract painting with blue streaks on a wall.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 228,
+    "ev_hit": true,
+    "ev_any": true
+   }
+  ],
+  "turn_index": [
+   {
+    "cat": "multi_hop",
+    "q": "What did Caroline research?",
+    "gold": "Adoption agencies",
+    "answer": "Adoption agencies",
+    "correct": true,
+    "ctx_chars": 1475,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What career path has Caroline decided to persue?",
+    "gold": "counseling or mental health for Transgender people",
+    "answer": "Counseling and mental health",
+    "correct": true,
+    "ctx_chars": 1434,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What books has Melanie read?",
+    "gold": "\"Nothing is Impossible\", \"Charlotte's Web\"",
+    "answer": "Charlotte's Web",
+    "correct": true,
+    "ctx_chars": 1243,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What did Melanie paint recently?",
+    "gold": "sunset",
+    "answer": "nature-inspired ones",
+    "correct": false,
+    "ctx_chars": 1312,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What kind of art does Caroline make?",
+    "gold": "abstract art",
+    "answer": "Painting and abstract art",
+    "correct": true,
+    "ctx_chars": 1528,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What are Melanie's pets' names?",
+    "gold": "Oliver, Luna, Bailey",
+    "answer": "Luna and Oliver",
+    "correct": false,
+    "ctx_chars": 1221,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What musical artists/bands has Melanie seen?",
+    "gold": "Summer Sounds, Matt Patterson",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1255,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "multi_hop",
+    "q": "What book did Melanie read from Caroline's suggestion?",
+    "gold": "\"Becoming Nicole\"",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1245,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline go to the LGBTQ support group?",
+    "gold": "7 May 2023",
+    "answer": "8 May, 2023",
+    "correct": false,
+    "ctx_chars": 1553,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline give a speech at a school?",
+    "gold": "The week before 9 June 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1510,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie sign up for a pottery class?",
+    "gold": "2 July 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1614,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline go to the LGBTQ conference?",
+    "gold": "10 July 2023",
+    "answer": "two days ago",
+    "correct": false,
+    "ctx_chars": 1663,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie go camping in June?",
+    "gold": "The week before 27 June 2023",
+    "answer": "27 June, 2023",
+    "correct": false,
+    "ctx_chars": 1633,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline join a new activist group?",
+    "gold": "The Tuesday before 20 July 2023",
+    "answer": "8 May, 2023",
+    "correct": false,
+    "ctx_chars": 1376,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Caroline apply to adoption agencies?",
+    "gold": "The week of 23 August 2023",
+    "answer": "25 May, 2023",
+    "correct": false,
+    "ctx_chars": 1592,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "temporal",
+    "q": "When did Melanie go to the park?",
+    "gold": "27 August 2023",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1271,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "What fields would Caroline be likely to pursue in her educaton?",
+    "gold": "Psychology, counseling certification",
+    "answer": "Counseling and mental health",
+    "correct": true,
+    "ctx_chars": 1101,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline still want to pursue counseling as a career if she hadn't received support growing up?",
+    "gold": "Likely no",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1505,
+    "ev_hit": false,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline likely have Dr. Seuss books on her bookshelf?",
+    "gold": "Yes, since she collects classic children's books",
+    "answer": "Yes",
+    "correct": true,
+    "ctx_chars": 1357,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Caroline pursue writing as a career option?",
+    "gold": "LIkely no; though she likes reading, she wants to be a counselor",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1504,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be considered a member of the LGBTQ community?",
+    "gold": "Likely no, she does not refer to herself as part of it",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1832,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be more interested in going to a national park or a theme park?",
+    "gold": "National park; she likes the outdoors",
+    "answer": "A national park",
+    "correct": true,
+    "ctx_chars": 1347,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "open_domain",
+    "q": "Would Melanie be considered an ally to the transgender community?",
+    "gold": "Yes, she is supportive",
+    "answer": "Yes",
+    "correct": true,
+    "ctx_chars": 1734,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "open_domain",
+    "q": "What would Caroline's political leaning likely be?",
+    "gold": "Liberal",
+    "answer": "Pro-LGBTQ+ and liberal",
+    "correct": true,
+    "ctx_chars": 1033,
+    "ev_hit": false,
+    "ev_any": false
+   },
+   {
+    "cat": "single_hop",
+    "q": "What did the charity race raise awareness for?",
+    "gold": "mental health",
+    "answer": "mental health",
+    "correct": true,
+    "ctx_chars": 1827,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "How long have Mel and her husband been married?",
+    "gold": "Mel and her husband have been married for 5 years.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 987,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What was discussed in the LGBTQ+ counseling workshop?",
+    "gold": "therapeutic methods and how to best work with trans people",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1796,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What are the new shoes that Melanie got used for?",
+    "gold": "Running",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1246,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What do sunflowers represent according to Caroline?",
+    "gold": "warmth and happiness",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1576,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "Why did Melanie choose to use colors and patterns in her pottery project?",
+    "gold": "She wanted to catch the eye and make people smile.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1613,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "Which  classical musicians does Melanie enjoy listening to?",
+    "gold": "Bach and Mozart",
+    "answer": "Bach and Mozart",
+    "correct": true,
+    "ctx_chars": 1354,
+    "ev_hit": true,
+    "ev_any": true
+   },
+   {
+    "cat": "single_hop",
+    "q": "What kind of painting did Caroline share with Melanie on October 13, 2023?",
+    "gold": "An abstract painting with blue streaks on a wall.",
+    "answer": "unknown",
+    "correct": false,
+    "ctx_chars": 1345,
+    "ev_hit": false,
+    "ev_any": false
+   }
+  ]
+ },
+ "write": {
+  "calls": 71,
+  "tokens": 33248,
+  "seconds": 27.7
+ }
+}

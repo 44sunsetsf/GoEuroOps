@@ -4,7 +4,9 @@
 三层记忆：
   1. 工作记忆（Redis）：当前会话最近的消息原文，满 COMPRESS_AT 条压缩，只留最近 KEEP_RAW 条原文
   2. 情景记忆（ChromaDB）：压缩下来的摘要（附原文存档），按语义检索，可跨会话
-  3. 用户画像（ChromaDB）：用户本人说出的事实，按固定字段归类，**只追加、带时间**；
+  3. 逐句索引（ChromaDB）：用户说的每句话单独建向量，提问时按语义取回原话，可跨会话。
+     摘要把 10 多句压成一条，细节在压缩时就丢了；单句索引保留原话，不需要任何模型调用（借鉴 A-Mem 的"记忆单位是原文"）
+  4. 用户画像（ChromaDB）：用户本人说出的事实，按固定字段归类，**只追加、带时间**；
      取用时同一字段以最新为准，旧值留档（“之前：荷兰”），一次提炼错了也不会把对的盖掉
 
 写画像的时机：用户这句话在讲自己的情况（带“我”，且出现数字、专业、成绩、国家、预算这类词）才提炼一次；
@@ -130,6 +132,7 @@ class MemoryContext:
     relevant_history: List[str]       # 情景记忆：语义相关的历史片段
     user_profile:     Dict[str, Any]  # 用户画像：{"version": 2, "facts": [...]}，见 normalize_profile
     summary:          str             # 当前会话摘要（压缩后）
+    relevant_turns:   List[str] = field(default_factory=list)   # 逐句索引：用户以前说过的、和这次提问相关的原话
 
     @staticmethod
     def _clean(text: str) -> str:
@@ -142,6 +145,8 @@ class MemoryContext:
             parts.append(f"[会话摘要]\n{self._clean(self.summary)}")
         if self.relevant_history:
             parts.append("[相关历史]\n" + "\n".join(f"- {self._clean(h)}" for h in self.relevant_history[:3]))
+        if self.relevant_turns:
+            parts.append("[用户以前说过的相关原话]\n" + "\n".join(f"- {self._clean(t)}" for t in self.relevant_turns))
         profile_text = render_profile(normalize_profile(self.user_profile)) if self.user_profile else ""
         if profile_text:
             parts.append(f"[用户画像]（用户本人说过的事实，后说的为准）\n{self._clean(profile_text)}")
@@ -169,6 +174,10 @@ class MemoryManager:
     KEEP_RAW      = 5
     HISTORY_TOP_K = 5     # 情景记忆检索返回条数
     SUMMARY_MAX_CHARS = 800
+    TURN_INDEX      = os.getenv("GOEUROOPS_TURN_INDEX", "1") != "0"   # 逐句索引开关，设成 0 回到只有摘要
+    TURN_TOP_K      = 6      # 提问时取回几句原话
+    TURN_MIN_CHARS  = 8      # 太短的话（"好的""谢谢"）不建索引
+    TURN_SHOW_CHARS = 300    # 每句原话放进提示词时最多多少字
     PROFILE_DOC_PREFIX = "user_profile:"
 
     def __init__(
@@ -213,6 +222,8 @@ class MemoryManager:
 
         # 情景记忆：存储历史对话片段
         self._episodic = chroma.get_or_create_collection("episodic")
+        # 逐句索引：用户说的每句话一条，不经过模型，只算向量
+        self._turns = chroma.get_or_create_collection("turns")
         # 用户画像：存储提炼出的偏好和实体
         self._profile  = chroma.get_or_create_collection("user_profile")
         # 画像是“读出来、追加、写回去”，同一用户的两次后台更新不能交错，否则会丢事实
@@ -237,6 +248,9 @@ class MemoryManager:
         }
         msg = Message(role=role, content=self._safe_text(content), metadata=clean_metadata)
         key = self._wm_key(user_id, conv_id)
+
+        if self.TURN_INDEX and role == MsgRole.USER:
+            await self._index_turn(user_id, conv_id, msg)
 
         try:
             length = await asyncio.wait_for(self._append(key, msg), self._redis_timeout * 2)
@@ -367,6 +381,13 @@ class MemoryManager:
             query or (recent[-1].content if recent else ""),
         )
 
+        # 2b. 逐句索引：以前说过的原话（工作记忆里已有的不重复）
+        turns = []
+        if self.TURN_INDEX:
+            turns = await self._search_turns(
+                user_id, query or (recent[-1].content if recent else ""), [m.content for m in recent],
+            )
+
         # 3. 用户画像
         profile = await self._get_profile(user_id)
 
@@ -384,11 +405,12 @@ class MemoryManager:
             relevant_history=history,
             user_profile=profile,
             summary=summary,
+            relevant_turns=turns,
         )
 
     # ── 压缩（防止 context 爆炸）─────────────────────────────────────────────
 
-    async def _compress(self, user_id: str, conv_id: str) -> None:
+    async def _compress(self, user_id: str, conv_id: str, force: bool = False) -> None:
         """
         工作记忆压缩：
           1. 用 LLM 对旧消息生成摘要
@@ -397,11 +419,12 @@ class MemoryManager:
           4. 工作记忆只保留最近 5 条
         """
         messages = await self._get_working_memory(user_id, conv_id)
-        if len(messages) < self.COMPRESS_AT:
+        if len(messages) < (2 if force else self.COMPRESS_AT):
             return
 
-        to_compress = messages[:-self.KEEP_RAW]
-        keep        = messages[-self.KEEP_RAW:]
+        # force：会话结束时把剩下的全部压进情景记忆（评测用；线上没有"会话结束"的信号，所以没有接）
+        to_compress = messages if force else messages[:-self.KEEP_RAW]
+        keep        = [] if force else messages[-self.KEEP_RAW:]
 
         # 压缩前把要压缩的消息再整理一遍画像，补上逐轮提炼漏掉的事实（相当于“空闲时整理”）。
         # 它和写摘要互不依赖，并行执行，压缩这一轮不会因此多等一次模型调用。
@@ -512,6 +535,51 @@ class MemoryManager:
             )
         except Exception as ex:
             logger.warning(f"存储情景记忆失败: {ex}")
+
+    async def _index_turn(self, user_id: str, conv_id: str, msg: "Message") -> None:
+        """用户说的话单独建一条向量。纯提问（带问号、没讲自己的情况）不建：它们不是要记住的事实，还会挤掉真正的原话。"""
+        text = msg.content.strip()
+        if len(text) < self.TURN_MIN_CHARS:
+            return
+        if re.search(r"[?？]\s*$", text) and not has_self_info(text):
+            return
+        try:
+            doc_id = hashlib.md5(f"{user_id}{conv_id}{msg.timestamp.isoformat()}{text}".encode()).hexdigest()
+            await asyncio.wait_for(asyncio.to_thread(
+                self._turns.add, ids=[doc_id], documents=[text],
+                metadatas=[{"user_id": user_id, "conv_id": conv_id, "ts": msg.timestamp.isoformat()}],
+            ), 10)
+        except Exception as ex:                     # noqa: BLE001 —— 索引失败只是少一条原话，不能影响对话
+            logger.warning(f"写入逐句索引失败: {ex}")
+
+    async def _search_turns(self, user_id: str, query: str, exclude: List[str]) -> List[str]:
+        """按语义取回用户以前说过的原话（带日期）。已经在工作记忆里的话不重复放。"""
+        query_text = self._safe_text(query).strip()
+        if not query_text:
+            return []
+        skip = {self._safe_text(t).strip() for t in exclude}
+        try:
+            res = await asyncio.wait_for(asyncio.to_thread(
+                self._turns.query, query_texts=[query_text],
+                n_results=self.TURN_TOP_K + len(skip), where={"user_id": self._safe_text(user_id)},
+            ), 10)
+            docs = (res.get("documents") or [[]])[0]
+            metas = (res.get("metadatas") or [[]])[0]
+            out: List[str] = []
+            for i, doc in enumerate(docs):
+                if not isinstance(doc, str) or doc.strip() in skip:
+                    continue
+                ts = ((metas[i] if i < len(metas) else None) or {}).get("ts", "")[:10]
+                text = doc.strip()
+                if len(text) > self.TURN_SHOW_CHARS:
+                    text = text[: self.TURN_SHOW_CHARS].rstrip() + "…"
+                out.append(f"[{ts}] {text}" if ts else text)
+                if len(out) >= self.TURN_TOP_K:
+                    break
+            return self._dedupe_texts(out)
+        except Exception as ex:                     # noqa: BLE001
+            logger.warning(f"逐句索引检索失败: {ex}")
+            return []
 
     async def _get_profile(self, user_id: str) -> Dict[str, Any]:
         """获取用户画像（取最新一条）。"""
