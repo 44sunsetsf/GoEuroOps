@@ -24,6 +24,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Awaitable, Callable, Dict, List, Optional
+from core.config import env_float, env_int
 
 logger = logging.getLogger(__name__)
 
@@ -60,20 +61,6 @@ RAG_POLICY: Dict[str, RagMode] = {
     "human_handoff": RagMode.OFF,
     "data_privacy": RagMode.OFF,
 }
-
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.getenv(name, default))
-    except (TypeError, ValueError):
-        return default
-
-
-def _env_int(name: str, default: int) -> int:
-    try:
-        return int(os.getenv(name, default))
-    except (TypeError, ValueError):
-        return default
 
 
 @dataclass
@@ -119,10 +106,10 @@ class RagGate:
         enabled: Optional[bool] = None,
     ):
         self._search_fn = search_fn
-        self.min_confidence = min_confidence if min_confidence is not None else _env_float("GOEUROOPS_RAG_GATE_MIN_CONF", 0.6)
-        self.top_k = top_k if top_k is not None else _env_int("GOEUROOPS_RAG_PREFETCH_TOP_K", 3)
+        self.min_confidence = min_confidence if min_confidence is not None else env_float("GOEUROOPS_RAG_GATE_MIN_CONF", 0.6)
+        self.top_k = top_k if top_k is not None else env_int("GOEUROOPS_RAG_PREFETCH_TOP_K", 3)
         # 混合检索分数下限（向量 0.75 + 字面覆盖 0.25），低于它的片段不注入
-        self.min_score = min_score if min_score is not None else _env_float("GOEUROOPS_RAG_PREFETCH_MIN_SCORE", 0.4)
+        self.min_score = min_score if min_score is not None else env_float("GOEUROOPS_RAG_PREFETCH_MIN_SCORE", 0.4)
         if enabled is None:
             enabled = os.getenv("GOEUROOPS_RAG_GATE_ENABLED", "true").lower() not in {"0", "false", "no", "off"}
         self.enabled = enabled

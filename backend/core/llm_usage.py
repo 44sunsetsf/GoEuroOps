@@ -112,8 +112,8 @@ class _TrackedStream:
             snapshot = getattr(self._stream, "current_message_snapshot", None)
             if snapshot is not None:
                 _record_soon(self._source, getattr(snapshot, "usage", None))
-        except Exception:
-            pass
+        except Exception:                           # noqa: BLE001 —— 记用量失败不能影响流式回复
+            log.debug("记录流式回复的 token 用量失败", exc_info=True)
         return await self._manager.__aexit__(*exc)
 
 
