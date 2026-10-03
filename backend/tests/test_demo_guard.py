@@ -4,6 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api import demo_guard
+from api.routes import chat as chat_routes
+from api.routes import evals as eval_routes
+from api.state import services
 from api.demo_guard import cost_exceeded, guest_write_allowed, mask_pii
 
 GUEST = {"X-Studio-Role": "guest"}
@@ -79,7 +82,7 @@ def client(monkeypatch):
         async def stats(self):
             return {"total": 1}
 
-    monkeypatch.setattr(main, "_lead_store", FakeLeads())
+    monkeypatch.setattr(services, "lead_store", FakeLeads())
     return TestClient(main.app)   # no `with`: lifespan (models, Redis) is not started
 
 
@@ -102,14 +105,13 @@ def test_leads_are_masked_for_guest_only(client):
 
 
 def test_chat_refused_once_daily_cost_is_spent(client, monkeypatch):
-    from api import main
 
     async def spent(*_):
         return True
 
-    monkeypatch.setattr(main, "_orchestrator", object())
-    monkeypatch.setattr(main, "_memory", object())
-    monkeypatch.setattr(main, "cost_exceeded", spent)
+    monkeypatch.setattr(services, "orchestrator", object())
+    monkeypatch.setattr(services, "memory", object())
+    monkeypatch.setattr(chat_routes, "cost_exceeded", spent)
     r = client.post("/chat", json={"message": "hi", "user_id": "u"})
     assert r.status_code == 429 and r.json()["detail"] == demo_guard.COST_LIMIT_MESSAGE
 
@@ -126,18 +128,17 @@ class FakeEvaluator:
 
 
 def test_guest_eval_uses_defaults_keeps_baseline_and_is_limited(client, monkeypatch):
-    from api import main
     from api.quota import DailyQuota
     from evaluation.evaluator import DEFAULT_INTENT_CASES
 
     ev = FakeEvaluator()
-    monkeypatch.setattr(main, "_evaluator", ev)
-    monkeypatch.setattr(main, "_guest_eval_quota", DailyQuota(limit=2))
+    monkeypatch.setattr(services, "evaluator", ev)
+    monkeypatch.setattr(services, "guest_eval_quota", DailyQuota(limit=2))
 
     async def not_spent(*_):
         return False
 
-    monkeypatch.setattr(main, "cost_exceeded", not_spent)
+    monkeypatch.setattr(eval_routes, "cost_exceeded", not_spent)
     custom = {"intent_cases": [{"message": "x", "expected_intent": "greeting"}] * 500, "compare_rag_gate": True}
     assert client.post("/eval/run", json=custom, headers=GUEST).status_code == 200
     assert ev.calls[-1]["intent_cases"] is DEFAULT_INTENT_CASES           # custom cases ignored
@@ -151,16 +152,15 @@ def test_guest_eval_uses_defaults_keeps_baseline_and_is_limited(client, monkeypa
 
 def test_guest_eval_refused_while_another_runs(client, monkeypatch):
     import asyncio
-    from api import main
 
     lock = asyncio.Lock()
     asyncio.run(lock.acquire())
-    monkeypatch.setattr(main, "_guest_eval_lock", lock)
-    monkeypatch.setattr(main, "_evaluator", FakeEvaluator())
+    monkeypatch.setattr(services, "guest_eval_lock", lock)
+    monkeypatch.setattr(services, "evaluator", FakeEvaluator())
 
     async def not_spent(*_):
         return False
 
-    monkeypatch.setattr(main, "cost_exceeded", not_spent)
+    monkeypatch.setattr(eval_routes, "cost_exceeded", not_spent)
     r = client.post("/eval/run", headers=GUEST)
     assert r.status_code == 429 and "在运行" in r.json()["detail"]
