@@ -142,7 +142,7 @@ def quote_bundle(
 
 
 def _format_quote(catalog: Catalog, lines, subtotal, discounts, total, due_now) -> str:
-    rows = [f"- {l['name']} × {l['qty']}：{catalog.money(l['amount'])}" for l in lines]
+    rows = [f"- {line['name']} × {line['qty']}：{catalog.money(line['amount'])}" for line in lines]
     rows.append(f"- 小计：{catalog.money(subtotal)}")
     rows += [f"- {d['name']}：{'-' if d['amount'] < 0 else '+'}{catalog.money(abs(d['amount']))}" for d in discounts]
     rows.append(f"- 应付合计：{catalog.money(total)}（签约时付 {catalog.money(due_now)}）")

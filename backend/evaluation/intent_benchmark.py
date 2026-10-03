@@ -100,11 +100,11 @@ def classification_metrics(gold: List[str], pred: List[str]) -> Dict[str, Any]:
         recall = tp / (tp + fn) if tp + fn else 0.0
         f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
         per_class[label] = {"precision": round(precision, 4), "recall": round(recall, 4), "f1": round(f1, 4), "support": tp + fn}
-    present = [l for l in LABELS if per_class[l]["support"]]
+    present = [label for label in LABELS if per_class[label]["support"]]
     group = lambda v: _group_of(IntentCategory(v)).value  # noqa: E731
     return {
         "accuracy": round(sum(g == p for g, p in zip(gold, pred)) / len(gold), 4),
-        "macro_f1": round(statistics.mean(per_class[l]["f1"] for l in present), 4),
+        "macro_f1": round(statistics.mean(per_class[label]["f1"] for label in present), 4),
         # 领域准确率：大类和细类属于同一领域时算对，这个口径直接决定路由到哪个 Agent
         "group_accuracy": round(sum(group(g) == group(p) for g, p in zip(gold, pred)) / len(gold), 4),
         "per_class": per_class,
@@ -232,7 +232,7 @@ def render_markdown(r: Dict[str, Any]) -> str:
     lines += [f"| {t} | {v['n']} | {v['accuracy']:.1%} |" for t, v in r["by_tag"].items()]
     lines += ["", "## 最常见的混淆", "", "| 标注 | 预测 | 次数 |", "|---|---|---|"]
     lines += [f"| {c['gold']} | {c['pred']} | {c['count']} |" for c in r["confusions"]]
-    lines += ["", f"## v3.1 修复的影响", "",
+    lines += ["", "## v3.1 修复的影响", "",
               f"- 修复前错、修复后对：{len(r['fixed_by_v3_1'])} 条 {r['fixed_by_v3_1'][:8]}",
               f"- 修复前对、修复后错：{len(r['broken_by_v3_1'])} 条 {r['broken_by_v3_1'][:8]}",
               "", "## 错例", "", "| 文本 | 标注 | 预测 | LLM | 置信度 |", "|---|---|---|---|---|"]

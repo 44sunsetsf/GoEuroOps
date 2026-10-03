@@ -5,8 +5,11 @@
 GOEUROOPS_DAILY_CHAT_LIMIT 给全站每天的对话次数设一个上限（0 或不设 = 不限制），
 计数按北京时间自然日重置；Redis 不可用时退回进程内计数，宁可多放行也不拦住正常访问。
 """
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 _KEY_PREFIX = "goeuroops:quota:chat:"
 _TZ = timezone(timedelta(hours=8))
@@ -42,7 +45,7 @@ class DailyQuota:
                 if count == 1:
                     await self._redis.expire(key, 2 * 86400)
                 return count <= self.limit
-            except Exception:
-                pass
+            except Exception as ex:                 # noqa: BLE001 —— 设计如此：Redis 不可用时退回进程内计数
+                logger.warning(f"每日额度 Redis 计数失败，退回进程内计数: {ex}")
         self._memory = {day: self._memory.get(day, 0) + 1}
         return self._memory[day] <= self.limit

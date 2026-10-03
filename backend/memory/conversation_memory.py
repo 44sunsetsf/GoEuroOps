@@ -220,8 +220,8 @@ class MemoryManager:
 
             try:
                 await asyncio.to_thread(self._profile.delete, ids=[doc_id])
-            except Exception:
-                pass
+            except Exception:                       # noqa: BLE001 —— 第一次写画像时旧记录本来就不存在
+                logger.debug("删除旧画像失败（可能本来就不存在）: %s", user_id, exc_info=True)
 
             # 直接传 documents，让 ChromaDB 内置模型生成 embedding（不依赖 Voyage API）
             await asyncio.to_thread(
@@ -402,8 +402,8 @@ class MemoryManager:
 
             results = await asyncio.to_thread(self._profile.get, where={"user_id": user_id})
             return self._latest_profile_from_results(results)
-        except Exception:
-            pass
+        except Exception as ex:                     # noqa: BLE001 —— 画像只是背景，读不到按没有画像继续
+            logger.warning(f"读取用户画像失败，按无画像继续: {ex}")
         return {}
 
     async def close(self) -> None:

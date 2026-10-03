@@ -201,11 +201,11 @@ class LeadStore:
                 logger.warning("读取线索列表失败，降级为内存存储: %s", ex)
                 self._degraded = True
         if self._degraded:
-            leads = sorted(self._memory.values(), key=lambda l: l["created_ts"], reverse=True)
+            leads = sorted(self._memory.values(), key=lambda lead: lead["created_ts"], reverse=True)
         if status:
-            leads = [l for l in leads if l.get("status") == status]
+            leads = [lead for lead in leads if lead.get("status") == status]
         if lead_type:
-            leads = [l for l in leads if l.get("type") == lead_type]
+            leads = [lead for lead in leads if lead.get("type") == lead_type]
         return leads[: max(1, min(limit, 500))]
 
     async def update(self, lead_id: str, *, status: Optional[str] = None, notes: Optional[str] = None) -> Optional[Dict[str, Any]]:

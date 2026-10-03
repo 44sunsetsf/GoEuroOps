@@ -449,9 +449,9 @@ class RetrievalManager:
         required = schema.get("required", [])
         properties = schema.get("properties", {})
 
-        for field in required:
-            if field not in params:
-                raise ValueError(f"工具 {tool.name} 缺少必需参数: {field}")
+        for name in required:
+            if name not in params:
+                raise ValueError(f"工具 {tool.name} 缺少必需参数: {name}")
 
         for key, value in params.items():
             if key in properties:

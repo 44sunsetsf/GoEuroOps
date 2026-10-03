@@ -31,8 +31,6 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
-OnDelta = Callable[[str], Awaitable[None]]
-
 from anthropic import AsyncAnthropic
 
 from agents.tools import (
@@ -55,6 +53,8 @@ from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
 from core.llm_utils import make_client, safe_text
 from core.config import DEFAULT_MODEL, env_float, env_int
+
+OnDelta = Callable[[str], Awaitable[None]]
 
 logger = logging.getLogger(__name__)
 
