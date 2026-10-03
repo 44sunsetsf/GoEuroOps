@@ -43,6 +43,20 @@ class FakeCollection:
         return {"documents": [[]]}
 
 
+class FakeTurns:
+    """逐句索引的替身：按写入顺序保存，query 按 user_id 过滤后原样返回前 n 条（不做语义排序，只验证流程）。"""
+
+    def __init__(self):
+        self.rows = []
+
+    def add(self, ids, documents, metadatas):
+        self.rows.extend(zip(ids, documents, metadatas))
+
+    def query(self, query_texts, n_results, where):
+        rows = [r for r in self.rows if r[2]["user_id"] == where["user_id"]][:n_results]
+        return {"ids": [[r[0] for r in rows]], "documents": [[r[1] for r in rows]], "metadatas": [[r[2] for r in rows]]}
+
+
 class FakeClient:
     """提炼画像的调用按顺序返回预设回复；写摘要等其他调用返回一段固定摘要。记下调用次数。"""
 
@@ -72,6 +86,7 @@ def _manager(replies=()):
     mgr._model = "m"
     mgr._profile = FakeCollection()
     mgr._episodic = FakeCollection()
+    mgr._turns = FakeTurns()
     from collections import defaultdict
     mgr._profile_locks = defaultdict(asyncio.Lock)
     return mgr
@@ -167,3 +182,69 @@ def test_compression_consolidates_profile_before_summarizing():
     asyncio.run(run())                                               # 1 + 14 = 15 条，触发压缩
     assert profile_view(asyncio.run(mgr._get_profile("u")))["major"]["value"] == "自动化"
     assert asyncio.run(mgr._redis.llen("wm:u:c")) == MemoryManager.KEEP_RAW
+
+
+def test_turn_index_keeps_statements_and_skips_noise():
+    mgr = _manager()
+
+    async def run():
+        await mgr.add_message("u", "c", MsgRole.USER, "我在一家互联网公司做后端开发实习，做了半年。")
+        await mgr.add_message("u", "c", MsgRole.USER, "好的")                           # 太短
+        await mgr.add_message("u", "c", MsgRole.USER, "瑞典的硕士一般读几年？")           # 纯提问
+        await mgr.add_message("u", "c", MsgRole.USER, "我的预算是多少合适，家里给了 15 万？")  # 提问但讲了自己的情况
+        await mgr.add_message("u", "c", MsgRole.ASSISTANT, "这是助手的一段很长的回复，不应该建索引。")
+
+    asyncio.run(run())
+    docs = [r[1] for r in mgr._turns.rows]
+    assert docs == ["我在一家互联网公司做后端开发实习，做了半年。", "我的预算是多少合适，家里给了 15 万？"]
+
+
+def test_search_turns_formats_dates_and_skips_working_memory():
+    mgr = _manager()
+
+    async def run():
+        await mgr.add_message("u", "a", MsgRole.USER, "我去年夏天在斯德哥尔摩参加过一个暑期项目。")
+        await mgr.add_message("u", "a", MsgRole.USER, "我打算申请的方向是分布式系统。")
+        return await mgr._search_turns("u", "暑期项目", exclude=["我打算申请的方向是分布式系统。"])
+
+    out = asyncio.run(run())
+    assert len(out) == 1 and out[0].startswith("[20") and "斯德哥尔摩" in out[0]      # 带日期；工作记忆里已有的那句不重复
+
+
+def test_context_has_turns_from_other_conversations():
+    mgr = _manager()
+
+    async def run():
+        await mgr.add_message("u", "old", MsgRole.USER, "我本科做过一个基于 PyTorch 的图像分类项目。")
+        return await mgr.get_context("u", "new", query="我做过什么项目")
+
+    ctx = asyncio.run(run())
+    assert "PyTorch" in ctx.to_prompt_text() and "[用户以前说过的相关原话]" in ctx.to_prompt_text()
+
+
+def test_turn_index_failure_does_not_break_add_message():
+    mgr = _manager()
+
+    class Broken:
+        def add(self, **kwargs):
+            raise RuntimeError("chroma down")
+
+    mgr._turns = Broken()
+
+    async def run():
+        await mgr.add_message("u", "c", MsgRole.USER, "我的雅思是 6.5，小分最低 6。")
+        return await mgr._redis.llen("wm:u:c")
+
+    assert asyncio.run(run()) == 1                                   # 索引挂了，消息照样进工作记忆
+
+
+def test_turn_index_can_be_switched_off():
+    mgr = _manager()
+    mgr.TURN_INDEX = False
+
+    async def run():
+        await mgr.add_message("u", "c", MsgRole.USER, "我的雅思是 6.5，小分最低 6。")
+        return await mgr.get_context("u", "d", query="雅思")
+
+    ctx = asyncio.run(run())
+    assert mgr._turns.rows == [] and ctx.relevant_turns == []
