@@ -279,7 +279,7 @@ class Counter:
 async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], concurrency: int) -> Dict[str, Any]:
     api_key = os.environ["ANTHROPIC_API_KEY"]
     base_url = os.environ.get("ANTHROPIC_BASE_URL") or None
-    model = os.environ.get("ANTHROPIC_MODEL", "deepseek-v4-pro")
+    model = os.environ.get("ANTHROPIC_MODEL", "deepseek-v4-flash")
     mgr = MemoryManager(redis_url="redis://unused:1/0", chroma_host="",
                         chroma_path=tempfile.mkdtemp(prefix=f"mem-{label}-{run_idx}-"),
                         api_key=api_key, base_url=base_url, model=model)
