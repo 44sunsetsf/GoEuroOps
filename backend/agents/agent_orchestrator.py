@@ -44,14 +44,19 @@ from agents.tools import (
     make_model_tool,
 )
 from business.catalog import get_catalog
+from business.domain_terms import (
+    ROUTING_KEYWORDS_BILLING,
+    ROUTING_KEYWORDS_CONSULTING,
+    ROUTING_KEYWORDS_CONSULTING_COLLAB,
+    ROUTING_KEYWORDS_GENERAL,
+)
 from business.lead_store import LeadStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from tooling.amount_guard import AmountGrounding, AmountGuard
 from tooling.gateway import get_gateway, validate_args
 from tooling.schemas import ReadSkillReferenceArgs
-from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
+from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client, safe_text
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
-from core.llm_utils import make_client, safe_text
 from core.config import DEFAULT_MODEL, env_float, env_int
 
 OnDelta = Callable[[str], Awaitable[None]]
@@ -861,14 +866,6 @@ _BILLING_INTENTS = {
     IntentCategory.INVOICE,
     IntentCategory.PAYMENT_ISSUE,
 }
-# 领域关键词：只用于主/辅 Agent 打分和复合问题检测，不直接决定路由
-_CONSULTING_KWS = ["留学", "申请", "硕士", "研究生", "选校", "文书", "雅思", "托福", "aps", "报价", "多少钱",
-                   "套餐", "陪跑", "瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧"]
-# 复合问题检测只看"问留学本身"的词：问退款时顺口提到"全程陪跑"不算咨询问题
-_CONSULTING_COLLAB_KWS = ["留学", "申请", "硕士", "研究生", "选校", "雅思", "托福", "aps",
-                          "瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧"]
-_BILLING_KWS = ["退款", "退钱", "定金", "尾款", "发票", "付款", "多付", "refund", "invoice"]
-_GENERAL_KWS = ["进度", "第几轮", "你们是", "工作室", "联系方式", "帮助"]
 
 
 def _service_terms() -> List[str]:
@@ -1332,9 +1329,9 @@ class AgentOrchestrator:
         if req.intent in _BILLING_INTENTS:
             scores[AgentType.BILLING] += 0.75
 
-        consulting_hits = sum(1 for kw in _CONSULTING_KWS if kw in msg)
-        billing_hits = sum(1 for kw in _BILLING_KWS if kw in msg)
-        general_hits = sum(1 for kw in _GENERAL_KWS if kw in msg)
+        consulting_hits = sum(1 for kw in ROUTING_KEYWORDS_CONSULTING if kw in msg)
+        billing_hits = sum(1 for kw in ROUTING_KEYWORDS_BILLING if kw in msg)
+        general_hits = sum(1 for kw in ROUTING_KEYWORDS_GENERAL if kw in msg)
 
         scores[AgentType.CONSULTING] += min(0.45, consulting_hits * 0.18)
         scores[AgentType.BILLING] += min(0.45, billing_hits * 0.18)
@@ -1378,9 +1375,9 @@ class AgentOrchestrator:
 
         # 服务名、交付物（"选校报告"）和费用短语（"申请退款"）不是在问留学本身，扫描前去掉
         consult_msg = _strip_service_terms(msg)
-        if req.intent in _CONSULTING_INTENTS or any(kw in consult_msg for kw in _CONSULTING_COLLAB_KWS):
+        if req.intent in _CONSULTING_INTENTS or any(kw in consult_msg for kw in ROUTING_KEYWORDS_CONSULTING_COLLAB):
             targets.append(AgentType.CONSULTING)
-        if req.intent in _BILLING_INTENTS or any(kw in msg for kw in _BILLING_KWS):
+        if req.intent in _BILLING_INTENTS or any(kw in msg for kw in ROUTING_KEYWORDS_BILLING):
             targets.append(AgentType.BILLING)
 
         # 保持顺序去重，并只返回当前有实例的 Agent 类型。

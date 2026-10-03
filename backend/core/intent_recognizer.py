@@ -21,35 +21,13 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 
-from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
-from core.text_embedding import cosine, hashed_ngram_embedding
-from core.llm_utils import make_client, safe_text
+from business.domain_terms import INTENT_KEYWORDS_GENERIC, INTENT_KEYWORDS_SPECIFIC
 from core.config import DEFAULT_MODEL
+from core.intent_categories import IntentCategory  # noqa: F401 —— 其他模块仍从这里导入
+from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client, safe_text
+from core.text_embedding import cosine, hashed_ngram_embedding
 
 logger = logging.getLogger(__name__)
-
-
-class IntentCategory(Enum):
-    """指北工作室的意图体系：通用大类 + 细粒度业务意图（细粒度优先）。"""
-    QUERY      = "query"       # 一般信息查询
-    COMPLAINT  = "complaint"   # 投诉不满
-    REQUEST    = "request"     # 请求操作
-    GREETING   = "greeting"    # 问候
-    ESCALATION = "escalation"  # 要求升级/找创始人
-    STUDY_CONSULT = "study_consult"  # 五国 CS 硕士公开知识咨询
-    BILLING    = "billing"     # 费用/付款大类
-    ACCOUNT    = "account"     # 个人资料与联系方式
-    FEEDBACK   = "feedback"    # 正面反馈
-    SERVICE_PROGRESS = "service_progress"  # 已购服务进度（文书改到第几轮、报告何时交付）
-    BOOKING = "booking"                    # 预约/改期/取消咨询
-    REFUND = "refund"                      # 服务退款
-    INVOICE = "invoice"                    # 发票
-    PAYMENT_ISSUE = "payment_issue"        # 定金/尾款/付款异常
-    DATA_PRIVACY = "data_privacy"          # 资料删除、隐私与授权
-    APPLICATION_PROCESS = "application_process"  # 申请材料/截止日期/语言成绩等流程问题
-    SERVICE_INQUIRY = "service_inquiry"    # 工作室服务/价格/报价
-    HUMAN_HANDOFF = "human_handoff"        # 转人工顾问
-    OTHER      = "other"
 
 
 class UrgencyLevel(Enum):
@@ -338,28 +316,8 @@ class IntentRecognizer:
     def _pattern_recognize(self, message: str) -> Dict[str, Any]:
         """策略 3：关键词模式匹配（同步，零延迟兜底）。"""
         msg = message.lower()
-        specific_patterns = {
-            IntentCategory.HUMAN_HANDOFF: ["转人工", "真人", "人工顾问", "让顾问联系"],
-            IntentCategory.DATA_PRIVACY: ["删除我的", "删除资料", "个人信息", "隐私", "不要再联系", "gdpr"],
-            IntentCategory.SERVICE_PROGRESS: ["第几轮", "进度", "什么时候交付", "改好了吗", "报告什么时候"],
-            IntentCategory.BOOKING: ["预约", "改期", "改时间", "取消咨询", "约个时间", "booking"],
-            IntentCategory.REFUND: ["退款", "退钱", "能退吗", "refund"],
-            IntentCategory.INVOICE: ["发票", "抬头", "税号", "invoice"],
-            IntentCategory.PAYMENT_ISSUE: ["付款失败", "付不了", "多付", "重复付款", "扣了两次", "payment failed"],
-            IntentCategory.APPLICATION_PROCESS: ["申请材料", "截止", "雅思", "托福", "语言成绩", "aps", "uni-assist", "推荐信要", "deadline", "requirement"],
-            IntentCategory.SERVICE_INQUIRY: ["收费", "价格", "多少钱", "报价", "套餐", "陪跑", "服务内容", "优惠", "便宜", "price"],
-        }
-        generic_patterns = {
-            IntentCategory.ESCALATION: ["投诉", "负责人", "创始人"],
-            IntentCategory.COMPLAINT:  ["太慢", "太差", "拖了", "没人回", "不满意"],
-            IntentCategory.QUERY:      ["?", "？", "怎么", "什么", "哪里"],
-            IntentCategory.REQUEST:    ["帮我", "需要", "please", "help"],
-            IntentCategory.GREETING:   ["你好", "嗨", "hello", "hi"],
-            IntentCategory.FEEDBACK:   ["谢谢", "满意", "专业", "很棒"],
-            IntentCategory.BILLING:    ["付款", "定金", "尾款", "费用"],
-            IntentCategory.STUDY_CONSULT: ["瑞典", "德国", "荷兰", "芬兰", "丹麦", "北欧", "硕士", "研究生", "cs", "计算机"],
-            IntentCategory.ACCOUNT:    ["联系方式", "邮箱", "微信号", "手机号"],
-        }
+        specific_patterns = INTENT_KEYWORDS_SPECIFIC
+        generic_patterns = INTENT_KEYWORDS_GENERIC
 
         # 记录消息里出现过关键词的所有意图大类，供分歧检测判断"LLM 选的领域有没有任何字面证据"。
         groups = {
