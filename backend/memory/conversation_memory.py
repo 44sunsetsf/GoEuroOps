@@ -13,6 +13,7 @@
 """
 import hashlib
 import asyncio
+import os
 import json
 import logging
 import time
@@ -103,7 +104,13 @@ class MemoryManager:
         self._client = track(AsyncAnthropic(**kwargs), "memory")
         self._model  = model
 
-        self._redis = redis.from_url(redis_url, decode_responses=True)
+        # 工作记忆在每次对话的主链路上：Redis 慢或挂了不能拖住对话，所以连接和读写都设超时，
+        # 失败时按"没有记忆"继续（见 get_context / add_message）。
+        timeout = float(os.getenv("GOEUROOPS_MEMORY_REDIS_TIMEOUT", "1.0"))
+        self._redis_timeout = timeout
+        self._redis = redis.from_url(
+            redis_url, decode_responses=True, socket_timeout=timeout, socket_connect_timeout=timeout,
+        )
 
         # ChromaDB：优先连接独立服务（docker compose 模式），连不上或 chroma_host 为空时用本地嵌入式
         try:
@@ -149,18 +156,29 @@ class MemoryManager:
         msg = Message(role=role, content=self._safe_text(content), metadata=clean_metadata)
         key = self._wm_key(user_id, conv_id)
 
-        # 追加到 Redis 列表（左推，最新在前）
+        try:
+            length = await asyncio.wait_for(self._append(key, msg), self._redis_timeout * 2)
+        except Exception as ex:                     # noqa: BLE001 —— 回复已经生成，写记忆失败不能让请求报错
+            logger.warning(f"写入工作记忆失败，本轮不记忆: {ex}")
+            return
+
+        # 压缩要调一次模型，不放进上面的超时里：中途取消会停在“旧列表已删、还没写回”的状态
+        if length >= self.COMPRESS_AT:
+            try:
+                await self._compress(user_id, conv_id)
+            except Exception as ex:                 # noqa: BLE001 —— 压缩失败下次还会再触发
+                logger.warning(f"工作记忆压缩失败: {ex}")
+
+    async def _append(self, key: str, msg: "Message") -> int:
+        """追加到 Redis 列表（左推，最新在前），刷新 24h TTL，返回当前条数。"""
         await self._redis.lpush(key, json.dumps({
             "role":      msg.role.value,
             "content":   msg.content,
             "ts":        msg.timestamp.isoformat(),
             "metadata":  msg.metadata,
         }))
-        await self._redis.expire(key, 86400)  # 24h TTL
-
-        # 超过压缩阈值时触发压缩
-        if await self._redis.llen(key) >= self.COMPRESS_AT:
-            await self._compress(user_id, conv_id)
+        await self._redis.expire(key, 86400)
+        return int(await self._redis.llen(key))
 
     async def update_profile(self, user_id: str, conv_id: str) -> None:
         """
@@ -169,7 +187,11 @@ class MemoryManager:
         """
         user_id = self._safe_text(user_id)
         conv_id = self._safe_text(conv_id)
-        messages = await self._get_working_memory(user_id, conv_id)
+        try:
+            messages = await asyncio.wait_for(self._get_working_memory(user_id, conv_id), self._redis_timeout * 2)
+        except Exception as ex:                     # noqa: BLE001 —— 后台任务，失败只记日志
+            logger.warning(f"更新画像时读取工作记忆失败: {ex}")
+            return
         if not messages:
             return
 
@@ -233,7 +255,11 @@ class MemoryManager:
         conv_id = self._safe_text(conv_id)
         query = self._safe_text(query)
 
-        recent = await self._get_working_memory(user_id, conv_id)
+        try:
+            recent = await asyncio.wait_for(self._get_working_memory(user_id, conv_id), self._redis_timeout * 2)
+        except Exception as ex:                     # noqa: BLE001 —— 记忆是背景，读不到就按没有记忆继续
+            logger.warning(f"读取工作记忆失败，按无记忆继续: {ex}")
+            recent = []
 
         # 2. 情景记忆（跨会话语义检索）
         history = await self._search_episodic(
@@ -246,7 +272,13 @@ class MemoryManager:
         profile = await self._get_profile(user_id)
 
         # 4. 会话摘要（如果已压缩过）
-        summary = await self._redis.get(self._summary_key(user_id, conv_id)) or ""
+        try:
+            summary = await asyncio.wait_for(
+                self._redis.get(self._summary_key(user_id, conv_id)), self._redis_timeout * 2,
+            ) or ""
+        except Exception as ex:                     # noqa: BLE001
+            logger.warning(f"读取会话摘要失败，按无摘要继续: {ex}")
+            summary = ""
 
         return MemoryContext(
             recent_messages=recent,
