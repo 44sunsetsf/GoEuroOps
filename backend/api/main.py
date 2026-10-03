@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from api.demo_guard import (
     COST_LIMIT_MESSAGE, GUEST_READONLY_MESSAGE, cost_exceeded, cost_limit, guest_write_allowed, is_guest, mask_pii,
 )
+from core.config import DEFAULT_MODEL
 
 load_dotenv()
 
@@ -67,7 +68,7 @@ def _anthropic_cfg() -> Dict[str, Any]:
         raise RuntimeError("未设置 ANTHROPIC_API_KEY")
     cfg: Dict[str, Any] = {
         "api_key":  key,
-        "model":    os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022").strip(),
+        "model":    os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL).strip(),
     }
     base_url = os.getenv("ANTHROPIC_BASE_URL", "").strip()
     if base_url:
@@ -82,7 +83,7 @@ async def lifespan(app: FastAPI):
 
     print(BANNER, flush=True)
 
-    from agents.agent_orchestrator import AgentOrchestrator, Request
+    from agents.agent_orchestrator import AgentOrchestrator
     from api.quota import DailyQuota
     from core.intent_recognizer import IntentRecognizer
     from evaluation.evaluator import EndToEndEvaluator

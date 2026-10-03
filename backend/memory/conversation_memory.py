@@ -18,16 +18,16 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import chromadb
 import redis.asyncio as redis
-from anthropic import AsyncAnthropic
-from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
+from core.llm_utils import make_client, safe_text
+from core.config import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +56,7 @@ class MemoryContext:
 
     @staticmethod
     def _clean(text: str) -> str:
-        """移除 Unicode 代理字符，防止编码错误。"""
-        return text.encode("utf-8", errors="ignore").decode("utf-8")
+        return safe_text(text)
 
     def to_prompt_text(self) -> str:
         """将记忆上下文格式化为 LLM 可用的文本。"""
@@ -96,12 +95,9 @@ class MemoryManager:
         chroma_path:  str = "./data/chroma",
         api_key:      str = "",
         base_url:     Optional[str] = None,
-        model:        str = "claude-3-5-sonnet-20241022",
+        model:        str = DEFAULT_MODEL,
     ):
-        kwargs: Dict[str, Any] = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        self._client = track(AsyncAnthropic(**kwargs), "memory")
+        self._client = make_client(api_key, base_url, "memory")
         self._model  = model
 
         # 工作记忆在每次对话的主链路上：Redis 慢或挂了不能拖住对话，所以连接和读写都设超时，
@@ -429,11 +425,7 @@ class MemoryManager:
     @staticmethod
     def _safe_text(value: Any) -> str:
         """转成 ChromaDB 可接受的普通 UTF-8 字符串。"""
-        if value is None:
-            return ""
-        if not isinstance(value, str):
-            value = str(value)
-        return value.encode("utf-8", errors="ignore").decode("utf-8")
+        return safe_text(value)
 
     @classmethod
     def _safe_metadata_value(cls, value: Any) -> Any:

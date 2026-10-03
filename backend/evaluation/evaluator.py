@@ -20,7 +20,6 @@
 LLM-as-Judge 是评测 Agent 质量的关键技术：
   人工标注成本高、主观性强；用 LLM 评判可以规模化、可重复。
 """
-import asyncio
 import json
 import logging
 import os
@@ -32,11 +31,12 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from anthropic import AsyncAnthropic
-from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 
-from core.intent_recognizer import IntentCategory, IntentRecognizer
+from core.intent_recognizer import IntentRecognizer
+from core.llm_utils import make_client, safe_text
+from core.config import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -167,11 +167,7 @@ class LLMJudge:
     @staticmethod
     def _clean_text(value: Any) -> str:
         """移除 Unicode 代理字符，避免 LLM 请求编码失败。"""
-        if value is None:
-            return ""
-        if not isinstance(value, str):
-            value = str(value)
-        return value.encode("utf-8", errors="ignore").decode("utf-8")
+        return safe_text(value)
 
 
 # ── 意图识别评测 ──────────────────────────────────────────────────────────────
@@ -250,14 +246,11 @@ class EndToEndEvaluator:
         recognizer: IntentRecognizer,
         api_key:  str,
         base_url: Optional[str] = None,
-        model:    str = "claude-3-5-sonnet-20241022",
+        model:    str = DEFAULT_MODEL,
         baseline_path: Optional[str] = None,
         skill_manager: Optional[Any] = None,
     ):
-        kwargs: Dict[str, Any] = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        client = track(AsyncAnthropic(**kwargs), "evaluation")
+        client = make_client(api_key, base_url, "evaluation")
 
         self._orchestrator     = orchestrator
         self._judge            = LLMJudge(client, model)

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 from business.catalog import CATEGORY_LABELS, get_catalog, get_countries
-from business.lead_store import CHANNEL_LABELS, STAGES, LeadStore, mask_contact, validate_lead_input
+from business.lead_store import CHANNEL_LABELS, LeadStore, mask_contact, validate_lead_input
 from business.pricing import calculate_refund, quote_bundle
 from tooling.gateway import ToolPolicy
 from tooling.schemas import (

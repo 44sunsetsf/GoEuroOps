@@ -20,7 +20,6 @@
   - 紧急度 CRITICAL 或转人工意图 → EscalationAgent 生成交接单写入线索面板
 """
 import asyncio
-import inspect
 import json
 import logging
 import os
@@ -35,7 +34,6 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 OnDelta = Callable[[str], Awaitable[None]]
 
 from anthropic import AsyncAnthropic
-from core.llm_usage import track
 
 from agents.tools import (
     AgentToolSpec,
@@ -55,6 +53,8 @@ from tooling.gateway import get_gateway, validate_args
 from tooling.schemas import ReadSkillReferenceArgs
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
+from core.llm_utils import make_client, safe_text
+from core.config import DEFAULT_MODEL, env_float, env_int
 
 logger = logging.getLogger(__name__)
 
@@ -81,24 +81,6 @@ class AgentProfile:
     model: Optional[str] = None
     temperature: float = 0.2
     max_tokens: int = 1024
-
-
-def _env_float(name: str, default: float) -> float:
-    """读取可选浮点配置；错误配置不应阻塞服务启动。"""
-    try:
-        return float(os.getenv(name, str(default)))
-    except (TypeError, ValueError):
-        logger.warning("忽略非法浮点配置 %s=%r", name, os.getenv(name))
-        return default
-
-
-def _env_int(name: str, default: int) -> int:
-    """读取可选整数配置；错误配置不应阻塞服务启动。"""
-    try:
-        return int(os.getenv(name, str(default)))
-    except (TypeError, ValueError):
-        logger.warning("忽略非法整数配置 %s=%r", name, os.getenv(name))
-        return default
 
 
 @dataclass
@@ -341,25 +323,22 @@ class BaseAgent:
         self, req: Request, on_delta: Optional[OnDelta] = None, run: Optional[_RunRecord] = None,
     ) -> str:
         run = run if run is not None else _RunRecord()
-        def _clean(s: str) -> str:
-            return s.encode("utf-8", errors="ignore").decode("utf-8")
-
         messages = []
         if req.context:
-            messages.append({"role": "user", "content": f"[背景信息]\n{_clean(req.context)}"})
+            messages.append({"role": "user", "content": f"[背景信息]\n{safe_text(req.context)}"})
             messages.append({"role": "assistant", "content": "好的，我已了解背景信息。"})
         if req.entities:
             entities_text = json.dumps(req.entities, ensure_ascii=False)
-            messages.append({"role": "user", "content": f"[结构化实体]\n{_clean(entities_text)}"})
+            messages.append({"role": "user", "content": f"[结构化实体]\n{safe_text(entities_text)}"})
             messages.append({"role": "assistant", "content": "好的，我会结合这些结构化实体处理。"})
         role_packet = self._build_role_packet(req)
         if role_packet:
-            messages.append({"role": "user", "content": f"[角色输入契约]\n{_clean(role_packet)}"})
+            messages.append({"role": "user", "content": f"[角色输入契约]\n{safe_text(role_packet)}"})
             messages.append({"role": "assistant", "content": "好的，我会按照该角色的输入和输出契约处理。"})
         if req.knowledge:
-            messages.append({"role": "user", "content": f"[知识库上下文]\n{_clean(RagGate.format_context(req.knowledge))}"})
+            messages.append({"role": "user", "content": f"[知识库上下文]\n{safe_text(RagGate.format_context(req.knowledge))}"})
             messages.append({"role": "assistant", "content": "好的，我会优先依据这些知识库片段回答，并注明来源。"})
-        messages.append({"role": "user", "content": _clean(req.message)})
+        messages.append({"role": "user", "content": safe_text(req.message)})
 
         selection = self._select_skills(req)
         run.skills = selection.applied() if selection is not None else []
@@ -840,8 +819,8 @@ class ResponseComposer:
         try:
             response = await self._client.messages.create(
                 model=self._model,
-                max_tokens=_env_int("GOEUROOPS_COMPOSER_MAX_TOKENS", 1000),
-                temperature=_env_float("GOEUROOPS_COMPOSER_TEMPERATURE", 0.1),
+                max_tokens=env_int("GOEUROOPS_COMPOSER_MAX_TOKENS", 1000),
+                temperature=env_float("GOEUROOPS_COMPOSER_TEMPERATURE", 0.1),
                 messages=[{"role": "user", "content": prompt}],
                 **NO_THINKING_KWARGS,
             )
@@ -938,21 +917,18 @@ class AgentOrchestrator:
         self,
         api_key:  str,
         base_url: Optional[str] = None,
-        model:    str = "claude-3-5-sonnet-20241022",
+        model:    str = DEFAULT_MODEL,
         skill_manager: Optional[Any] = None,
         rag_tool_manager: Optional[Any] = None,
         lead_store: Optional[LeadStore] = None,
         rag_gate: Optional[RagGate] = None,
     ):
-        kwargs: Dict[str, Any] = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        client = track(AsyncAnthropic(**kwargs), "agents")
+        client = make_client(api_key, base_url, "agents")
 
         self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model)
         self._skill_manager = skill_manager
         self._composer = ResponseComposer(client, model, skill_manager)
-        self._recent_tool_traces = deque(maxlen=_env_int("GOEUROOPS_TOOL_TRACE_MAX", 200))
+        self._recent_tool_traces = deque(maxlen=env_int("GOEUROOPS_TOOL_TRACE_MAX", 200))
         self._rag_gate = rag_gate or RagGate()
 
         # Agent 池：每种类型可有多个实例（水平扩展）

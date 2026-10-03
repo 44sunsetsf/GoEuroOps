@@ -18,7 +18,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -29,6 +28,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 import yaml
 
 from core.text_embedding import ngram_profile, sparse_cosine
+from core.config import env_float
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +49,6 @@ SEMANTIC_MIN = 0.15         # 低于该值视为噪声
 PER_SKILL_CHARS = 3200
 REFERENCE_MAX_CHARS = 6000
 _REFERENCE_NAME = re.compile(r"^[A-Za-z0-9_\-.]+\.md$")
-
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.getenv(name, default))
-    except (TypeError, ValueError):
-        return default
 
 
 @dataclass
@@ -206,7 +199,7 @@ class SkillManager:
     ):
         self.root_dir = Path(root_dir).expanduser().resolve()
         self.max_prompt_chars = max_prompt_chars
-        self.threshold = threshold if threshold is not None else _env_float("GOEUROOPS_SKILL_MATCH_THRESHOLD", 0.35)
+        self.threshold = threshold if threshold is not None else env_float("GOEUROOPS_SKILL_MATCH_THRESHOLD", 0.35)
         self._skills: List[Skill] = []
         self._errors: List[str] = []
         self._stats: Dict[str, Dict[str, Any]] = {}

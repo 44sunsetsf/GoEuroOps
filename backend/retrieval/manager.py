@@ -19,14 +19,13 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from anthropic import AsyncAnthropic
-from core.llm_usage import track
-from tooling.breaker import CircuitBreaker, CircuitState
+from tooling.breaker import CircuitBreaker
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
+from core.llm_utils import make_client, safe_text
+from core.config import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -92,11 +91,8 @@ class RetrievalManager:
       用户查询 → 查询改写（多角度子查询）→ 并行召回 → 结果重排 → 返回 Top-K
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
-        kwargs: Dict[str, Any] = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        self._client = track(AsyncAnthropic(**kwargs), "tools")
+    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = DEFAULT_MODEL):
+        self._client = make_client(api_key, base_url, "tools")
         self._model  = model
         self._tools: Dict[str, Tool] = {}
         self._cache: Dict[str, tuple] = {}   # key → (result, expire_at, reranked)
@@ -469,11 +465,7 @@ class RetrievalManager:
     @staticmethod
     def _clean_text(value: Any) -> str:
         """移除 Unicode 代理字符，避免 LLM 请求编码失败。"""
-        if value is None:
-            return ""
-        if not isinstance(value, str):
-            value = str(value)
-        return value.encode("utf-8", errors="ignore").decode("utf-8")
+        return safe_text(value)
 
     # ── 统计 ──────────────────────────────────────────────────────────────────
 

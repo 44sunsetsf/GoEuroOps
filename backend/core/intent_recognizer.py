@@ -20,11 +20,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from anthropic import AsyncAnthropic
-from core.llm_usage import track
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
 from core.text_embedding import cosine, hashed_ngram_embedding
+from core.llm_utils import make_client, safe_text
+from core.config import DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -179,13 +179,10 @@ class IntentRecognizer:
         self,
         api_key: str,
         base_url: Optional[str] = None,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = DEFAULT_MODEL,
         confidence_threshold: float = 0.5,
     ):
-        kwargs: Dict[str, Any] = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        self.client    = track(AsyncAnthropic(**kwargs), "intent")
+        self.client = make_client(api_key, base_url, "intent")
         self.model     = model
         self.threshold = confidence_threshold
         # 本地字符 n-gram 向量始终可用；如果未来客户端暴露 embeddings 资源，
@@ -601,11 +598,7 @@ class IntentRecognizer:
     @staticmethod
     def _clean_text(value: Any) -> str:
         """移除 Unicode 代理字符，避免 HTTP 客户端编码 prompt 时崩溃。"""
-        if value is None:
-            return ""
-        if not isinstance(value, str):
-            value = str(value)
-        return value.encode("utf-8", errors="ignore").decode("utf-8")
+        return safe_text(value)
 
     @property
     def cache_stats(self) -> Dict[str, Any]:
