@@ -220,6 +220,7 @@ class MemoryManager:
                 settings=chromadb.Settings(anonymized_telemetry=False),
             )
 
+        self._chroma = chroma
         # 情景记忆：存储历史对话片段
         self._episodic = chroma.get_or_create_collection("episodic")
         # 逐句索引：用户说的每句话一条，不经过模型，只算向量
@@ -539,9 +540,7 @@ class MemoryManager:
     async def _index_turn(self, user_id: str, conv_id: str, msg: "Message") -> None:
         """用户说的话单独建一条向量。纯提问（带问号、没讲自己的情况）不建：它们不是要记住的事实，还会挤掉真正的原话。"""
         text = msg.content.strip()
-        if len(text) < self.TURN_MIN_CHARS:
-            return
-        if re.search(r"[?？]\s*$", text) and not has_self_info(text):
+        if not self._worth_indexing(text):
             return
         try:
             doc_id = hashlib.md5(f"{user_id}{conv_id}{msg.timestamp.isoformat()}{text}".encode()).hexdigest()
@@ -551,6 +550,13 @@ class MemoryManager:
             ), 10)
         except Exception as ex:                     # noqa: BLE001 —— 索引失败只是少一条原话，不能影响对话
             logger.warning(f"写入逐句索引失败: {ex}")
+
+    @classmethod
+    def _worth_indexing(cls, text: str) -> bool:
+        """太短的（“好的”）和纯提问（带问号、没讲自己的情况）不值得单独存。"""
+        if len(text) < cls.TURN_MIN_CHARS:
+            return False
+        return not (re.search(r"[?？]\s*$", text) and not has_self_info(text))
 
     async def _search_turns(self, user_id: str, query: str, exclude: List[str]) -> List[str]:
         """按语义取回用户以前说过的原话（带日期）。已经在工作记忆里的话不重复放。"""
@@ -721,3 +727,13 @@ class MemoryManager:
             return json.loads(latest_doc)
         except Exception:
             return {}
+
+
+def build_memory_manager(**kwargs: Any) -> MemoryManager:
+    """按 GOEUROOPS_MEMORY_IMPL 选记忆实现：v2（默认，摘要 + 逐句索引）或 amem（A-Mem 魔改版笔记层）。"""
+    impl = os.getenv("GOEUROOPS_MEMORY_IMPL", "v2").strip().lower()
+    if impl == "amem":
+        from memory.agentic_memory import AgenticMemoryManager
+        logger.info("记忆实现：A-Mem 魔改版（笔记 + 链接 + 只追加的演化）")
+        return AgenticMemoryManager(**kwargs)
+    return MemoryManager(**kwargs)

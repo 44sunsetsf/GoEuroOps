@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
     from evaluation.evaluator import EndToEndEvaluator
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
-    from memory.conversation_memory import MemoryManager
+    from memory.conversation_memory import build_memory_manager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
     from business.catalog import get_catalog, get_countries
@@ -127,7 +127,7 @@ async def lifespan(app: FastAPI):
     )
 
     # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
-    services.memory = MemoryManager(
+    services.memory = build_memory_manager(
         redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
@@ -247,7 +247,7 @@ async def _cli():
     print("GoEuroOps CLI — 输入 quit 退出\n")
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
-    from memory.conversation_memory import MemoryManager, MsgRole
+    from memory.conversation_memory import MsgRole, build_memory_manager
     from core.skill_loader import SkillManager
 
     cfg = _anthropic_cfg()
@@ -262,7 +262,7 @@ async def _cli():
         model=cfg["model"],
         skill_manager=skill_manager,
     )
-    mem  = MemoryManager(
+    mem  = build_memory_manager(
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         chroma_host=os.getenv("CHROMA_HOST", "localhost"),
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
