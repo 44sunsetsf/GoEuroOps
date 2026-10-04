@@ -5,7 +5,7 @@
 数据写在哈希 ``goeuroops:usage:<北京时间日期>`` 里，字段有 calls / in / out / cost，以及按来源拆开的
 ``calls:<source>`` 等，保留 120 天。
 费用（元）按调用时刻估算：单价取 LLM_PRICE_INPUT / LLM_PRICE_CACHED_INPUT / LLM_PRICE_OUTPUT（元 / 百万 token，
-默认是 DeepSeek V4 Pro 的闲时价 4.5 / 0.15 / 13.5），工作日北京时间 9–12 点和 14–18 点按忙时价乘 LLM_PEAK_MULTIPLIER（默认 2）。
+默认是 DeepSeek V4 Flash 的闲时价 1 / 0.02 / 4，见 api-docs.deepseek.com 的价格页），工作日北京时间 9–12 点和 14–18 点按忙时价乘 LLM_PEAK_MULTIPLIER（默认 2）。
 Redis 不可用时静默跳过：统计失败绝不能影响回答。
 """
 import asyncio
@@ -51,8 +51,8 @@ def is_peak(now: datetime) -> bool:
 
 def cost_of(tokens_in: int, tokens_cached: int, tokens_out: int, now: Optional[datetime] = None) -> float:
     now = now or datetime.now(_TZ)
-    cost = (tokens_in * _price("LLM_PRICE_INPUT", 4.5) + tokens_cached * _price("LLM_PRICE_CACHED_INPUT", 0.15)
-            + tokens_out * _price("LLM_PRICE_OUTPUT", 13.5)) / 1_000_000
+    cost = (tokens_in * _price("LLM_PRICE_INPUT", 1.0) + tokens_cached * _price("LLM_PRICE_CACHED_INPUT", 0.02)
+            + tokens_out * _price("LLM_PRICE_OUTPUT", 4.0)) / 1_000_000
     return cost * (_price("LLM_PEAK_MULTIPLIER", 2.0) if is_peak(now) else 1.0)
 
 
