@@ -34,6 +34,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client  # noqa: E402
+from memory.agentic_memory import AgenticMemoryManager  # noqa: E402
 from memory.conversation_memory import MemoryManager, MsgRole  # noqa: E402
 
 REPORT_DIR = ROOT / "evaluation" / "reports"
@@ -276,11 +277,12 @@ class Counter:
         client.messages.create = counted
 
 
-async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], concurrency: int) -> Dict[str, Any]:
+async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], concurrency: int, impl: str = "v2") -> Dict[str, Any]:
     api_key = os.environ["ANTHROPIC_API_KEY"]
     base_url = os.environ.get("ANTHROPIC_BASE_URL") or None
     model = os.environ.get("ANTHROPIC_MODEL", "deepseek-v4-flash")
-    mgr = MemoryManager(redis_url="redis://unused:1/0", chroma_host="",
+    cls = AgenticMemoryManager if impl == "amem" else MemoryManager
+    mgr = cls(redis_url="redis://unused:1/0", chroma_host="",
                         chroma_path=tempfile.mkdtemp(prefix=f"mem-{label}-{run_idx}-"),
                         api_key=api_key, base_url=base_url, model=model)
     mgr._redis = FakeRedis()
@@ -299,6 +301,8 @@ async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], co
                     await mgr.add_message(uid, conv, MsgRole.USER, user_msg)
                     await mgr.add_message(uid, conv, MsgRole.ASSISTANT, assistant_msg)
                     await mgr.update_profile(uid, conv)      # 对话接口每轮回复后都会调用
+            if isinstance(mgr, AgenticMemoryManager):
+                await mgr.wait_background()                  # 压缩触发的后台补全（线上它们自己会跑完）
             probe = sc["probe"]
             ctx = await mgr.get_context(uid, f"{uid}-{probe['conv']}", query=probe["question"])
             ctx_text = ctx.to_prompt_text()
@@ -368,13 +372,14 @@ async def main() -> None:
     ap.add_argument("--label", default="run")
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--only", default="", help="只跑这些场景，逗号分隔，如 E1,U1")
+    ap.add_argument("--impl", default="v2", choices=["v2", "amem"], help="记忆实现：v2 / amem（A-Mem 魔改版）")
     ap.add_argument("--set", default="all", choices=["basic", "hard", "all"], help="basic 基础题 / hard 难题 / all 全部")
     args = ap.parse_args()
     scenarios = [sc for sc in build_scenarios() if args.set == "all" or sc["set"] == args.set]
     if args.only:
         keep = set(args.only.split(","))
         scenarios = [s for s in scenarios if s["id"] in keep]
-    runs = [await run_once(i + 1, args.label, scenarios, args.concurrency) for i in range(args.runs)]
+    runs = [await run_once(i + 1, args.label, scenarios, args.concurrency, args.impl) for i in range(args.runs)]
     summary = summarize(args.label, runs, scenarios)
     path = write_report(summary, runs)
     print(json.dumps({k: v for k, v in summary.items() if k != "per_category"}, ensure_ascii=False))
