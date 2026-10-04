@@ -76,6 +76,9 @@ services:
       CHROMA_PERSIST_DIRECTORY: /app/data/chroma
       EVAL_BASELINE_PATH: /app/data/eval/baseline.json
       GOEUROOPS_SKILLS_DIR: /app/skills
+      # 记忆实现：v2（摘要 + 逐句索引）或 amem（A-Mem 魔改版笔记层）；逐句索引开关
+      GOEUROOPS_MEMORY_IMPL: ${GOEUROOPS_MEMORY_IMPL:-v2}
+      GOEUROOPS_TURN_INDEX: ${GOEUROOPS_TURN_INDEX:-1}
       PROMETHEUS_PORT: "9091"
       MONITOR_INTERVAL: "10"
     volumes:
