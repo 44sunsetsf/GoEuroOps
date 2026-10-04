@@ -48,9 +48,9 @@ def test_peak_hours_cost_double():
     from datetime import datetime
     off = datetime(2026, 9, 26, 3, 0, tzinfo=llm_usage._TZ)       # Saturday
     peak = datetime(2026, 9, 25, 10, 0, tzinfo=llm_usage._TZ)     # Friday 10:00
-    assert llm_usage.cost_of(1_000_000, 0, 0, off) == 4.5
-    assert llm_usage.cost_of(1_000_000, 0, 0, peak) == 9.0
-    assert llm_usage.cost_of(0, 1_000_000, 1_000_000, off) == 0.15 + 13.5
+    assert llm_usage.cost_of(1_000_000, 0, 0, off) == 1.0
+    assert llm_usage.cost_of(1_000_000, 0, 0, peak) == 2.0
+    assert llm_usage.cost_of(0, 1_000_000, 1_000_000, off) == 0.02 + 4.0
 
 
 def test_record_never_raises():
