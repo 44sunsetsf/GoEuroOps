@@ -30,7 +30,7 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     """
     from agents.agent_orchestrator import Request as OrcReq
     from core import chat_log
-    from memory.conversation_memory import MsgRole
+    from memory.amem import MsgRole
 
     mem_ctx = await services.memory.get_context(req.user_id, conv_id, query=req.message)
     history = [
@@ -49,8 +49,8 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
 
     await services.memory.add_message(req.user_id, conv_id, MsgRole.USER, req.message)
     await services.memory.add_message(req.user_id, conv_id, MsgRole.ASSISTANT, result.response)
-    # 异步更新用户画像（不阻塞响应）
-    asyncio.create_task(services.memory.update_profile(req.user_id, conv_id))
+    # 后台补全笔记（不阻塞响应）
+    services.memory.schedule_after_turn(req.user_id, conv_id)
 
     response = ChatResponse(
         conv_id=conv_id,

@@ -1,5 +1,5 @@
 # GoEuroOps 留学业务智能运营中枢 — Docker Compose 服务编排
-# 三级记忆架构：Redis（工作记忆）+ ChromaDB（情景记忆 + 用户画像）
+# 记忆：Redis（最近对话）+ ChromaDB（A-Mem 笔记）
 
 services:
 
@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── ChromaDB 向量数据库（情景记忆 + 用户画像）────────────────────────────────
+  # ── ChromaDB 向量数据库（记忆笔记 + 知识库）────────────────────────────────
   chromadb:
     image: chromadb/chroma:0.5.23
     container_name: goeuroops-chromadb

@@ -1,7 +1,8 @@
 """工作记忆在对话主链路上：Redis 慢或挂了，对话要按"没有记忆"继续，而不是报错或卡住。"""
 import asyncio
 
-from memory.conversation_memory import MemoryManager, MsgRole
+from memory.amem import MemoryManager, MsgRole
+from tests.test_amem import FakeEmbedder, FakeNotes
 
 
 class BrokenRedis:
@@ -26,13 +27,14 @@ def _manager(redis_client, timeout=0.05):
     mgr = MemoryManager.__new__(MemoryManager)      # 不连真实的 Redis、ChromaDB 和模型
     mgr._redis = redis_client
     mgr._redis_timeout = timeout
+    mgr._notes = FakeNotes()
+    mgr._embedder = FakeEmbedder()
     return mgr
 
 
 def test_get_context_returns_empty_memory_when_redis_is_down():
     ctx = asyncio.run(_manager(BrokenRedis()).get_context("u1", "c1", query="瑞典怎么申请"))
-    assert ctx.recent_messages == []
-    assert ctx.summary == ""
+    assert ctx.recent_messages == [] and ctx.notes == [] and ctx.facts == []
 
 
 def test_get_context_does_not_hang_when_redis_is_slow():
@@ -40,7 +42,7 @@ def test_get_context_does_not_hang_when_redis_is_slow():
         return await asyncio.wait_for(_manager(SlowRedis()).get_context("u1", "c1", query="hi"), 2)
 
     ctx = asyncio.run(run())
-    assert ctx.recent_messages == [] and ctx.summary == ""
+    assert ctx.recent_messages == []
 
 
 def test_add_message_swallows_redis_errors():
@@ -54,5 +56,5 @@ def test_add_message_does_not_hang_when_redis_is_slow():
     asyncio.run(run())
 
 
-def test_update_profile_skips_when_redis_is_down():
-    asyncio.run(_manager(BrokenRedis()).update_profile("u1", "c1"))
+def test_after_turn_skips_when_redis_is_down():
+    asyncio.run(_manager(BrokenRedis()).after_turn("u1", "c1"))

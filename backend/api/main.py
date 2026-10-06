@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
     from evaluation.evaluator import EndToEndEvaluator
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
-    from memory.conversation_memory import build_memory_manager
+    from memory.amem import build_memory_manager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
     from business.catalog import get_catalog, get_countries
@@ -126,7 +126,7 @@ async def lifespan(app: FastAPI):
         lead_store=services.lead_store,
     )
 
-    # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
+    # 记忆（A-Mem：Redis 最近对话 + ChromaDB 笔记）
     services.memory = build_memory_manager(
         redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
@@ -247,7 +247,7 @@ async def _cli():
     print("GoEuroOps CLI — 输入 quit 退出\n")
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
-    from memory.conversation_memory import MsgRole, build_memory_manager
+    from memory.amem import MsgRole, build_memory_manager
     from core.skill_loader import SkillManager
 
     cfg = _anthropic_cfg()
@@ -294,6 +294,7 @@ async def _cli():
 
         await mem.add_message(user_id, conv_id, MsgRole.USER, msg)
         await mem.add_message(user_id, conv_id, MsgRole.ASSISTANT, result.response)
+        await mem.after_turn(user_id, conv_id)
 
         print(f"\nGoEuroOps [{result.agent_type.value}]: {result.response}\n")
 

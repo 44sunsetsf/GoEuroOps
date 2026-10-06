@@ -1,20 +1,25 @@
 """多轮记忆评测：记忆模块能不能让模型记住、记对用户说过的话。
 
-考点参照 LongMemEval 的分类，按本项目的场景改写，共 20 段多轮对话、6 类：
-  early_recall   第 1 轮说的事实，5–7 轮后再问（正好落在工作记忆 10–14 条的区间）
-  post_compress  第 1 轮说的事实，压缩发生之后（9 轮以上）再问
-  update         中途改了主意，问现在的值（旧值不能当成答案）
-  history        中途改了主意，问最开始的值
-  cross_session  在一个会话里说，在新会话里问（只能靠画像和情景记忆）
-  abstention     从没说过的事，应该回答“未知”，不能编
+考点参照 LongMemEval 的分类，按本项目的场景改写，三套题：
+  basic（20 段）
+    early_recall   第 1 轮说的事实，5–7 轮后再问
+    post_compress  第 1 轮说的事实，9 轮以上后再问（已经滑出最近对话，只能靠笔记）
+    update         中途改了主意，问现在的值（旧值不能当成答案）
+    history        中途改了主意，问最开始的值
+    cross_session  在一个会话里说，在新会话里问
+    abstention     从没说过的事，应该回答“未知”，不能编
+  hard（10 段）：多个事实、跨多个会话改主意、长消息、长对话
+  stress（10 段，单独跑）：闲聊陈述句也会存成笔记（含“表姐在荷兰”这类干扰项），多会话、反复修改、相对时间、多跳
 
 怎么跑：
-  - 用项目自己的 MemoryManager，每轮按对话接口的顺序写入用户消息、助手回复，再更新画像；
-  - 工作记忆的 Redis 换成进程内的假实现（只实现用到的几个命令），向量库用临时目录的嵌入式 ChromaDB；
-  - 压缩、摘要合并、画像提炼、最后的提问都调用真实模型（读 ANTHROPIC_* 环境变量）；
+  - 用项目自己的 MemoryManager，每轮按对话接口的顺序写入用户消息、助手回复，再调用 after_turn；
+    会话之间调用 enrich_notes，相当于线上用户停下来 IDLE_SECONDS 后的补全；
+  - Redis 换成进程内的假实现（只实现用到的几个命令），向量库用临时目录的嵌入式 ChromaDB，向量模型和线上一样；
+  - 笔记补全和最后的提问都调用真实模型（读 ANTHROPIC_* 环境变量）；
   - 提问时用 get_context() 拼出的记忆文本，让模型只依据它回答一个短语，按关键词判分。
 
-用法：python -m evaluation.memory_benchmark --runs 3 --label baseline
+用法：python -m evaluation.memory_benchmark --runs 3 --label amem
+      python -m evaluation.memory_benchmark --runs 3 --set stress --label stress-amem
 """
 from __future__ import annotations
 
@@ -34,8 +39,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client  # noqa: E402
-from memory.agentic_memory import AgenticMemoryManager  # noqa: E402
-from memory.conversation_memory import MemoryManager, MsgRole  # noqa: E402
+from memory.amem import MemoryManager, MsgRole  # noqa: E402
 
 REPORT_DIR = ROOT / "evaluation" / "reports"
 
@@ -56,6 +60,10 @@ class FakeRedis:
 
     async def llen(self, key: str) -> int:
         return len(self.lists.get(key, []))
+
+    async def ltrim(self, key: str, start: int, end: int) -> bool:
+        self.lists[key] = self.lists.get(key, [])[start:end + 1]
+        return True
 
     async def lrange(self, key: str, start: int, end: int) -> List[str]:
         return self.lists.get(key, [])[start:end + 1]
@@ -132,6 +140,22 @@ FILLERS: List[Tuple[str, str]] = [
      "价格大约每月 3000 到 6000 人民币，看城市和房型。"),
 ]
 
+# 闲聊陈述：带“我”、不是提问，会被存成笔记，用来考检索能不能在一堆相似的话里找对（含干扰项）
+NOISE: List[str] = [
+    "我觉得北欧冬天太冷了，有点担心适应不了。",
+    "我朋友去年去了德国读书，说那边生活挺方便的。",
+    "我平时喜欢打篮球，周末一般去健身房。",
+    "我爸妈希望我毕业以后回国工作。",
+    "我对人工智能方向挺感兴趣的，看过一些机器学习的网课。",
+    "我室友在准备考公，我们宿舍好几个人在考研。",
+    "我之前看过一个瑞典留学的视频，感觉那边很不错。",
+    "我英语口语一般，听力还行。",
+    "我们学校今年出国的人挺多的，大概有三十个。",
+    "我高中同学在英国读本科，说学费特别贵。",
+    "我有点担心一个人在国外会孤单。",
+    "我暑假打算先去考个驾照。",
+]
+
 ACK = "好的，我记下了。你可以继续问我关于选校、申请流程或者服务的问题。"
 
 
@@ -170,7 +194,7 @@ def build_scenarios() -> List[Dict[str, Any]]:
         "我现在在做什么方向的实习？", ["后端"])
     add("E6", "early_recall", [{"conv": "a", "turns": _session([(1, "我最想去的是芬兰，喜欢那边安静的环境。")], 5, 5)}],
         "我最想去哪个国家？", ["芬兰"])
-    # post_compress：压缩之后再问
+    # post_compress：已经滑出最近对话之后再问
     add("P1", "post_compress", [{"conv": "a", "turns": _session([(1, "我本科读的是自动化专业。")], 9, 6)}],
         "我本科是什么专业？", ["自动化"])
     add("P2", "post_compress", [{"conv": "a", "turns": _session([(1, "我的 GPA 是 3.4，满分 4 分。")], 10, 7)}],
@@ -210,7 +234,7 @@ def build_scenarios() -> List[Dict[str, Any]]:
     for sc in S:
         sc["set"] = "basic"
 
-    # ── 难题：更接近真实使用（多个事实、多次压缩、跨多个会话、长消息）。旧版和新版跑同一套题 ──
+    # ── 难题：更接近真实使用（多个事实、跨多个会话、长消息） ──
     hard: List[Dict[str, Any]] = []
     five = [(1, "我本科是华中科技大学的电子信息工程专业。"), (2, "我的 GPA 是 3.5。"), (3, "想去荷兰，2027 年秋季入学。"),
             (4, "预算是每年 18 万。"), (5, "雅思 6.5，小分都过 6 了。")]
@@ -237,6 +261,64 @@ def build_scenarios() -> List[Dict[str, Any]]:
     addh("L2", "long_message", [{"conv": "a", "turns": _session([(1, long_msg)], 11, 4)}], "我的托福是多少分？", ["98"])
     addh("T1", "long_conversation", [{"conv": "a", "turns": _session([(2, "补充一下，我是 2025 年本科毕业的，已经工作一年了。")], 25, 7)}],
          "我是哪一年本科毕业的？", ["2025"])
+
+    # ── 压力题：闲聊陈述句也会存成笔记（含干扰项），多个会话、反复修改、相对时间、多跳。和 basic / hard 分开跑 ──
+    def chat(facts: List[Tuple[int, str]], n_turns: int, offset: int) -> List[Tuple[str, str]]:
+        """事实 + 闲聊陈述 + 常见提问交替，比 _session 更像真实用户。"""
+        facts_at = dict(facts)
+        turns: List[Tuple[str, str]] = []
+        for i in range(1, n_turns + 1):
+            if i in facts_at:
+                turns.append((facts_at[i], ACK))
+            elif i % 2:
+                turns.append((NOISE[(offset + i) % len(NOISE)], ACK))
+            else:
+                turns.append(FILLERS[(offset + i) % len(FILLERS)])
+        return turns
+
+    def adds(sid, cat, sessions, question, expect, reject=()):
+        probe = f"p{len(sessions)}"
+        add(sid, cat, sessions + [{"conv": probe, "turns": []}], question, expect, reject, probe_conv=probe)
+        S[-1]["set"] = "stress"
+
+    adds("S1", "many_sessions", [
+        {"conv": "a", "turns": chat([(2, "我本科是华中科技大学的，读电子信息工程。"), (6, "GPA 3.5。")], 12, 0)},
+        {"conv": "b", "turns": chat([], 10, 3)}, {"conv": "c", "turns": chat([], 10, 6)}],
+        "我本科是哪所学校的？", ["华中科技"])
+    budget = [{"conv": "a", "turns": chat([(2, "家里给的预算是每年 20 万。")], 8, 1)},
+              {"conv": "b", "turns": chat([(3, "家里生意不太好，预算降到每年 15 万了。")], 8, 4)},
+              {"conv": "c", "turns": chat([(2, "好消息，我拿到一笔奖学金，加上家里的钱，每年能到 25 万了。")], 8, 7)}]
+    adds("S2", "repeated_update", budget, "我现在每年的预算是多少？", ["25"], ["20 万", "15 万"])
+    adds("S3", "repeated_history", budget, "我最开始说的每年预算是多少？", ["20"], ["25"])
+    adds("S4", "temporal", [
+        {"conv": "a", "turns": chat([(3, "我去年夏天第一次考雅思，考了 6.0。")], 10, 2)},
+        {"conv": "b", "turns": chat([], 8, 5)}],
+        "我第一次考雅思是哪一年？", ["2025"])
+    adds("S5", "multi_hop", [
+        {"conv": "a", "turns": chat([(3, "我女朋友在哥本哈根工作，已经两年了。")], 10, 3)},
+        {"conv": "b", "turns": chat([(4, "我最想的是读书的时候能和女朋友在同一个城市。")], 8, 6)}],
+        "我想去哪个城市读书？", ["哥本哈根"])
+    adds("S6", "distractor", [
+        {"conv": "a", "turns": chat([(3, "我表姐在荷兰读的硕士，现在在阿姆斯特丹工作。"), (7, "不过我自己想去芬兰，喜欢安静一点的地方。")], 12, 1)},
+        {"conv": "b", "turns": chat([], 8, 9)}],
+        "我自己想去哪个国家？", ["芬兰"], ["荷兰"])
+    adds("S7", "abstention", [
+        {"conv": "a", "turns": chat([(2, "我 GPA 3.3，雅思 6.5，托福没考。"), (6, "预算每年 18 万。")], 12, 4)},
+        {"conv": "b", "turns": chat([], 8, 2)}],
+        "我的 GRE 考了多少分？", ["未知"])
+    adds("S8", "long_history", [
+        {"conv": "a", "turns": chat([(3, "我的 GPA 是 3.7，专业排名前 10%。")], 40, 5)}],
+        "我的 GPA 是多少？", ["3.7"])
+    adds("S9", "cross_update", [
+        {"conv": "a", "turns": chat([(2, "我想去荷兰读数据科学。")], 8, 0)},
+        {"conv": "b", "turns": chat([], 8, 3)},
+        {"conv": "c", "turns": chat([(5, "跟你说一下，荷兰的项目太贵了，我改申瑞典了。")], 8, 6)},
+        {"conv": "d", "turns": chat([], 6, 9)}],
+        "我现在的目标国家是哪个？", ["瑞典"], ["荷兰"])
+    adds("S10", "detail_recall", [
+        {"conv": "a", "turns": chat([(2, "我参加过全国大学生数学建模竞赛，拿了省级二等奖。")], 10, 7)},
+        {"conv": "b", "turns": chat([], 10, 1)}],
+        "我参加数学建模竞赛拿了什么奖？", ["二等奖"])
     return S
 
 
@@ -277,12 +359,11 @@ class Counter:
         client.messages.create = counted
 
 
-async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], concurrency: int, impl: str = "v2") -> Dict[str, Any]:
+async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], concurrency: int) -> Dict[str, Any]:
     api_key = os.environ["ANTHROPIC_API_KEY"]
     base_url = os.environ.get("ANTHROPIC_BASE_URL") or None
     model = os.environ.get("ANTHROPIC_MODEL", "deepseek-v4-flash")
-    cls = AgenticMemoryManager if impl == "amem" else MemoryManager
-    mgr = cls(redis_url="redis://unused:1/0", chroma_host="",
+    mgr = MemoryManager(redis_url="redis://unused:1/0", chroma_host="",
                         chroma_path=tempfile.mkdtemp(prefix=f"mem-{label}-{run_idx}-"),
                         api_key=api_key, base_url=base_url, model=model)
     mgr._redis = FakeRedis()
@@ -300,9 +381,10 @@ async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], co
                 for user_msg, assistant_msg in sess["turns"]:
                     await mgr.add_message(uid, conv, MsgRole.USER, user_msg)
                     await mgr.add_message(uid, conv, MsgRole.ASSISTANT, assistant_msg)
-                    await mgr.update_profile(uid, conv)      # 对话接口每轮回复后都会调用
-            if isinstance(mgr, AgenticMemoryManager):
-                await mgr.wait_background()                  # 压缩触发的后台补全（线上它们自己会跑完）
+                    await mgr.after_turn(uid, conv)          # 对话接口每轮回复后都会调用
+                if sess["turns"]:
+                    await mgr.enrich_notes(uid)              # 会话之间用户停下来了：线上空闲 IDLE_SECONDS 后补全
+            await mgr.wait_background()
             probe = sc["probe"]
             ctx = await mgr.get_context(uid, f"{uid}-{probe['conv']}", query=probe["question"])
             ctx_text = ctx.to_prompt_text()
@@ -353,7 +435,7 @@ def write_report(summary: Dict[str, Any], runs: List[Dict[str, Any]]) -> Path:
              f"- 场景 {summary['scenarios']} 个，每个跑 {k} 次",
              f"- 总体准确率（{k} 次平均）：**{summary['overall_acc_mean']:.1%}**；各次：{', '.join(f'{x:.0%}' for x in summary['overall_acc_runs'])}",
              f"- pass^{k}（同一场景 {k} 次全对的比例）：**{summary['pass_k']:.1%}**",
-             f"- 每次运行的记忆维护调用（画像、压缩、摘要合并）：{summary['maintenance_calls_per_run']:.0f} 次，"
+             f"- 每次运行的记忆维护调用（笔记补全）：{summary['maintenance_calls_per_run']:.0f} 次，"
              f"约 {summary['maintenance_tokens_per_run']:.0f} token",
              f"- 提问时记忆文本平均长度：{summary['avg_context_chars']:.0f} 字", "",
              "| 类别 | 场景数 | 平均准确率 | pass^k |", "|---|---|---|---|"]
@@ -372,14 +454,13 @@ async def main() -> None:
     ap.add_argument("--label", default="run")
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--only", default="", help="只跑这些场景，逗号分隔，如 E1,U1")
-    ap.add_argument("--impl", default="v2", choices=["v2", "amem"], help="记忆实现：v2 / amem（A-Mem 魔改版）")
-    ap.add_argument("--set", default="all", choices=["basic", "hard", "all"], help="basic 基础题 / hard 难题 / all 全部")
+    ap.add_argument("--set", default="all", choices=["basic", "hard", "all", "stress"], help="basic 基础题 / hard 难题 / all 前两者 / stress 压力题（单独跑）")
     args = ap.parse_args()
-    scenarios = [sc for sc in build_scenarios() if args.set == "all" or sc["set"] == args.set]
+    scenarios = [sc for sc in build_scenarios() if sc["set"] == args.set or (args.set == "all" and sc["set"] != "stress")]
     if args.only:
         keep = set(args.only.split(","))
         scenarios = [s for s in scenarios if s["id"] in keep]
-    runs = [await run_once(i + 1, args.label, scenarios, args.concurrency, args.impl) for i in range(args.runs)]
+    runs = [await run_once(i + 1, args.label, scenarios, args.concurrency) for i in range(args.runs)]
     summary = summarize(args.label, runs, scenarios)
     path = write_report(summary, runs)
     print(json.dumps({k: v for k, v in summary.items() if k != "per_category"}, ensure_ascii=False))
