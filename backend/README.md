@@ -50,7 +50,7 @@ python -m pytest -q
 
 ```text
 /chat/stream
-  ├─ MemoryManager 读取工作记忆 / 情景记忆 / 用户画像
+  ├─ MemoryManager 读取最近对话 / 相关笔记 / 关键事实（A-Mem）
   └─ AgentOrchestrator.run
        ├─ 并行：IntentRecognizer（LLM ∥ 向量 ∥ 关键词）
        │       RagGate.speculate（consulting / billing / general 三个 domain 的纯向量召回）
@@ -87,7 +87,7 @@ core/text_embedding.py         本地字符 n-gram 向量（意图识别与 Skil
 retrieval/knowledge_base.py    ChromaDB 知识库（bge-small-zh 向量 + 字面覆盖混合打分）
 retrieval/embeddings.py        中文向量模型加载（fastembed / ONNX）
 retrieval/manager.py            检索治理层：缓存、熔断、降级、查询改写、LLM 重排
-memory/conversation_memory.py  Redis + ChromaDB 分层记忆
+memory/amem.py                 A-Mem 记忆：Redis 最近对话 + ChromaDB 笔记（批量补全、链接、只追加的演化）
 evaluation/evaluator.py        端到端评测
 skills/                        业务规范（编写规范见 skills/README.md）
 tests/                         单元测试（含所有 Skill 的命中回归用例）

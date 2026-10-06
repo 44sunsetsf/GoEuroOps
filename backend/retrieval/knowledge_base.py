@@ -7,7 +7,7 @@ RAG 知识库 —— 基于 ChromaDB 的真实检索实现。
   3. 与检索工具管理器集成：作为 knowledge_search 工具的真实 handler
 
 ChromaDB 在这里的角色：
-  - memory/ 中用于存储对话记忆（情景记忆 + 用户画像）
+  - memory/ 中用于存储对话记忆（A-Mem 笔记）
   - 这里用于存储知识库文档（RAG 检索）
   两者是不同的 collection，互不干扰。
 """
