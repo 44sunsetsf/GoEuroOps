@@ -5,12 +5,13 @@ GoEuroOps 的记忆模块，按客服系统常见的分层设计：
   2. 客户档案（Redis，profile.py）：用户本人的关键事实，带出处和以前的取值；顾问改过的字段模型不能覆盖。
   3. 咨询记录（Redis，cases.py）：每个会话停下来后写一份摘要（想解决什么、没解决什么、约好的下一步），
      回访时放进提示词，转顾问时附在交接单上。
-  4. 原话档案（ChromaDB，archive.py）：用户说过的每句陈述原样存一条，马上可检索，保留 RETENTION_DAYS 天。
+  4. 原话笔记（ChromaDB，notes.py）：用户说过的每句陈述原样存一条，马上可检索；整理时按 A-Mem 补上关键词、背景、
+     链接和取代关系，检索时顺着链接多取几条。保留 RETENTION_DAYS 天。
 
 业务事实以系统记录为准：报价、线索、付款、退款只从工具和线索库取，记忆里只有“用户自己说的”，提示词里也这样标明。
 身份证号、护照号在写入前就换成占位符，哪一层都不存。
 
-写入不调模型；整理（抽档案候选 + 写咨询记录）在后台一次模型调用完成，时机是：攒够 BATCH 句、用户换了会话、
+写入不调模型；整理（补全笔记 + 抽档案候选 + 写咨询记录）在后台一次模型调用完成，时机是：攒够 BATCH 句、用户换了会话、
 或者用户停下来 IDLE_SECONDS 秒。任何一步失败都按“少一点记忆”继续，不影响对话。
 """
 from __future__ import annotations
@@ -33,12 +34,12 @@ from business.lead_store import redact_sensitive_ids
 from core import chat_log
 from core.config import DEFAULT_MODEL
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client, safe_text
-from memory import archive as archive_mod
 from memory import cases as cases_mod
+from memory import notes as notes_mod
 from memory import profile as profile_mod
-from memory.archive import UtteranceArchive
 from memory.cases import CaseStore
 from memory.consolidate import build_prompt, parse_json_object, transcript_text
+from memory.notes import NoteStore, resolve
 from memory.profile import ProfileStore, apply_candidate
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ class Message:
 class MemoryContext:
     """传给 Agent 的记忆。"""
     recent_messages: List[Message]                          # 当前会话最近的原文
-    notes:           List[str] = field(default_factory=list)  # 和这次提问相关的原话（按说话时间先后）
+    notes:           List[str] = field(default_factory=list)  # 和这次提问相关的笔记（按说话时间先后）
     facts:           List[str] = field(default_factory=list)  # 客户档案，一行一个字段
     cases:           List[str] = field(default_factory=list)  # 以前的咨询记录（最近的在前）
     max_chars:       int = 6000
@@ -120,13 +121,14 @@ class MemoryManager:
     WINDOW          = 14     # 提示词里放最近多少条原文
     TRANSCRIPT_MAX  = 60     # 每个会话最多存多少条消息（写咨询记录用）
     BATCH           = 8      # 攒够多少句未整理的原话就整理一次
-    TOP_K           = 6      # 检索取几条原话
-    NEIGHBORS_EACH  = 3      # 整理时每句取几条以前的原话帮助理解指代
-    NEIGHBOR_CAP    = 10     # 一次最多给模型看几条以前的原话
+    TOP_K           = 6      # 检索取几条笔记
+    LINK_EXPAND     = 3      # 顺链接最多多取几条
+    NEIGHBORS_EACH  = 3      # 整理时每句取几条已有笔记做候选（链接、取代、理解指代）
+    NEIGHBOR_CAP    = 10     # 一次最多给模型看几条旧笔记
     MAX_TRIES       = 2      # 整理失败几次后放弃（原话仍然可检索）
     NOTE_MIN_CHARS  = 6      # 太短的话（“好的”“谢谢”）不存
     CASES_SHOWN     = 2      # 提示词里放最近几份咨询记录
-    SEARCH_TIMEOUT  = 5.0    # 提问时检索原话最多等多久（秒）
+    SEARCH_TIMEOUT  = 5.0    # 提问时检索笔记最多等多久（秒）
     IDLE_SECONDS    = 120    # 用户停下来这么久没说话，就整理并给停下来的会话写咨询记录
 
     def __init__(
@@ -166,10 +168,10 @@ class MemoryManager:
             embedder = get_shared_embedding_function()
         if embedder is None:                        # 中文模型加载失败：退回 ChromaDB 默认模型，记忆照常可用
             from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-            embedder, name = DefaultEmbeddingFunction(), "utterances"
-        else:
-            name = f"utterances_{embedder.collection_suffix}"[:60]
-        self._archive = UtteranceArchive(chroma.get_or_create_collection(name, embedding_function=embedder), embedder)
+            embedder, name = DefaultEmbeddingFunction(), "amem_notes"
+        else:                                       # 和 A-Mem 版用同一个集合，线上已有的笔记照样能检索
+            name = f"amem_notes_{embedder.collection_suffix}"[:60]
+        self._notes = NoteStore(chroma.get_or_create_collection(name, embedding_function=embedder), embedder)
 
         self._locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
         self._bg_tasks: set = set()
@@ -188,16 +190,16 @@ class MemoryManager:
 
     async def add_message(self, user_id: str, conv_id: str, role: MsgRole, content: str,
                           metadata: Optional[Dict[str, Any]] = None) -> None:
-        """写入会话状态；用户说的陈述同时存进原话档案。都不调模型。证件号先换成占位符。"""
+        """写入会话状态；用户说的陈述同时存成一条原话笔记。都不调模型。证件号先换成占位符。"""
         user_id, conv_id = safe_text(user_id), safe_text(conv_id)
         msg = Message(role=role, content=redact_sensitive_ids(safe_text(content)),
                       metadata={safe_text(k): safe_text(v) for k, v in (metadata or {}).items()})
         if role == MsgRole.USER and self.worth_noting(msg.content.strip()):
             try:
                 await asyncio.wait_for(asyncio.to_thread(
-                    self._archive.add, user_id, conv_id, msg.content.strip(), msg.timestamp), 10)
-            except Exception as ex:                 # noqa: BLE001 —— 少一条原话不能影响对话
-                logger.warning(f"写入原话失败: {ex}")
+                    self._notes.add, user_id, conv_id, msg.content.strip(), msg.timestamp), 10)
+            except Exception as ex:                 # noqa: BLE001 —— 少一条笔记不能影响对话
+                logger.warning(f"写入笔记失败: {ex}")
         try:
             await asyncio.wait_for(self._push(user_id, conv_id, msg), self._redis_timeout * 2)
         except Exception as ex:                     # noqa: BLE001 —— 回复已经生成，写记忆失败不能让请求报错
@@ -250,7 +252,7 @@ class MemoryManager:
         当前会话不写咨询记录，等它停下来再写。"""
         user_id, conv_id = safe_text(user_id), safe_text(conv_id)
         try:
-            pending = await asyncio.to_thread(self._archive.pending, user_id)
+            pending = await asyncio.to_thread(self._notes.pending, user_id)
             stale = (datetime.now() - timedelta(seconds=self.IDLE_SECONDS)).isoformat()
             left = []
             for other in await self._redis.smembers(self._open_key(user_id)):
@@ -275,17 +277,17 @@ class MemoryManager:
         user_id = safe_text(user_id)
         done = 0
         async with self._locks[user_id]:
-            pending = await asyncio.to_thread(self._archive.pending, user_id)
+            pending = await asyncio.to_thread(self._notes.pending, user_id)
             convs = list(await self._redis.smembers(self._open_key(user_id))) if close is None else close
             case_inputs = [c for c in [await self._case_input(user_id, conv) for conv in sorted(convs)] if c]
             batches = [pending[i:i + self.BATCH] for i in range(0, len(pending), self.BATCH)] or ([[]] if case_inputs else [])
             for i, batch in enumerate(batches):
                 done += await self._consolidate_batch(user_id, batch, case_inputs if i == len(batches) - 1 else [])
-            cutoff = datetime.now() - timedelta(days=archive_mod.RETENTION_DAYS)
+            cutoff = datetime.now() - timedelta(days=notes_mod.RETENTION_DAYS)
             try:
-                await asyncio.to_thread(self._archive.purge_older_than, user_id, cutoff)
+                await asyncio.to_thread(self._notes.purge_older_than, user_id, cutoff)
             except Exception as ex:                 # noqa: BLE001
-                logger.warning(f"清理过期原话失败: {ex}")
+                logger.warning(f"清理过期笔记失败: {ex}")
         return done
 
     async def _case_input(self, user_id: str, conv_id: str) -> Optional[Dict[str, Any]]:
@@ -302,24 +304,22 @@ class MemoryManager:
         return {"conv_id": conv_id, "previous": previous, "transcript": transcript_text(new), "upto": new[-1]["ts"]}
 
     async def _consolidate_batch(self, user_id: str, batch: List[Any], case_inputs: List[Dict[str, Any]]) -> int:
-        new = [{"id": nid, "ts": meta.get("ts", ""), "text": meta.get("text", "")} for nid, meta in batch]
-        batch_ids = {r["id"] for r in new}
-        related: Dict[str, Dict[str, Any]] = {}
-        for r in new:
-            if len(related) >= self.NEIGHBOR_CAP:
+        batch_ids = {nid for nid, _ in batch}
+        neighbors: Dict[str, Dict[str, Any]] = {}
+        for _, meta in batch:
+            if len(neighbors) >= self.NEIGHBOR_CAP:
                 break
-            hits = await asyncio.to_thread(self._archive.nearest, r["text"],
+            hits = await asyncio.to_thread(self._notes.nearest, meta.get("text", ""),
                                            {"$and": [{"user_id": user_id}, {"consolidated": "1"}]}, self.NEIGHBORS_EACH)
-            for nid, meta in hits:
-                if nid not in batch_ids and nid not in related and len(related) < self.NEIGHBOR_CAP:
-                    related[nid] = {"ts": meta.get("ts", ""), "text": meta.get("text", "")}
+            for nid, nmeta in hits:
+                if nid not in batch_ids and nid not in neighbors and len(neighbors) < self.NEIGHBOR_CAP:
+                    neighbors[nid] = nmeta
 
         profile = await self._profiles.get(user_id)
-        prompt, m_ids, c_ids = build_prompt(profile_mod.render(profile), sorted(related.values(), key=lambda r: r["ts"]),
-                                            new, case_inputs)
+        prompt, m_ids, n_ids, c_ids = build_prompt(profile_mod.render(profile), list(neighbors.items()), batch, case_inputs)
         try:
             resp = await self._client.messages.create(
-                model=self._model, max_tokens=2000, temperature=0.0,
+                model=self._model, max_tokens=3000, temperature=0.0,
                 messages=[{"role": "user", "content": prompt}], **NO_THINKING_KWARGS,
             )
             obj = parse_json_object(extract_text_content(resp.content))
@@ -327,12 +327,14 @@ class MemoryManager:
             logger.warning(f"整理记忆的模型输出无效: {ex}")
             for nid, meta in batch:
                 tries = int(meta.get("tries") or 0) + 1
-                await asyncio.to_thread(self._archive.update, nid,
+                await asyncio.to_thread(self._notes.update, nid,
                                         {**meta, "tries": tries, "consolidated": "1" if tries >= self.MAX_TRIES else "0"})
             return 0
 
-        # 档案：模型给候选，规则在 apply_candidate 里
+        # 新笔记：补全字段；档案候选交给 apply_candidate
         notes = {n.get("m"): n for n in obj.get("notes") or [] if isinstance(n, dict)}
+        link_back: Dict[str, List[str]] = defaultdict(list)
+        superseded: Dict[str, str] = {}
         changed = False
         for key, (nid, meta) in zip(m_ids, batch):
             n = notes.get(key) or {}
@@ -340,10 +342,40 @@ class MemoryManager:
                 if isinstance(fact, dict):
                     changed |= apply_candidate(profile, str(fact.get("slot") or "").strip(), str(fact.get("value") or ""),
                                                meta.get("text", ""), meta.get("ts", ""))
-            await asyncio.to_thread(self._archive.update, nid, {
-                **meta, "consolidated": "1", "event_time": str(n.get("event_time") or "")[:20]})
+            links = [x for x in (resolve(str(r), m_ids, n_ids) for r in n.get("links") or []) if x and x != nid]
+            for ref in n.get("supersedes") or []:
+                old = resolve(str(ref), m_ids, n_ids)
+                if old and old != nid:
+                    superseded[old] = nid
+            for target in links:
+                link_back[target].append(nid)
+            meta = {**meta, "consolidated": "1",
+                    "keywords": "、".join(str(k) for k in (n.get("keywords") or [])[:6]),
+                    "tags": "、".join(str(t) for t in (n.get("tags") or [])[:3]),
+                    "context": safe_text(n.get("context") or "")[:200],
+                    "event_time": str(n.get("event_time") or "")[:20],
+                    "links": json.dumps(sorted(set(links) | set(json.loads(meta.get("links") or "[]"))))}
+            await asyncio.to_thread(self._notes.update, nid, meta, True)
         if changed:
             await self._profiles.save(user_id, profile)
+
+        # 旧笔记：反向链接、取代标记、背景更正（只追加版本）
+        updates = {u.get("n"): safe_text(u.get("context") or "").strip()
+                   for u in obj.get("neighbor_updates") or [] if isinstance(u, dict)}
+        new_ctx = {n_ids[k]: v for k, v in updates.items() if k in n_ids and v}
+        touched = (set(link_back) | set(superseded) | set(new_ctx)) - batch_ids
+        for nid, meta in await asyncio.to_thread(self._notes.get, sorted(touched)) if touched else []:
+            meta = dict(meta)
+            meta["links"] = json.dumps(sorted(set(json.loads(meta.get("links") or "[]")) | set(link_back.get(nid, []))))
+            if nid in superseded:
+                meta["superseded_by"] = superseded[nid]
+            reembed = False
+            if new_ctx.get(nid) and new_ctx[nid] != meta.get("context", ""):
+                versions = json.loads(meta.get("versions") or "[]")
+                versions.append({"context": meta.get("context", ""), "replaced_at": batch[-1][1].get("ts", "")})
+                meta.update(versions=json.dumps(versions, ensure_ascii=False), context=new_ctx[nid][:200])
+                reembed = True
+            await asyncio.to_thread(self._notes.update, nid, meta, reembed)
 
         # 咨询记录：模型没给的会话留着，下次再写
         by_conv = {c["conv_id"]: c for c in case_inputs}
@@ -391,22 +423,31 @@ class MemoryManager:
         return [cases_mod.render(c) for c in await self._cases.recent(user_id, self.CASES_SHOWN, exclude_conv=conv_id)]
 
     async def _search_notes(self, user_id: str, query: str, exclude: List[str]) -> List[str]:
-        """取相关原话；已经在最近对话里的不重复放。"""
+        """取相关笔记，顺链接扩展；已经在最近对话里的不重复放。"""
         query = query.strip()
         if not query:
             return []
         skip = {t.strip() for t in exclude}
         try:
             hits = await asyncio.wait_for(asyncio.to_thread(
-                self._archive.nearest, query, {"user_id": user_id}, self.TOP_K + len(skip)), self.SEARCH_TIMEOUT)
+                self._notes.nearest, query, {"user_id": user_id}, self.TOP_K + len(skip)), self.SEARCH_TIMEOUT)
+            hits = [(i, m) for i, m in hits if m.get("text", "").strip() not in skip][: self.TOP_K]
+            have = {i for i, _ in hits}
+            want: List[str] = []
+            for _, meta in hits:
+                for lid in json.loads(meta.get("links") or "[]"):
+                    if lid not in have and lid not in want:
+                        want.append(lid)
+            if want[: self.LINK_EXPAND]:
+                got = await asyncio.to_thread(self._notes.get, want[: self.LINK_EXPAND])
+                hits += [(i, m) for i, m in got if m.get("text", "").strip() not in skip]
         except Exception as ex:                     # noqa: BLE001
-            logger.warning(f"原话检索失败: {ex}")
+            logger.warning(f"笔记检索失败: {ex}")
             return []
-        hits = [(i, m) for i, m in hits if m.get("text", "").strip() not in skip][: self.TOP_K]
         hits.sort(key=lambda h: h[1].get("ts", ""))
         out: List[str] = []
         for _, meta in hits:
-            line = archive_mod.render(meta)
+            line = notes_mod.render(meta)
             if line not in out:
                 out.append(line)
         return out
@@ -438,7 +479,7 @@ class MemoryManager:
         return profile
 
     async def forget_user(self, user_id: str) -> Dict[str, int]:
-        """隐私删除：清掉这位用户的会话、档案、咨询记录、原话档案和后台对话记录。"""
+        """隐私删除：清掉这位用户的会话、档案、咨询记录、笔记和后台对话记录。"""
         user_id = safe_text(user_id)
         timer = self._idle_timers.pop(user_id, None)
         if timer is not None:
@@ -451,7 +492,7 @@ class MemoryManager:
             await self._redis.delete(self._open_key(user_id))
             await self._profiles.delete(user_id)
             await self._cases.delete(user_id)
-            await asyncio.to_thread(self._archive.delete_user, user_id)
+            await asyncio.to_thread(self._notes.delete_user, user_id)
             logs = await chat_log.forget(user_id, self._redis)
         logger.info(f"已删除用户记忆: conversations={len(windows)} chatlog={logs}")
         return {"conversations": len(windows), "chatlog_entries": logs}

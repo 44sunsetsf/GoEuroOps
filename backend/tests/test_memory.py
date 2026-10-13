@@ -1,4 +1,4 @@
-"""分层记忆：原话档案、客户档案的合并规则、咨询记录、整理时机、读取和字数预算、证件号、隐私删除、失败兜底。"""
+"""分层记忆：原话笔记（A-Mem 补全、链接、取代、只追加的演化）、客户档案的合并规则、咨询记录、整理时机、读取和字数预算、证件号、隐私删除、失败兜底。"""
 import asyncio
 import json
 from collections import defaultdict
@@ -9,7 +9,7 @@ from agents.base import Request
 from agents.tools import build_handoff_summary
 from core import chat_log
 from evaluation.memory_benchmark import FakeRedis
-from memory.archive import UtteranceArchive
+from memory.notes import NoteStore
 from memory.manager import MemoryContext, MemoryManager, Message, MsgRole, has_self_info
 from memory.profile import apply_candidate, render
 
@@ -58,6 +58,8 @@ class FakeCollection:
         for k, i in enumerate(ids):
             if metadatas:
                 self.rows[i] = dict(metadatas[k])
+            if documents:
+                self.docs[i] = documents[k]
 
     def delete(self, where=None):
         for i in [i for i in self.rows if _match(self.rows[i], where)]:
@@ -95,7 +97,7 @@ def _mgr(replies=()):
     mgr._redis_timeout = 1.0
     mgr._client = ScriptedClient(replies)
     mgr._model = "m"
-    mgr._archive = UtteranceArchive(FakeCollection(), FakeEmbedder())
+    mgr._notes = NoteStore(FakeCollection(), FakeEmbedder())
     mgr._locks = defaultdict(asyncio.Lock)
     mgr._bg_tasks = set()
     mgr._idle_timers = {}
@@ -103,19 +105,21 @@ def _mgr(replies=()):
 
 
 def _rows(mgr):
-    return mgr._archive._col.rows
+    return mgr._notes._col.rows
 
 
 def _by_text(mgr, text):
     return next((i, m) for i, m in _rows(mgr).items() if m["text"] == text)
 
 
-def _reply(notes=(), cases=()):
-    return json.dumps({"notes": list(notes), "cases": list(cases)}, ensure_ascii=False)
+def _reply(notes=(), cases=(), updates=()):
+    return json.dumps({"notes": list(notes), "cases": list(cases), "neighbor_updates": list(updates)}, ensure_ascii=False)
 
 
-def _note(m, facts=(), event_time=""):
-    return {"m": m, "event_time": event_time, "facts": [{"slot": s, "value": v} for s, v in facts]}
+def _note(m, facts=(), event_time="", **kw):
+    base = {"m": m, "keywords": [], "tags": [], "context": "", "event_time": event_time,
+            "facts": [{"slot": s, "value": v} for s, v in facts], "links": [], "supersedes": []}
+    return {**base, **kw}
 
 
 async def _say(mgr, uid, conv, *texts):
@@ -370,6 +374,46 @@ def test_schedule_after_turn_keeps_a_reference_until_done():
     asyncio.run(run())
 
 
+def test_enrichment_adds_keywords_two_way_links_supersedes_and_appends_context_versions():
+    mgr = _mgr([_reply([_note("M1", context="想去荷兰")])])
+
+    async def run():
+        await _say(mgr, "u1", "c1", "我想去荷兰读计算机硕士")
+        await mgr.consolidate("u1")
+        old_id, _ = _by_text(mgr, "我想去荷兰读计算机硕士")
+        mgr._client.replies = [lambda p: _reply(
+            [_note("M1", [("target_country", "瑞典")], keywords=["瑞典", "改申"], context="改申瑞典", links=["N1"], supersedes=["N1"])],
+            updates=[{"n": "N1", "context": "最初想去荷兰，后来改了"}])]
+        await _say(mgr, "u1", "c1", "我决定不去荷兰了，改申瑞典")
+        await mgr.consolidate("u1")
+        return old_id, await mgr.get_context("u1", "c2", query="目标国家")
+
+    old_id, ctx = asyncio.run(run())
+    new_id, new = _by_text(mgr, "我决定不去荷兰了，改申瑞典")
+    old = _rows(mgr)[old_id]
+    assert new["keywords"] == "瑞典、改申" and json.loads(new["links"]) == [old_id]
+    assert json.loads(old["links"]) == [new_id] and old["superseded_by"] == new_id
+    assert old["context"] == "最初想去荷兰，后来改了" and json.loads(old["versions"])[0]["context"] == "想去荷兰"
+    assert "关键词：瑞典、改申" in mgr._notes._col.docs[new_id]          # 向量按补全后的内容重算
+    assert ctx.facts == ["目标国家：瑞典"]
+    assert any("后来有更新" in n for n in ctx.notes)
+
+
+def test_search_expands_links():
+    mgr = _mgr()
+
+    async def run():
+        await _say(mgr, "u1", "c1", "我本科是自动化专业", "我女朋友在哥本哈根工作")
+        a, _ = _by_text(mgr, "我本科是自动化专业")
+        b, meta = _by_text(mgr, "我女朋友在哥本哈根工作")
+        _rows(mgr)[a]["links"] = json.dumps([b])
+        mgr.TOP_K = 1                                   # 只取到第一条，第二条靠链接带出来
+        return await mgr.get_context("u1", "c2", query="专业")
+
+    ctx = asyncio.run(run())
+    assert len(ctx.notes) == 2 and "哥本哈根" in ctx.notes[1]
+
+
 # ── 读取 ──────────────────────────────────────────────────────────────────────
 
 def test_context_excludes_current_conversation_case_and_window_duplicates():
@@ -403,7 +447,7 @@ def test_vector_search_error_falls_back_to_exact_search():
 
     async def run():
         await _say(mgr, "u1", "c1", "我本科是自动化专业", "我雅思 6.5 分")
-        mgr._archive._col.fail_query = True
+        mgr._notes._col.fail_query = True
         return await mgr.get_context("u1", "c2", query="专业")
 
     ctx = asyncio.run(run())

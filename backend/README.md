@@ -50,7 +50,7 @@ python -m pytest -q
 
 ```text
 /chat/stream
-  ├─ MemoryManager 读取最近对话 / 客户档案 / 以前的咨询记录 / 相关原话
+  ├─ MemoryManager 读取最近对话 / 客户档案 / 以前的咨询记录 / 相关笔记（A-Mem）
   └─ AgentOrchestrator.run
        ├─ 并行：IntentRecognizer（LLM ∥ 向量 ∥ 关键词）
        │       RagGate.speculate（consulting / billing / general 三个 domain 的纯向量召回）
@@ -90,8 +90,8 @@ retrieval/manager.py            检索治理层：缓存、熔断、降级、查
 memory/manager.py              分层记忆入口：会话状态、整理时机、读取和字数预算、顾问修改、隐私删除
 memory/profile.py              客户档案：字段带出处和历史，合并规则由代码决定，顾问核实过的字段模型不能改
 memory/cases.py                咨询记录：每个会话停下来后的摘要（没解决的事、约好的下一步），回访和交接单用
-memory/archive.py              原话档案（ChromaDB）：每句陈述原样存，马上可检索，保留 180 天
-memory/consolidate.py          整理：一次模型调用抽档案候选、写咨询记录
+memory/notes.py                原话笔记（ChromaDB，A-Mem）：每句陈述原样存、马上可检索，补全关键词、背景、链接和取代，保留 180 天
+memory/consolidate.py          整理：一次模型调用补全笔记、抽档案候选、写咨询记录
 api/routes/memory.py           顾问接口：看档案、改字段、按用户要求删除全部记忆
 evaluation/evaluator.py        端到端评测
 skills/                        业务规范（编写规范见 skills/README.md）

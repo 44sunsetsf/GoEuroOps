@@ -80,8 +80,8 @@ async def ingest(mgr: MemoryManager, uid: str, sessions) -> None:
 
 async def retrieved_sessions(mgr: MemoryManager, uid: str, question: str) -> set:
     """检索到的笔记来自哪些会话（用来算证据有没有被取回，不调模型）。"""
-    if hasattr(mgr, "_archive"):
-        hits = await asyncio.to_thread(mgr._archive.nearest, question, {"user_id": uid}, mgr.TOP_K)
+    if hasattr(mgr, "consolidate"):
+        hits = await asyncio.to_thread(mgr._notes.nearest, question, {"user_id": uid}, mgr.TOP_K)
     else:                                                 # 旧版 A-Mem
         hits = await asyncio.to_thread(mgr._nearest, question, {"user_id": uid}, mgr.NOTE_TOP_K)
     return {m.get("conv_id", "").split("-")[-1] for _, m in hits}

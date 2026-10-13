@@ -1,7 +1,7 @@
 """会话状态在对话主链路上：Redis 慢或挂了，对话要按"没有记忆"继续，而不是报错或卡住。"""
 import asyncio
 
-from memory.archive import UtteranceArchive
+from memory.notes import NoteStore
 from memory.manager import MemoryManager, MsgRole
 from tests.test_memory import FakeCollection, FakeEmbedder
 
@@ -28,7 +28,7 @@ def _manager(redis_client, timeout=0.05):
     mgr = MemoryManager.__new__(MemoryManager)      # 不连真实的 Redis、ChromaDB 和模型
     mgr._redis = redis_client
     mgr._redis_timeout = timeout
-    mgr._archive = UtteranceArchive(FakeCollection(), FakeEmbedder())
+    mgr._notes = NoteStore(FakeCollection(), FakeEmbedder())
     return mgr
 
 

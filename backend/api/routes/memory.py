@@ -38,5 +38,5 @@ async def set_profile_field(user_id: str, slot: str, body: ProfileFieldInput, re
 
 @router.delete("/memory/{user_id}", tags=["记忆"], dependencies=[Depends(_require_admin)])
 async def forget_user(user_id: str, request: Request):
-    """隐私删除：清掉这位用户的会话、档案、咨询记录、原话档案和后台对话记录。线索和交接单是业务记录，由顾问在线索面板处理。"""
+    """隐私删除：清掉这位用户的会话、档案、咨询记录、笔记和后台对话记录。线索和交接单是业务记录，由顾问在线索面板处理。"""
     return {"user_id": user_id, "deleted": await _memory(request).forget_user(user_id)}
