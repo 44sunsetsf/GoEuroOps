@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
     from evaluation.evaluator import EndToEndEvaluator
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
-    from memory.amem import build_memory_manager
+    from memory.manager import build_memory_manager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
     from business.catalog import get_catalog, get_countries
@@ -126,7 +126,7 @@ async def lifespan(app: FastAPI):
         lead_store=services.lead_store,
     )
 
-    # 记忆（A-Mem：Redis 最近对话 + ChromaDB 笔记）
+    # 记忆（分层：会话状态、客户档案、咨询记录在 Redis，原话档案在 ChromaDB）
     services.memory = build_memory_manager(
         redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
@@ -235,9 +235,9 @@ async def _guest_guard(request: Request, call_next):
 
 
 # ── 路由（各模块在 api/routes/ 下）──────────────────────────────────────────────
-from api.routes import chat, evals, knowledge, leads, skills, system  # noqa: E402
+from api.routes import chat, evals, knowledge, leads, memory, skills, system  # noqa: E402
 
-for _module in (system, skills, leads, chat, knowledge, evals):
+for _module in (system, skills, leads, memory, chat, knowledge, evals):
     app.include_router(_module.router)
 
 
@@ -247,7 +247,7 @@ async def _cli():
     print("GoEuroOps CLI — 输入 quit 退出\n")
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
-    from memory.amem import MsgRole, build_memory_manager
+    from memory.manager import MsgRole, build_memory_manager
     from core.skill_loader import SkillManager
 
     cfg = _anthropic_cfg()

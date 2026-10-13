@@ -106,6 +106,8 @@ class Request:
     user_id:     str
     conv_id:     str
     context:     str = ""        # 来自 MemoryManager 的格式化上下文
+    memory_facts: List[str] = field(default_factory=list)   # 客户档案（交接单用）
+    memory_cases: List[str] = field(default_factory=list)   # 以前的咨询记录（交接单用）
     history:     Optional[List[Dict[str, str]]] = None  # 对话历史，传给意图识别
     entities:    Dict[str, List[str]] = field(default_factory=dict)
     intent:      Optional[IntentCategory] = None

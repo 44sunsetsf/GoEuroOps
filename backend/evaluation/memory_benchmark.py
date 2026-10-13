@@ -10,21 +10,25 @@
     abstention     从没说过的事，应该回答“未知”，不能编
   hard（10 段）：多个事实、跨多个会话改主意、长消息、长对话
   stress（10 段，单独跑）：闲聊陈述句也会存成笔记（含“表姐在荷兰”这类干扰项），多会话、反复修改、相对时间、多跳
+  service（8 段，单独跑）：客服场景——回访时接上没解决的事、助手约好的下一步、证件号不能被记住、不能编造约定
 
 怎么跑：
   - 用项目自己的 MemoryManager，每轮按对话接口的顺序写入用户消息、助手回复，再调用 after_turn；
-    会话之间调用 enrich_notes，相当于线上用户停下来 IDLE_SECONDS 后的补全；
+    会话之间调用 idle()，相当于线上用户停下来 IDLE_SECONDS 后的整理；
+  - 环境变量 GOEUROOPS_MEMORY_MODULE 选实现（默认 memory.manager）；和旧版对比时在旧版的工作树里设成 memory.amem；
   - Redis 换成进程内的假实现（只实现用到的几个命令），向量库用临时目录的嵌入式 ChromaDB，向量模型和线上一样；
   - 笔记补全和最后的提问都调用真实模型（读 ANTHROPIC_* 环境变量）；
   - 提问时用 get_context() 拼出的记忆文本，让模型只依据它回答一个短语，按关键词判分。
 
-用法：python -m evaluation.memory_benchmark --runs 3 --label amem
-      python -m evaluation.memory_benchmark --runs 3 --set stress --label stress-amem
+用法：python -m evaluation.memory_benchmark --runs 3 --label layered
+      python -m evaluation.memory_benchmark --runs 3 --set stress --label stress-layered
+      python -m evaluation.memory_benchmark --runs 3 --set service --label service-layered
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import json
 import os
 import sys
@@ -39,7 +43,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client  # noqa: E402
-from memory.amem import MemoryManager, MsgRole  # noqa: E402
+_mem = importlib.import_module(os.getenv("GOEUROOPS_MEMORY_MODULE", "memory.manager"))
+MemoryManager, MsgRole = _mem.MemoryManager, _mem.MsgRole
+
+
+async def idle(mgr: Any, user_id: str) -> None:
+    """用户停下来了：线上空闲 IDLE_SECONDS 后的整理（旧版 A-Mem 叫 enrich_notes）。"""
+    if hasattr(mgr, "consolidate"):
+        await mgr.consolidate(user_id)
+    else:
+        await mgr.enrich_notes(user_id)
 
 REPORT_DIR = ROOT / "evaluation" / "reports"
 
@@ -50,6 +63,7 @@ class FakeRedis:
     def __init__(self) -> None:
         self.lists: Dict[str, List[str]] = {}
         self.kv: Dict[str, str] = {}
+        self.sets: Dict[str, set] = {}
 
     async def lpush(self, key: str, value: str) -> int:
         self.lists.setdefault(key, []).insert(0, value)
@@ -66,10 +80,37 @@ class FakeRedis:
         return True
 
     async def lrange(self, key: str, start: int, end: int) -> List[str]:
-        return self.lists.get(key, [])[start:end + 1]
+        return self.lists.get(key, [])[start:None if end == -1 else end + 1]      # 和 Redis 一样，-1 表示到末尾
 
-    async def delete(self, key: str) -> int:
-        return int(self.lists.pop(key, None) is not None or self.kv.pop(key, None) is not None)
+    async def lrem(self, key: str, count: int, value: str) -> int:
+        before = len(self.lists.get(key, []))
+        self.lists[key] = [v for v in self.lists.get(key, []) if v != value]
+        return before - len(self.lists[key])
+
+    async def sadd(self, key: str, *values: str) -> int:
+        s = self.sets.setdefault(key, set())
+        new = set(values) - s
+        s.update(values)
+        return len(new)
+
+    async def smembers(self, key: str) -> set:
+        return set(self.sets.get(key, set()))
+
+    async def srem(self, key: str, *values: str) -> int:
+        s = self.sets.get(key, set())
+        gone = s & set(values)
+        s -= gone
+        return len(gone)
+
+    async def scan_iter(self, match: str = "*"):
+        import fnmatch
+        for key in list(self.lists) + list(self.kv) + list(self.sets):
+            if fnmatch.fnmatchcase(key, match):
+                yield key
+
+    async def delete(self, *keys: str) -> int:
+        return sum(int(self.lists.pop(k, None) is not None or self.kv.pop(k, None) is not None
+                       or self.sets.pop(k, None) is not None) for k in keys)
 
     async def get(self, key: str) -> Optional[str]:
         return self.kv.get(key)
@@ -319,6 +360,43 @@ def build_scenarios() -> List[Dict[str, Any]]:
         {"conv": "a", "turns": chat([(2, "我参加过全国大学生数学建模竞赛，拿了省级二等奖。")], 10, 7)},
         {"conv": "b", "turns": chat([], 10, 1)}],
         "我参加数学建模竞赛拿了什么奖？", ["二等奖"])
+
+    # ── 客服题：回访接上没解决的事、助手约好的下一步、证件号不能被记住、不能编造约定。和其他题分开跑 ──
+    def addv(sid, cat, sessions, question, expect, reject=()):
+        adds(sid, cat, sessions, question, expect, reject)
+        S[-1]["set"] = "service"
+
+    addv("V1", "open_item", [{"conv": "a", "turns": [
+        ("我想在瑞典和荷兰之间选一个读计算机硕士。", ACK), FILLERS[3], FILLERS[0],
+        ("学费比我想的贵，我回去和爸妈商量一下预算，商量好了再来找你。", "好的，预算定下来之后，我们再按预算帮你筛项目。")]}],
+        "上次聊完，我回去要先确定什么？", ["预算"])
+    addv("V2", "next_step", [{"conv": "a", "turns": [
+        ("我想找你们做文书服务，动机信我自己写不好。", ACK), FILLERS[6],
+        ("那就这样安排吧", "好的，我们约周四晚上 8 点视频，顾问会先看你的简历，视频时一起定动机信的提纲。"),
+        ("好的谢谢", "不客气，到时候见！")]}],
+        "我们约的视频是星期几？", ["四"])
+    addv("V3", "unresolved", [{"conv": "a", "turns": [
+        ("我上周不小心付了两次咨询费，想退一笔。", "这类情况需要顾问核对付款记录，我已经帮你转给顾问，1–2 个工作日内会联系你。"),
+        FILLERS[1], FILLERS[4]]}],
+        "我上次找你们是要处理什么事？", ["退"])
+    addv("V4", "no_passport", [{"conv": "a", "turns": [
+        ("我的护照号是 E12345678，你帮我记一下，填表的时候要用。", ACK), FILLERS[2], FILLERS[5]]}],
+        "我的护照号是多少？", [], ["12345678"])
+    addv("V5", "no_id_card", [{"conv": "a", "turns": [
+        ("我身份证号是 110101199901011234，报名的时候要用，先存你这。", ACK), FILLERS[0], FILLERS[3]]}],
+        "我的身份证号是多少？", [], ["1234", "110101"])
+    addv("V6", "no_made_up_commitment", [{"conv": "a", "turns": [
+        ("我本科是英语专业，想转去读传媒。", ACK), FILLERS[5], FILLERS[2],
+        ("我再自己看看项目", "好的，有问题随时来问。")]}],
+        "我们上次约的视频是几点？", ["未知"])
+    addv("V7", "open_item_two_sessions_ago", [
+        {"conv": "a", "turns": [("我还没决定要不要考 GRE，我回去查一下目标项目要不要求。", ACK), FILLERS[2]]},
+        {"conv": "b", "turns": [FILLERS[4], FILLERS[1]]}],
+        "我之前说要回去查的是什么事？", ["GRE"])
+    addv("V8", "advisor_promise", [{"conv": "a", "turns": [
+        ("我想申请瑞典和芬兰，帮我看看能申哪些学校。", ACK), FILLERS[0],
+        ("可以，辛苦了", "好的，顾问明天下午会把初步的选校清单发到你留的邮箱，你看完有问题再来找我们。")]}],
+        "顾问说会把什么发到我邮箱？", ["选校"])
     return S
 
 
@@ -383,7 +461,7 @@ async def run_once(run_idx: int, label: str, scenarios: List[Dict[str, Any]], co
                     await mgr.add_message(uid, conv, MsgRole.ASSISTANT, assistant_msg)
                     await mgr.after_turn(uid, conv)          # 对话接口每轮回复后都会调用
                 if sess["turns"]:
-                    await mgr.enrich_notes(uid)              # 会话之间用户停下来了：线上空闲 IDLE_SECONDS 后补全
+                    await idle(mgr, uid)                     # 会话之间用户停下来了
             await mgr.wait_background()
             probe = sc["probe"]
             ctx = await mgr.get_context(uid, f"{uid}-{probe['conv']}", query=probe["question"])
@@ -435,7 +513,7 @@ def write_report(summary: Dict[str, Any], runs: List[Dict[str, Any]]) -> Path:
              f"- 场景 {summary['scenarios']} 个，每个跑 {k} 次",
              f"- 总体准确率（{k} 次平均）：**{summary['overall_acc_mean']:.1%}**；各次：{', '.join(f'{x:.0%}' for x in summary['overall_acc_runs'])}",
              f"- pass^{k}（同一场景 {k} 次全对的比例）：**{summary['pass_k']:.1%}**",
-             f"- 每次运行的记忆维护调用（笔记补全）：{summary['maintenance_calls_per_run']:.0f} 次，"
+             f"- 实现 `{_mem.__name__}`；每次运行的记忆维护调用（整理 / 补全）：{summary['maintenance_calls_per_run']:.0f} 次，"
              f"约 {summary['maintenance_tokens_per_run']:.0f} token",
              f"- 提问时记忆文本平均长度：{summary['avg_context_chars']:.0f} 字", "",
              "| 类别 | 场景数 | 平均准确率 | pass^k |", "|---|---|---|---|"]
@@ -454,9 +532,10 @@ async def main() -> None:
     ap.add_argument("--label", default="run")
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--only", default="", help="只跑这些场景，逗号分隔，如 E1,U1")
-    ap.add_argument("--set", default="all", choices=["basic", "hard", "all", "stress"], help="basic 基础题 / hard 难题 / all 前两者 / stress 压力题（单独跑）")
+    ap.add_argument("--set", default="all", choices=["basic", "hard", "all", "stress", "service"],
+                    help="basic 基础题 / hard 难题 / all 前两者 / stress 压力题、service 客服题（单独跑）")
     args = ap.parse_args()
-    scenarios = [sc for sc in build_scenarios() if sc["set"] == args.set or (args.set == "all" and sc["set"] != "stress")]
+    scenarios = [sc for sc in build_scenarios() if sc["set"] == args.set or (args.set == "all" and sc["set"] in ("basic", "hard"))]
     if args.only:
         keep = set(args.only.split(","))
         scenarios = [s for s in scenarios if s["id"] in keep]

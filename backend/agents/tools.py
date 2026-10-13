@@ -335,7 +335,18 @@ def build_handoff_summary(req: Request, reason: str) -> Dict[str, Any]:
         "urgency": req.urgency.name if req.urgency else "UNKNOWN",
         "entities": req.entities or {},
         "last_message": (req.message or "")[:500],
+        # 顾问接手时不用翻聊天记录：附上客户档案和以前的咨询记录（线索面板显示 background）
+        "background": handoff_background(req.memory_facts, req.memory_cases),
     }
+
+
+def handoff_background(facts: List[str], cases: List[str]) -> str:
+    parts = []
+    if facts:
+        parts.append("客户档案（用户自述）：" + "；".join(facts))
+    if cases:
+        parts.append("以前的咨询：" + " / ".join(cases))
+    return "。".join(parts)[:1200]
 
 
 def build_handoff_tool(lead_store: Optional[LeadStore]) -> AgentToolSpec:

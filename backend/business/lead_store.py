@@ -53,6 +53,12 @@ def contains_sensitive_id(text: str) -> bool:
     return bool(_ID_CARD_RE.search(text or "") or _PASSPORT_RE.search(text or ""))
 
 
+def redact_sensitive_ids(text: str) -> str:
+    """把身份证号、护照号换成占位符（记忆模块存原话前用）。"""
+    text = _ID_CARD_RE.sub("[证件号已隐去]", text or "")
+    return _PASSPORT_RE.sub("[证件号已隐去]", text)
+
+
 def validate_contact(channel: str, contact: str) -> Optional[str]:
     contact = (contact or "").strip()
     if channel not in CONTACT_CHANNELS:
