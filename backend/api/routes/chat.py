@@ -30,7 +30,7 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     """
     from agents.agent_orchestrator import Request as OrcReq
     from core import chat_log
-    from memory.amem import MsgRole
+    from memory.manager import MsgRole
 
     mem_ctx = await services.memory.get_context(req.user_id, conv_id, query=req.message)
     history = [
@@ -43,13 +43,15 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
         user_id=req.user_id,
         conv_id=conv_id,
         context=mem_ctx.to_prompt_text(),
+        memory_facts=mem_ctx.facts,
+        memory_cases=mem_ctx.cases,
         history=history,
     )
     result = await services.orchestrator.run(orch_req, on_delta=on_delta)
 
     await services.memory.add_message(req.user_id, conv_id, MsgRole.USER, req.message)
     await services.memory.add_message(req.user_id, conv_id, MsgRole.ASSISTANT, result.response)
-    # 后台补全笔记（不阻塞响应）
+    # 后台整理记忆（不阻塞响应）
     services.memory.schedule_after_turn(req.user_id, conv_id)
 
     response = ChatResponse(

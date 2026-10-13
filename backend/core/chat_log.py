@@ -47,3 +47,19 @@ async def record(user_id: str, conv_id: str, message: str, resp: Any, redis_clie
         await pipe.execute()
     except Exception:
         log.debug("chat log not recorded", exc_info=True)
+
+
+async def forget(user_id: str, redis_client: Any = None) -> int:
+    """删掉这位访客的全部对话记录（隐私删除请求用）。逐条 LREM，不影响同时写入的新记录。返回删掉的条数。"""
+    r = redis_client if redis_client is not None else llm_usage._client()
+    if r is None:
+        return 0
+    removed = 0
+    for raw in await r.lrange(KEY, 0, KEEP - 1):
+        try:
+            mine = json.loads(raw).get("user_id") == user_id
+        except (TypeError, ValueError):
+            continue
+        if mine:
+            removed += int(await r.lrem(KEY, 0, raw))
+    return removed

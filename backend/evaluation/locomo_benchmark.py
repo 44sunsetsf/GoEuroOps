@@ -5,12 +5,12 @@ LoCoMo：两个人几十个会话的长对话，附带问答（多跳、时间�
 
 怎么跑：
   - 每个会话一个 conv_id，每句话作为一条用户消息写入，之后像对话接口一样调用 after_turn；
-  - 每个会话结束时调用 enrich_notes，相当于线上用户停下来 IDLE_SECONDS 后的补全；
+  - 每个会话结束时调用 idle()，相当于线上用户停下来 IDLE_SECONDS 后的整理；
   - 提问放在一个全新的会话里，所以只能靠笔记回答；
   - 读者模型回答，再由同一个模型当裁判判对错（和 Mem0 论文的做法一致）。
   - 注意：线上向量模型是中文的 bge-small-zh，这份数据是英文，分数只适合和本项目以前的结果比，不适合和论文比。
 
-用法：python -m evaluation.locomo_benchmark --data locomo10.json --convs 0,1 --per-cat 10 --label amem
+用法：python -m evaluation.locomo_benchmark --data locomo10.json --convs 0,1 --per-cat 10 --label layered
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ if str(ROOT) not in sys.path:
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content, make_client  # noqa: E402
 from evaluation.memory_benchmark import Counter, FakeRedis  # noqa: E402
-from memory.amem import MemoryManager, MsgRole  # noqa: E402
+from evaluation.memory_benchmark import MemoryManager, MsgRole, idle  # noqa: E402
 
 REPORT_DIR = ROOT / "evaluation" / "reports"
 CATS = {1: "multi_hop", 2: "temporal", 3: "open_domain", 4: "single_hop"}
@@ -68,7 +68,7 @@ async def ingest(mgr: MemoryManager, uid: str, sessions) -> None:
         for t in turns:
             await mgr.add_message(uid, f"{uid}-{conv}", MsgRole.USER, t)
             await mgr.after_turn(uid, f"{uid}-{conv}")           # 对话接口每轮回复后都会调用
-        await mgr.enrich_notes(uid)                              # 会话之间用户停下来了：线上空闲 IDLE_SECONDS 后补全
+        await idle(mgr, uid)                                     # 会话之间用户停下来了：线上空闲 IDLE_SECONDS 后整理
     sem = asyncio.Semaphore(4)
 
     async def guarded(c, t):
@@ -80,7 +80,10 @@ async def ingest(mgr: MemoryManager, uid: str, sessions) -> None:
 
 async def retrieved_sessions(mgr: MemoryManager, uid: str, question: str) -> set:
     """检索到的笔记来自哪些会话（用来算证据有没有被取回，不调模型）。"""
-    hits = await asyncio.to_thread(mgr._nearest, question, {"user_id": uid}, mgr.NOTE_TOP_K)
+    if hasattr(mgr, "_archive"):
+        hits = await asyncio.to_thread(mgr._archive.nearest, question, {"user_id": uid}, mgr.TOP_K)
+    else:                                                 # 旧版 A-Mem
+        hits = await asyncio.to_thread(mgr._nearest, question, {"user_id": uid}, mgr.NOTE_TOP_K)
     return {m.get("conv_id", "").split("-")[-1] for _, m in hits}
 
 

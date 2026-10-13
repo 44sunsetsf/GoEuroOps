@@ -55,6 +55,10 @@ class LeadUpdateInput(BaseModel):
     notes: Optional[str] = None
 
 
+class ProfileFieldInput(BaseModel):
+    value: str = Field(..., min_length=1, max_length=80)
+
+
 class DocInput(BaseModel):
     """单篇文档输入。"""
     title:   str

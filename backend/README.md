@@ -50,7 +50,7 @@ python -m pytest -q
 
 ```text
 /chat/stream
-  ├─ MemoryManager 读取最近对话 / 相关笔记 / 关键事实（A-Mem）
+  ├─ MemoryManager 读取最近对话 / 客户档案 / 以前的咨询记录 / 相关原话
   └─ AgentOrchestrator.run
        ├─ 并行：IntentRecognizer（LLM ∥ 向量 ∥ 关键词）
        │       RagGate.speculate（consulting / billing / general 三个 domain 的纯向量召回）
@@ -87,7 +87,12 @@ core/text_embedding.py         本地字符 n-gram 向量（意图识别与 Skil
 retrieval/knowledge_base.py    ChromaDB 知识库（bge-small-zh 向量 + 字面覆盖混合打分）
 retrieval/embeddings.py        中文向量模型加载（fastembed / ONNX）
 retrieval/manager.py            检索治理层：缓存、熔断、降级、查询改写、LLM 重排
-memory/amem.py                 A-Mem 记忆：Redis 最近对话 + ChromaDB 笔记（批量补全、链接、只追加的演化）
+memory/manager.py              分层记忆入口：会话状态、整理时机、读取和字数预算、顾问修改、隐私删除
+memory/profile.py              客户档案：字段带出处和历史，合并规则由代码决定，顾问核实过的字段模型不能改
+memory/cases.py                咨询记录：每个会话停下来后的摘要（没解决的事、约好的下一步），回访和交接单用
+memory/archive.py              原话档案（ChromaDB）：每句陈述原样存，马上可检索，保留 180 天
+memory/consolidate.py          整理：一次模型调用抽档案候选、写咨询记录
+api/routes/memory.py           顾问接口：看档案、改字段、按用户要求删除全部记忆
 evaluation/evaluator.py        端到端评测
 skills/                        业务规范（编写规范见 skills/README.md）
 tests/                         单元测试（含所有 Skill 的命中回归用例）
