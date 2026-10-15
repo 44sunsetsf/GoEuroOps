@@ -294,7 +294,7 @@ def test_knowledge_fallback_is_reported_as_failure_not_evidence():
         fallback=lambda params, context, error: [{"title": "知识库降级结果", "content": "暂时不可用", "fallback": True}],
     ))
 
-    async def no_rewrite(query, n=3):
+    async def no_rewrite(query, n=3, previous=""):
         return [query]
 
     manager.rewrite_query = no_rewrite

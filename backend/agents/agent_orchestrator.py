@@ -36,7 +36,7 @@ from agents.tools import (
 from business.lead_store import LeadStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import make_client
-from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
+from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative, retrieval_query
 from core.config import DEFAULT_MODEL, env_float, env_int
 
 
@@ -218,7 +218,7 @@ class AgentOrchestrator:
         t0 = time.monotonic()
 
         # 0. 投机预取：与意图识别并行启动各 domain 的纯向量召回（门控决定是否采用）
-        speculative = self._rag_gate.speculate(req.message) if req.rag_mode is None else None
+        speculative = self._rag_gate.speculate(retrieval_query(req.message, req.history)) if req.rag_mode is None else None
 
         # 1. 意图识别（如果调用方已识别则跳过）
         try:
@@ -330,7 +330,7 @@ class AgentOrchestrator:
             intent=req.intent.value if req.intent else None,
             confidence=req.intent_confidence,
             domain=decision.primary_agent.value,
-            message=req.message,
+            message=retrieval_query(req.message, req.history),
         )
         req.rag_mode = gate.mode.value
         req.knowledge = list(gate.items)

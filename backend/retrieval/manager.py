@@ -6,8 +6,8 @@
 本模块的答案：
   1. 查询改写（Query Rewriting）—— 用 LLM 把用户原始问题扩写成多个角度的子查询，
      再合并去重，解决"召回不全"问题。
-  2. 结果重排（Reranking）—— 对召回结果用 LLM 打分，按相关性重新排序，
-     解决"召回不好/排序差"问题。
+  2. 结果重排（Reranking）—— 用 bge-reranker（cross-encoder，retrieval/rerank.py）给召回结果
+     打 0–1 的相关度，重新排序并过滤不相关的，解决"召回不好/排序差"问题。
   3. 熔断器（Circuit Breaker）—— 连续失败超阈值时自动断开，防止雪崩。
   4. 结果缓存（TTL Cache）—— 相同参数直接返回缓存，减少重复调用。
   5. 降级策略（Fallback）—— 工具不可用时返回有意义的降级结果。
@@ -19,8 +19,10 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
+from core.rag_gate import retrieval_query
+from retrieval.rerank import ApiReranker, passes_threshold
 from tooling.breaker import CircuitBreaker
 
 from core.llm_utils import NO_THINKING_KWARGS, extract_text_content
@@ -91,11 +93,15 @@ class RetrievalManager:
       用户查询 → 查询改写（多角度子查询）→ 并行召回 → 结果重排 → 返回 Top-K
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = DEFAULT_MODEL):
+    RERANK_CANDIDATES = 8        # 交给重排的候选文档数
+
+    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = DEFAULT_MODEL,
+                 reranker: Optional[ApiReranker] = None):
         self._client = make_client(api_key, base_url, "tools")
         self._model  = model
+        self._reranker = reranker
         self._tools: Dict[str, Tool] = {}
-        self._cache: Dict[str, tuple] = {}   # key → (result, expire_at, reranked)
+        self._cache: Dict[str, tuple] = {}   # key → (result, expire_at)
 
     # ── 注册 / 注销 ───────────────────────────────────────────────────────────
 
@@ -115,32 +121,22 @@ class RetrievalManager:
         context: Optional[Dict[str, Any]] = None,
         *,
         use_cache: bool = True,
-        rerank_top_k: int = 0,          # >0 时对结果重排，取 Top-K
     ) -> ToolResult:
         """
         调用工具，完整执行链：
-          缓存检查 → 熔断检查 → 参数校验 → 执行（含超时）→ 可选重排 → 缓存写入
+          缓存检查 → 熔断检查 → 参数校验 → 执行（含超时）→ 缓存写入
         """
         tool = self._tools.get(name)
         if not tool:
             return ToolResult(success=False, data=None, tool_name=name, error=f"工具不存在: {name}")
 
-        cache_rerank_top_k = rerank_top_k if rerank_top_k > 0 and tool.supports_rerank else 0
-
         # 缓存命中
         if use_cache and tool.cache_ttl > 0:
-            cached = self._get_cache(name, params, cache_rerank_top_k)
+            cached = self._get_cache(name, params)
             if cached is not None:
-                cached_data, cached_reranked = cached
                 tool.stats.total += 1
                 tool.stats.success += 1
-                return ToolResult(
-                    success=True,
-                    data=cached_data,
-                    tool_name=name,
-                    cached=True,
-                    reranked=cached_reranked,
-                )
+                return ToolResult(success=True, data=cached, tool_name=name, cached=True)
 
         # 熔断检查
         ticket = tool.breaker.acquire()
@@ -162,18 +158,10 @@ class RetrievalManager:
             tool.stats.total_latency_ms += latency
             tool.breaker.record_success(ticket)
 
-            # 重排（针对返回列表的检索工具）
-            reranked = False
-            if rerank_top_k > 0 and tool.supports_rerank and isinstance(data, list):
-                query = params.get("query", "")
-                data, reranked = await self._rerank(query, data, rerank_top_k), True
-
-            # 写缓存：缓存最终返回结果，避免下次命中未重排的原始结果。
             if tool.cache_ttl > 0:
-                self._set_cache(name, params, data, tool.cache_ttl, cache_rerank_top_k, reranked)
+                self._set_cache(name, params, data, tool.cache_ttl)
 
-            return ToolResult(success=True, data=data, tool_name=name,
-                              latency_ms=latency, reranked=reranked)
+            return ToolResult(success=True, data=data, tool_name=name, latency_ms=latency)
 
         except asyncio.TimeoutError:
             tool.stats.failed += 1
@@ -234,7 +222,7 @@ class RetrievalManager:
 
     # ── 查询改写（解决召回不全）────────────────────────────────────────────────
 
-    async def rewrite_query(self, query: str, n: int = 3) -> List[str]:
+    async def rewrite_query(self, query: str, n: int = 3, previous: str = "") -> List[str]:
         """
         用 LLM 将原始查询改写为 n 个不同角度的子查询。
 
@@ -248,6 +236,7 @@ class RetrievalManager:
         prompt = f"""将以下用户查询改写为 {n} 个不同角度的搜索子查询，用于检索知识库。
 要求：每个子查询角度不同，覆盖原始问题的不同方面。
 原始查询: "{query}"
+{f'上一轮用户说的是: "{previous}"。原始查询省略了主语或指代上一轮时，子查询要写完整（例如“那德国呢”写成“德国 CS 硕士申请截止时间”）。' if previous else ''}
 返回 JSON 数组，例如: ["子查询1", "子查询2", "子查询3"]"""
         prompt = self._clean_text(prompt)
         try:
@@ -272,15 +261,20 @@ class RetrievalManager:
         top_k: int = 5,
         context: Optional[Dict[str, Any]] = None,
         domain: Optional[str] = None,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> ToolResult:
         """
         完整的检索优化链路：查询改写 → 并行召回 → 去重 → 重排（含相关性过滤）→ Top-K
 
         这是解决"检索不全、召回不好"的完整方案。
         domain 非空时只在该 Agent 的知识范围内检索，避免跨业务线串场。
+        history 用来补全“那德国呢”这类追问：改写时参考上一轮用户的话，重排按补全后的问题打分。
         """
+        full_query = retrieval_query(query, history)
+        previous = full_query[: -len(query)].strip() if full_query != query.strip() else ""
+
         # 1. 查询改写：生成多角度子查询
-        sub_queries = await self.rewrite_query(query, n=3)
+        sub_queries = await self.rewrite_query(query, n=3, previous=previous)
         logger.info(f"查询改写: {query!r} → {sub_queries}")
 
         # 2. 并行召回：所有子查询同时检索
@@ -291,9 +285,7 @@ class RetrievalManager:
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # 3. 合并去重：按标题+内容去重（而不是整条结果的哈希），
-        #    因为同一段内容被不同子查询召回时相似度分数会不同，
-        #    用整条结果做哈希会把同一份内容误判成多条不同结果。
+        # 3. 合并去重：同一篇文档被不同子查询召回时只留一条（分数会不同，不能按整条结果去重），
         #    重复命中时保留分数更高的那一条。
         best_by_key: Dict[str, Dict[str, Any]] = {}
         degraded_error = ""
@@ -306,7 +298,7 @@ class RetrievalManager:
                         # 降级提示不是检索到的知识，不能当证据交给模型
                         degraded_error = r.error or str(item.get("error") or "")
                         continue
-                    key = f"{item.get('title', '')}\x1f{item.get('content', '')}"
+                    key = str(item.get("doc_id") or f"{item.get('title', '')}\x1f{item.get('content', '')}")
                     existing = best_by_key.get(key)
                     if existing is None or float(item.get("score", 0) or 0) > float(existing.get("score", 0) or 0):
                         best_by_key[key] = item
@@ -318,11 +310,13 @@ class RetrievalManager:
                                   error=f"知识库暂时不可用（{degraded_error}），请稍后重试或请顾问确认")
             return ToolResult(success=False, data=[], tool_name=tool_name, error="所有子查询均无结果")
 
-        # 4. 重排：用 LLM 对合并结果按相关性打分，过滤掉不相关的，取 Top-K
-        reranked = await self._rerank(query, merged, top_k)
-        if not reranked:
-            return ToolResult(success=False, data=[], tool_name=tool_name, error="知识库中没有与问题足够相关的内容", reranked=True)
-        return ToolResult(success=True, data=reranked, tool_name=tool_name, reranked=True)
+        # 4. 重排（按原问题打分）→ 过滤不够相关的 → Top-K；重排不可用时按混合分和原阈值
+        ranked, reranked = await self._rerank(full_query, merged)
+        kept = [item for item in ranked if passes_threshold(item)][:top_k]
+        if not kept:
+            return ToolResult(success=False, data=[], tool_name=tool_name, error="知识库中没有与问题足够相关的内容",
+                              reranked=reranked)
+        return ToolResult(success=True, data=kept, tool_name=tool_name, reranked=reranked)
 
     async def search_fast(
         self,
@@ -331,74 +325,28 @@ class RetrievalManager:
         top_k: int = 3,
         domain: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """快速检索：单次向量召回，不做 LLM 改写和重排。
+        """快速检索：单次向量召回 + 重排，不做 LLM 改写。
 
-        给意图门控 RAG 的投机预取使用——它和意图识别并行跑，必须足够快；
-        仍然走 call()，复用缓存、熔断和降级。
+        给意图门控 RAG 的投机预取使用——它和意图识别（一两秒）并行跑，重排的一两百毫秒被藏住；
+        仍然走 call()，复用缓存、熔断和降级。阈值过滤由门控按 passes_threshold 做。
         """
-        result = await self.call(tool_name, {"query": query, "top_k": top_k, "domain": domain}, use_cache=True)
+        want = max(top_k, self.RERANK_CANDIDATES) if self._reranker is not None else top_k
+        result = await self.call(tool_name, {"query": query, "top_k": want, "domain": domain}, use_cache=True)
         if not result.success or not isinstance(result.data, list):
             return []
-        return [item for item in result.data if isinstance(item, dict) and not item.get("fallback")]
+        items = [item for item in result.data if isinstance(item, dict) and not item.get("fallback")]
+        ranked, _ = await self._rerank(query, items)
+        return ranked[:top_k]
 
     # ── 结果重排（解决召回不好）──────────────────────────────────────────────
 
-    # 相关性打分低于这个阈值（0-10）的结果会被丢弃，而不是硬塞给 top_k。
-    RERANK_MIN_RELEVANCE = 4.0
-
-    async def _rerank(self, query: str, items: List[Any], top_k: int) -> List[Any]:
-        """
-        用 LLM 对召回结果逐条打相关性分，过滤掉不相关的，再取 Top-K。
-
-        解决两个问题：
-          1. 向量检索的相似度分数不等于"对用户有用"，LLM 能理解语义相关性；
-          2. 原来的实现只做"排序"，不管问题和知识库完全无关也会硬凑够 top_k 条
-             塞给调用方；现在低于阈值的结果会被丢弃，检索不到就诚实地返回空，
-             而不是让 Agent 拿着不相关的内容去回答。
-        """
-        if not items:
-            return []
-
-        items_text = "\n".join(f"{i}. {json.dumps(item, ensure_ascii=False)[:200]}"
-                               for i, item in enumerate(items))
-        prompt = f"""根据用户查询，对以下检索结果逐条打相关性分（0-10）。
-10 表示直接回答了用户问题，0 表示完全不相关/答非所问，中间分数表示部分相关。
-不相关的结果必须给出真实的低分，不要为了凑数虚高打分。
-
-用户查询: "{query}"
-检索结果:
-{items_text}
-
-只返回 JSON 数组，每个元素是 {{"index": <结果编号>, "relevance": <0-10>}}，不要其他文字。"""
-        prompt = self._clean_text(prompt)
-
-        try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=400, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-                **NO_THINKING_KWARGS,
-            )
-            raw = extract_text_content(resp.content)
-            s, e = raw.find("["), raw.rfind("]") + 1
-            scored: List[Dict[str, Any]] = json.loads(raw[s:e])
-            ranked = sorted(
-                (
-                    entry for entry in scored
-                    if isinstance(entry, dict) and 0 <= int(entry.get("index", -1)) < len(items)
-                ),
-                key=lambda entry: float(entry.get("relevance", 0) or 0),
-                reverse=True,
-            )
-            relevant = [
-                {**items[int(entry["index"])], "relevance": float(entry.get("relevance", 0) or 0)}
-                if isinstance(items[int(entry["index"])], dict) else items[int(entry["index"])]
-                for entry in ranked
-                if float(entry.get("relevance", 0) or 0) >= self.RERANK_MIN_RELEVANCE
-            ]
-            return relevant[:top_k]
-        except Exception as ex:
-            logger.warning(f"重排失败，返回原始顺序: {ex}")
-            return items[:top_k]
+    async def _rerank(self, query: str, items: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], bool]:
+        """有重排器就按 cross-encoder 分数排序；没有或失败时按原来的混合分排序。返回 (结果, 是否重排)。"""
+        if self._reranker is not None and items:
+            ranked = await self._reranker.rerank(query, items[: self.RERANK_CANDIDATES])
+            if ranked is not None:
+                return ranked, True
+        return sorted(items, key=lambda item: float(item.get("score", 0) or 0), reverse=True), False
 
     # ── 缓存 ──────────────────────────────────────────────────────────────────
 
@@ -420,16 +368,15 @@ class RetrievalManager:
             logger.info(f"工具缓存已失效: tool={tool_name or '*'} removed={removed}")
         return removed
 
-    def _cache_key(self, name: str, params: Dict, rerank_top_k: int = 0) -> str:
-        payload = {"params": params, "rerank_top_k": rerank_top_k}
-        return f"{name}:{hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()}"
+    def _cache_key(self, name: str, params: Dict) -> str:
+        return f"{name}:{hashlib.md5(json.dumps(params, sort_keys=True).encode()).hexdigest()}"
 
-    def _get_cache(self, name: str, params: Dict, rerank_top_k: int = 0) -> Optional[Tuple[Any, bool]]:
-        key = self._cache_key(name, params, rerank_top_k)
+    def _get_cache(self, name: str, params: Dict) -> Optional[Any]:
+        key = self._cache_key(name, params)
         if key in self._cache:
-            data, expire_at, reranked = self._cache[key]
+            data, expire_at = self._cache[key]
             if time.monotonic() < expire_at:
-                return data, reranked
+                return data
             del self._cache[key]
         return None
 
@@ -439,14 +386,12 @@ class RetrievalManager:
         params: Dict,
         data: Any,
         ttl: float,
-        rerank_top_k: int = 0,
-        reranked: bool = False,
     ) -> None:
         if len(self._cache) >= 5000:
             # 清掉最旧的 1/4
             for k in list(self._cache)[:1250]:
                 del self._cache[k]
-        self._cache[self._cache_key(name, params, rerank_top_k)] = (data, time.monotonic() + ttl, reranked)
+        self._cache[self._cache_key(name, params)] = (data, time.monotonic() + ttl)
 
     # ── 参数校验 ──────────────────────────────────────────────────────────────
 
@@ -489,3 +434,4 @@ class RetrievalManager:
             }
             for name, t in self._tools.items()
         }
+

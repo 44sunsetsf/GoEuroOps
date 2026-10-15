@@ -186,19 +186,20 @@ def test_shared_rag_tool_is_available_to_all_agents():
 
 
 def test_rag_tool_scopes_search_to_its_own_domain():
-    """search_knowledge_base 必须把 Agent 自己的领域传给检索层，避免跨业务线串场。"""
+    """search_knowledge_base 必须把 Agent 自己的领域传给检索层，避免跨业务线串场；对话历史也要传，用来补全追问。"""
     calls = []
 
     class RagManager:
-        async def search_with_rewrite(self, tool_name, query, top_k=5, context=None, domain=None):
-            calls.append(domain)
+        async def search_with_rewrite(self, tool_name, query, top_k=5, context=None, domain=None, history=None):
+            calls.append((domain, history))
             return type("Result", (), {"success": True, "data": [], "reranked": True})()
 
     tools = build_shared_rag_tools(RagManager(), domain="consulting")
     req = make_request()
+    req.history = [{"role": "user", "content": "瑞典 CS 什么时候截止"}]
     asyncio.run(tools["search_knowledge_base"].handler(req, {"query": "瑞典硕士"}))
 
-    assert calls == ["consulting"]
+    assert calls == [("consulting", req.history)]
 
 
 def test_tool_input_validation_rejects_unknown_fields():
