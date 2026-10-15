@@ -161,7 +161,8 @@ class ToolGateway:
             return finish("invalid_args", {"success": False, "error": str(ex)}, str(ex))
 
         breaker = self._breaker(name) if policy.breaker else None
-        if breaker is not None and not breaker.allow():
+        ticket = breaker.acquire() if breaker is not None else None
+        if breaker is not None and ticket is None:
             msg = f"工具 {name} 暂时不可用（连续失败，熔断中），请稍后再试或转顾问处理"
             return finish("circuit_open", {"success": False, "error": msg}, msg)
 
@@ -169,18 +170,18 @@ class ToolGateway:
             result = await asyncio.wait_for(self._invoke(spec, req, data), timeout=policy.timeout_s)
         except asyncio.TimeoutError:
             if breaker is not None:
-                breaker.record_failure()
+                breaker.record_failure(ticket)
             msg = f"工具 {name} 执行超过 {policy.timeout_s:g} 秒"
             logger.warning(msg)
             return finish("timeout", {"success": False, "error": msg}, msg)
         except Exception as ex:                     # noqa: BLE001 —— 工具出错不能拖垮整个请求
             if breaker is not None:
-                breaker.record_failure()
+                breaker.record_failure(ticket)
             logger.warning("Agent 工具 %s 执行失败: %s", name, ex)
             return finish("error", {"success": False, "error": str(ex)}, str(ex))
 
         if breaker is not None:
-            breaker.record_success()
+            breaker.record_success(ticket)
 
         output_model = getattr(spec, "output_model", None)
         if output_model is not None and isinstance(result, dict):

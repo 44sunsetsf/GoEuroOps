@@ -140,6 +140,8 @@ export default {
   '通过': 'Passed',
   '总数': 'Total',
   '回归': 'Regressions',
+  '评分失败的样本：': 'Cases the judge failed to score: ',
+  '（未计入分数和通过率，本次不做回归对比）': ' (left out of the scores and pass rate; no regression check this run)',
   '平均评分': 'Average scores',
   '优化建议': 'Suggestions',
   '本次评测没有返回额外建议。': 'No suggestions from this run.',

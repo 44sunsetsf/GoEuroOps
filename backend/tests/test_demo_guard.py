@@ -121,10 +121,10 @@ class FakeEvaluator:
         self.calls = []
 
     async def run(self, **kwargs):
-        from types import SimpleNamespace
+        from evaluation.evaluator import EvalReport
         self.calls.append(kwargs)
-        return SimpleNamespace(pass_rate=1.0, total=0, passed=0, avg_scores={}, regressions=[],
-                               recommendations=[], results=[])
+        return EvalReport(timestamp="", total=0, passed=0, pass_rate=1.0, avg_scores={}, regressions=[],
+                          recommendations=[], results=[])
 
 
 def test_guest_eval_uses_defaults_keeps_baseline_and_is_limited(client, monkeypatch):

@@ -143,7 +143,8 @@ class RetrievalManager:
                 )
 
         # 熔断检查
-        if not tool.breaker.allow():
+        ticket = tool.breaker.acquire()
+        if ticket is None:
             error = f"工具熔断中: {name}，请稍后重试"
             return await self._fallback_result(tool, params, context, error)
 
@@ -159,7 +160,7 @@ class RetrievalManager:
             tool.stats.success += 1
             tool.stats.consecutive_fails = 0
             tool.stats.total_latency_ms += latency
-            tool.breaker.record_success()
+            tool.breaker.record_success(ticket)
 
             # 重排（针对返回列表的检索工具）
             reranked = False
@@ -177,14 +178,14 @@ class RetrievalManager:
         except asyncio.TimeoutError:
             tool.stats.failed += 1
             tool.stats.consecutive_fails += 1
-            tool.breaker.record_failure()
+            tool.breaker.record_failure(ticket)
             logger.error(f"工具超时: {name} ({tool.timeout_s}s)")
             return await self._fallback_result(tool, params, context, "执行超时")
 
         except Exception as ex:
             tool.stats.failed += 1
             tool.stats.consecutive_fails += 1
-            tool.breaker.record_failure()
+            tool.breaker.record_failure(ticket)
             logger.error(f"工具异常: {name} — {ex}")
             return await self._fallback_result(tool, params, context, str(ex))
 
@@ -295,10 +296,15 @@ class RetrievalManager:
         #    用整条结果做哈希会把同一份内容误判成多条不同结果。
         #    重复命中时保留分数更高的那一条。
         best_by_key: Dict[str, Dict[str, Any]] = {}
+        degraded_error = ""
         for r in results:
             if isinstance(r, ToolResult) and r.success and isinstance(r.data, list):
                 for item in r.data:
                     if not isinstance(item, dict):
+                        continue
+                    if item.get("fallback"):
+                        # 降级提示不是检索到的知识，不能当证据交给模型
+                        degraded_error = r.error or str(item.get("error") or "")
                         continue
                     key = f"{item.get('title', '')}\x1f{item.get('content', '')}"
                     existing = best_by_key.get(key)
@@ -307,6 +313,9 @@ class RetrievalManager:
         merged = list(best_by_key.values())
 
         if not merged:
+            if degraded_error:
+                return ToolResult(success=False, data=[], tool_name=tool_name,
+                                  error=f"知识库暂时不可用（{degraded_error}），请稍后重试或请顾问确认")
             return ToolResult(success=False, data=[], tool_name=tool_name, error="所有子查询均无结果")
 
         # 4. 重排：用 LLM 对合并结果按相关性打分，过滤掉不相关的，取 Top-K

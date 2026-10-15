@@ -325,11 +325,12 @@
 
       <div v-if="evalData" class="evaluation-content">
         <div class="evaluation-summary">
-          <div class="score-hero"><span>Pass rate</span><strong>{{ formatPercent(evalData.pass_rate) }}</strong><small>{{ evalData.passed }} / {{ evalData.total }} cases passed</small></div>
+          <div class="score-hero"><span>Pass rate</span><strong>{{ formatPercent(evalData.pass_rate) }}</strong><small>{{ evalData.passed }} / {{ evalData.scored ?? evalData.total }} cases passed</small></div>
           <div><span>{{ t('通过') }}</span><strong>{{ evalData.passed }}</strong></div>
           <div><span>{{ t('总数') }}</span><strong>{{ evalData.total }}</strong></div>
           <div><span>{{ t('回归') }}</span><strong :class="evalData.regressions?.length ? 'danger' : 'success'">{{ evalData.regressions?.length || 0 }}</strong></div>
         </div>
+        <p v-if="evalData.judge_failed" class="hint">{{ t('评分失败的样本：') }}{{ evalData.judge_failed }}{{ t('（未计入分数和通过率，本次不做回归对比）') }}</p>
         <div class="evaluation-layout">
           <section class="workspace-card">
             <div class="card-heading"><div><h2>{{ t('平均评分') }}</h2></div></div>
@@ -584,6 +585,9 @@ async function sendMessage() {
       onToken(text) {
         assistantMessage.content += text
         scrollToBottom()
+      },
+      onReset() {
+        assistantMessage.content = ''
       },
       async onDone(response) {
         assistantMessage.streaming = false

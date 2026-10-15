@@ -20,8 +20,10 @@
 LLM-as-Judge 是评测 Agent 质量的关键技术：
   人工标注成本高、主观性强；用 LLM 评判可以规模化、可重复。
 """
+import hashlib
 import json
 import logging
+import math
 import os
 import pathlib
 import statistics
@@ -87,6 +89,13 @@ class EvalReport:
     regressions:      List[str]          # 相比基线退化的指标
     recommendations:  List[str]
     results:          List[EvalResult]
+    # complete：全部评分有效；partial：部分对话 Judge 评分失败；failed：对话评分全部失败；empty：没有用例。
+    # 评分失败的样本不计入分数和通过率，pass_rate 的分母是 scored。
+    status:           str = "complete"
+    scored:           int = 0
+    judge_failed:     int = 0
+    # 用例、Judge 模型和评测选项的指纹；回归对比只在同一套件的完整报告之间进行
+    suite_id:         str = ""
 
 
 # ── LLM-as-Judge ─────────────────────────────────────────────────────────────
@@ -119,9 +128,40 @@ class LLMJudge:
 
 只返回 JSON，例如: {{"relevance": 0.9, "accuracy": 0.8, "completeness": 0.85, "helpfulness": 0.85, "compliance": 1.0, "comment": "无"}}"""
 
+    SCORE_KEYS = ("relevance", "accuracy", "completeness", "helpfulness", "compliance")
+    MAX_TOKENS = 400
+
     def __init__(self, client: AsyncAnthropic, model: str):
         self._client = client
         self._model  = model
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    @classmethod
+    def parse(cls, raw: str) -> Dict[str, Any]:
+        """
+        解析评分 JSON。缺字段、布尔值、NaN、超出 0–1 一律算评分失败，不再悄悄补成 0.5：
+        补出来的中间分会混进均分和基线，看上去像"回答质量一般"。
+        """
+        if not raw.strip():
+            raise ValueError("Judge 输出为空")
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        if start < 0 or end <= start:
+            raise ValueError("Judge 输出里没有 JSON")
+        try:
+            data = json.loads(raw[start:end])
+        except json.JSONDecodeError as ex:
+            raise ValueError(f"Judge 输出的 JSON 格式错误：{ex.msg}") from ex
+        if not isinstance(data, dict):
+            raise ValueError("Judge 输出的 JSON 不是对象")
+        for key in cls.SCORE_KEYS:
+            value = data.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) \
+                    or not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError(f"评分字段 {key} 缺失或不在 0–1：{value!r}")
+        return data
 
     async def judge(
         self,
@@ -139,30 +179,33 @@ class LLMJudge:
             expected_section=expected_section,
         )
         prompt = self._clean_text(prompt)
-        try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=400, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-                **NO_THINKING_KWARGS,
-            )
-            raw = extract_text_content(resp.content)
-            s, e = raw.find("{"), raw.rfind("}") + 1
-            data = json.loads(raw[s:e])
-            return QualityScores(
-                relevance=float(data.get("relevance", 0.5)),
-                accuracy=float(data.get("accuracy", 0.5)),
-                completeness=float(data.get("completeness", 0.5)),
-                helpfulness=float(data.get("helpfulness", 0.5)),
-                compliance=float(data.get("compliance", 0.5)),
-                comment=str(data.get("comment", ""))[:200],
-            )
-        except Exception as ex:
-            logger.warning(f"LLM Judge 失败: {ex}")
-            return QualityScores(
-                0.5, 0.5, 0.5, 0.5, 0.5,
-                judge_failed=True,
-                error=str(ex),
-            )
+        error = ""
+        max_tokens = self.MAX_TOKENS
+        for _ in range(2):                  # 最多试两次；鉴权错误重试也没用，直接失败
+            try:
+                resp = await self._client.messages.create(
+                    model=self._model, max_tokens=max_tokens, temperature=0.0,
+                    messages=[{"role": "user", "content": prompt}],
+                    **NO_THINKING_KWARGS,
+                )
+                raw = extract_text_content(resp.content)
+                try:
+                    data = self.parse(raw)
+                except ValueError:
+                    if getattr(resp, "stop_reason", None) == "max_tokens":
+                        max_tokens *= 2
+                        raise ValueError(f"Judge 输出被截断（max_tokens={max_tokens // 2}）")
+                    raise
+                return QualityScores(
+                    **{key: float(data[key]) for key in self.SCORE_KEYS},
+                    comment=str(data.get("comment", ""))[:200],
+                )
+            except Exception as ex:          # noqa: BLE001 —— 评分失败只影响这一条
+                error = str(ex) or type(ex).__name__
+                logger.warning(f"LLM Judge 失败: {error}")
+                if getattr(ex, "status_code", None) in (401, 403):
+                    break
+        return QualityScores(0.0, 0.0, 0.0, 0.0, 0.0, judge_failed=True, error=error)
 
     @staticmethod
     def _clean_text(value: Any) -> str:
@@ -353,11 +396,24 @@ class EndToEndEvaluator:
         if tool_checks:
             avg_scores["tool_accuracy"] = round(statistics.mean(tool_checks), 4)
 
-        passed_count = sum(1 for r in results if r.passed)
-        pass_rate    = passed_count / len(results) if results else 0.0
+        # 评分失败的样本不算通过也不算不通过，不进分母
+        scored_results = [r for r in results if not r.metadata.get("judge_failed")]
+        judge_failed = len(results) - len(scored_results)
+        dialog_count = sum(1 for r in results if r.test_id.startswith("dialog_"))
+        passed_count = sum(1 for r in scored_results if r.passed)
+        pass_rate    = passed_count / len(scored_results) if scored_results else 0.0
+        if not results:
+            status = "empty"
+        elif judge_failed == 0:
+            status = "complete"
+        elif judge_failed < dialog_count:
+            status = "partial"
+        else:
+            status = "failed"
+        suite_id = self._suite_id(intent_cases, dialog_cases, include_skill_evals, compare_rag_gate)
 
-        # 6. 回归检测
-        regressions = self._detect_regressions(avg_scores)
+        # 6. 回归检测：只拿同一套件的完整报告比；本次不完整就不比，免得评分失败被当成退化
+        regressions = self._detect_regressions(avg_scores, suite_id) if status == "complete" else []
 
         # 7. 优化建议（基于失败样本，而不是固定模板）
         recommendations = self._recommendations(avg_scores, intent_metrics, results, skill_metrics)
@@ -371,11 +427,33 @@ class EndToEndEvaluator:
             regressions=regressions,
             recommendations=recommendations,
             results=results,
+            status=status,
+            scored=len(scored_results),
+            judge_failed=judge_failed,
+            suite_id=suite_id,
         )
         self._history.append(report)
-        if save_baseline:
+        if save_baseline and status == "complete":
             self._save_baseline(report)
         return report
+
+    def _suite_id(
+        self,
+        intent_cases: Optional[List[IntentTestCase]],
+        dialog_cases: Optional[List[Dict[str, Any]]],
+        include_skill_evals: bool,
+        compare_rag_gate: bool,
+    ) -> str:
+        """用例、Judge 模型和评测选项的指纹。换了任何一项，分数就不能直接比。"""
+        payload = {
+            "intent": [[c.message, c.expected_intent] for c in intent_cases or []],
+            "dialog": dialog_cases or [],
+            "skills": include_skill_evals,
+            "rag_ab": compare_rag_gate,
+            "judge": self._judge.model,
+        }
+        raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
 
     async def _evaluate_dialog_case(self, case: Dict[str, Any], case_idx: int) -> List[EvalResult]:
         """评测单轮或多轮对话用例。"""
@@ -407,7 +485,7 @@ class EndToEndEvaluator:
             scores = await self._judge.judge(
                 question, actual_answer, context=context or None, expected_behavior=expected_behavior
             )
-            passed = scores.overall >= self.PASS_THRESHOLD
+            passed = not scores.judge_failed and scores.overall >= self.PASS_THRESHOLD
 
             # 期望工具：确定性检查，不依赖 LLM Judge
             expected_tools = list(case.get("expected_tools") or []) if is_last_turn else []
@@ -423,15 +501,18 @@ class EndToEndEvaluator:
                 test_id=test_id,
                 passed=passed,
                 scores={
-                    "relevance": scores.relevance,
-                    "accuracy": scores.accuracy,
-                    "completeness": scores.completeness,
-                    "helpfulness": scores.helpfulness,
-                    "compliance": scores.compliance,
-                    "overall": scores.overall,
+                    **({} if scores.judge_failed else {
+                        "relevance": scores.relevance,
+                        "accuracy": scores.accuracy,
+                        "completeness": scores.completeness,
+                        "helpfulness": scores.helpfulness,
+                        "compliance": scores.compliance,
+                        "overall": scores.overall,
+                    }),
                     **({"tool_check": 0.0 if missing_tools else 1.0} if expected_tools else {}),
                 },
-                detail=f"Q: {question[:30]}... → 综合评分 {scores.overall:.3f}"
+                detail=f"Q: {question[:30]}... → "
+                       + (f"评分失败：{scores.error}" if scores.judge_failed else f"综合评分 {scores.overall:.3f}")
                        + (f"，缺少工具调用 {', '.join(missing_tools)}" if missing_tools else ""),
                 metadata={
                     "question": question,
@@ -468,9 +549,13 @@ class EndToEndEvaluator:
         lines = [f"{m['role']}: {m['content']}" for m in history[-8:]]
         return "[评测多轮历史]\n" + "\n".join(lines)
 
-    def _detect_regressions(self, current: Dict[str, float]) -> List[str]:
-        """与上一次评测对比，找出退化超过 5% 的指标。"""
-        prev_report = self._history[-1] if self._history else self._baseline
+    def _detect_regressions(self, current: Dict[str, float], suite_id: str) -> List[str]:
+        """与同一套件上一次完整的评测对比，找出退化超过 5% 的指标。"""
+        candidates = [r for r in reversed(self._history)] + ([self._baseline] if self._baseline else [])
+        prev_report = next(
+            (r for r in candidates if r.suite_id == suite_id and r.status == "complete"),
+            None,
+        )
         if prev_report is None:
             return []
         prev = prev_report.avg_scores
@@ -548,7 +633,10 @@ class EndToEndEvaluator:
 
         judge_failed = [r for r in results if r.metadata.get("judge_failed")]
         if judge_failed:
-            recs.append(f"{len(judge_failed)} 个样本 LLM Judge 调用失败（按 0.5 计分，未计入建议），请检查模型配置或重试")
+            recs.append(
+                f"{len(judge_failed)} 个样本 LLM Judge 评分失败（未计入分数和通过率，本次不做回归对比、不更新基线），"
+                f"请检查模型配置或重试。第一条原因：{judge_failed[0].metadata.get('judge_error') or '未知'}"
+            )
 
         if not recs:
             recs.append("所有指标均达标，继续保持")
@@ -632,6 +720,10 @@ class EndToEndEvaluator:
             avg_scores=dict(data.get("avg_scores", {})),
             regressions=list(data.get("regressions", [])),
             recommendations=list(data.get("recommendations", [])),
+            status=str(data.get("status", "complete")),
+            scored=int(data.get("scored", data.get("total", 0))),
+            judge_failed=int(data.get("judge_failed", 0)),
+            suite_id=str(data.get("suite_id", "")),
             results=[
                 EvalResult(
                     test_id=r.get("test_id", ""),

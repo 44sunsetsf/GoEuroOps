@@ -190,9 +190,19 @@ async def lifespan(app: FastAPI):
     )
     await services.monitor.start()
 
-    # 评测器
+    # 评测器：用一个单独的编排器。线上编排器的统计、监控降权和工具轨迹不被评测流量污染，
+    # 评测里报价登记、转顾问生成的线索和交接单只写进内存，不进站长的线索库。
+    # 知识库和检索管理器（缓存、熔断）仍然共用，评测也会消耗真实的模型额度。
+    eval_orchestrator = AgentOrchestrator(
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+        skill_manager=services.skill_manager,
+        lead_store=LeadStore(),
+    )
+    eval_orchestrator.set_shared_tools(services.tool_manager)
     services.evaluator = EndToEndEvaluator(
-        orchestrator=services.orchestrator,
+        orchestrator=eval_orchestrator,
         recognizer=recognizer,
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),

@@ -92,7 +92,7 @@ export async function requestSearch(settings, query, topK = 5, domain = '') {
   return requestJson(backendMeta(settings).baseUrl, `/search?${params}`, { method: 'POST' })
 }
 
-export async function streamChat(settings, message, { onToken, onDone, onError } = {}) {
+export async function streamChat(settings, message, { onToken, onReset, onDone, onError } = {}) {
   const meta = backendMeta(settings)
   const payload = buildChatPayload(settings, message)
   const response = await fetch(`${meta.baseUrl}/chat/stream`, {
@@ -122,6 +122,8 @@ export async function streamChat(settings, message, { onToken, onDone, onError }
       if (!parsed) continue
       if (parsed.event === 'token') {
         await onToken?.(parsed.data?.text || '')
+      } else if (parsed.event === 'reset') {
+        await onReset?.()
       } else if (parsed.event === 'done') {
         await onDone?.(normalizeChatResponse(parsed.data))
       } else if (parsed.event === 'error') {
