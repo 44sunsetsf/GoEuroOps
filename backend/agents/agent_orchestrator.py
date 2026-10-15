@@ -37,7 +37,7 @@ from business.lead_store import LeadStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import make_client
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative
-from core.config import DEFAULT_MODEL, env_int
+from core.config import DEFAULT_MODEL, env_float, env_int
 
 
 from agents.base import (  # noqa: F401 —— 部分名字供旧的导入路径使用
@@ -49,6 +49,7 @@ from agents.base import (  # noqa: F401 —— 部分名字供旧的导入路径
     OnDelta,
     OrchestratorResult,
     Request,
+    reset_stream,
 )
 from agents.roles import (  # noqa: F401 —— 部分名字供旧的导入路径使用
     BillingAgent,
@@ -408,11 +409,31 @@ class AgentOrchestrator:
 
     @property
     def _router(self) -> Router:
-        # 每次按当前的 Agent 池判断可用性；Router 本身无状态，创建很便宜
-        return Router(lambda agent_type: bool(self._pool.get(agent_type)))
+        # 每次按当前的 Agent 池和监控结果判断可用性；Router 本身无状态，创建很便宜
+        degraded = self._monitor_degraded()
+        return Router(lambda agent_type: bool(self._pool.get(agent_type)) and agent_type not in degraded)
+
+    def _monitor_degraded(self) -> List[AgentType]:
+        """
+        被 Monitor 判定为降级的专属 Agent 类型：该类型所有实例的惩罚都达到阈值。
+        每类通常只有一个实例，只在同类实例之间择优的话，惩罚项根本改变不了路由；
+        这里把整个类型从本次路由里拿掉，问题交给 GeneralAgent。惩罚按最近 5 分钟的调用计算，
+        被排除后没有新样本，窗口清空后惩罚归零，自动重新接流量；还坏着就会再次被排除。
+        """
+        threshold = env_float("GOEUROOPS_MONITOR_FALLBACK_PENALTY", 0.5)
+        return [
+            agent_type
+            for agent_type in (AgentType.CONSULTING, AgentType.BILLING)
+            if self._pool.get(agent_type)
+            and all(agent.stats.monitor_penalty >= threshold for agent in self._pool[agent_type])
+        ]
 
     def _route_decision(self, req: Request) -> RoutingDecision:
-        return self._router.decide(req)
+        decision = self._router.decide(req)
+        degraded = self._monitor_degraded()
+        if degraded and decision.primary_agent != AgentType.ESCALATION:
+            decision.reason += f", monitor_fallback=[{', '.join(a.value for a in degraded)}]"
+        return decision
 
     def _collaboration_targets(self, req: Request) -> List[AgentType]:
         return self._router.collaboration_targets(req)
@@ -455,7 +476,24 @@ class AgentOrchestrator:
             logger.warning(f"{agent_type.value} 失败，降级到 GeneralAgent")
             fallback = self._best_agent(AgentType.GENERAL)
             if fallback:
+                if response.streamed:
+                    # 失败前已经流出半段回复，先让前端清掉，否则 GeneralAgent 的回答会接在后面
+                    await reset_stream(on_delta)
+                failed = response
                 response = await fallback.handle(req, on_delta=on_delta)
+                # 两次尝试的轨迹都留下，排查时才知道专属 Agent 失败前调过什么工具
+                response.tool_traces = failed.tool_traces + [{
+                    "agent_type": failed.agent_type.value,
+                    "tool_name": "agent_fallback",
+                    "tool_use_id": "",
+                    "input": {"from": failed.agent_type.value, "to": fallback.agent_type.value},
+                    "success": True,
+                    "result_success": response.success,
+                    "latency_ms": round(failed.latency_ms, 1),
+                    "cached": False,
+                    "reranked": False,
+                    "error": f"{failed.agent_type.value} 处理失败，改由 {fallback.agent_type.value} 回答",
+                }] + response.tool_traces
 
         return response
 
@@ -466,6 +504,7 @@ class AgentOrchestrator:
         for agent_type, agents in self._pool.items():
             for i, agent in enumerate(agents):
                 key = f"{agent_type.value}_{i}"
+                recent_total, recent_sr, recent_first_ms = agent.stats.recent_window()
                 result[key] = {
                     "total":        agent.stats.total,
                     "success_rate": round(agent.stats.success_rate, 3),
@@ -473,6 +512,9 @@ class AgentOrchestrator:
                     "streamed":     agent.stats.first_count,
                     "avg_first_ms": round(agent.stats.avg_first_ms, 1),
                     "monitor_penalty": round(agent.stats.monitor_penalty, 3),
+                    "recent_total": recent_total,
+                    "recent_success_rate": round(recent_sr, 3),
+                    "recent_first_ms": round(recent_first_ms, 1),
                     "routing_score": round(agent.stats.routing_score(), 3),
                     "role": agent.profile.role,
                     "workflow": list(agent.profile.workflow),

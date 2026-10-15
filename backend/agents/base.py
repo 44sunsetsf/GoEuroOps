@@ -3,9 +3,10 @@ import json
 import logging
 import time
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Callable, Deque, Dict, List, Optional, Tuple
 
 from anthropic import AsyncAnthropic
 
@@ -24,6 +25,13 @@ from core.rag_gate import RagGate, RagMode
 
 
 OnDelta = Callable[[str], Awaitable[None]]
+
+
+async def reset_stream(on_delta: Optional[OnDelta]) -> None:
+    """让前端清掉已经流出去的半段回复。调用方在 on_delta 上挂一个 reset 协程函数才生效。"""
+    reset = getattr(on_delta, "reset", None)
+    if reset is not None:
+        await reset()
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +71,11 @@ class AgentStats:
     first_count:    int   = 0
     first_total_ms: float = 0.0
     monitor_penalty: float = 0.0
+    # 最近完成的调用：(完成时刻, 是否成功, 首字耗时 ms 或 None)。Monitor 按它算路由惩罚，
+    # 累计值会让很久以前的故障一直拖着分数，被排除出路由的 Agent 也就永远恢复不了。
+    recent: Deque[Tuple[float, bool, Optional[float]]] = field(
+        default_factory=lambda: deque(maxlen=50), repr=False,
+    )
 
     @property
     def success_rate(self) -> float:
@@ -76,9 +89,31 @@ class AgentStats:
     def avg_first_ms(self) -> float:
         return self.first_total_ms / self.first_count if self.first_count else 0.0
 
-    def first_output(self, t0: float) -> None:
+    def first_output(self, t0: float) -> float:
+        ms = (time.monotonic() - t0) * 1000
         self.first_count += 1
-        self.first_total_ms += (time.monotonic() - t0) * 1000
+        self.first_total_ms += ms
+        return ms
+
+    def finish(self, success: bool, ms: float, first_ms: Optional[float] = None) -> None:
+        """一次调用结束（total 在开始时已经加过）。"""
+        if success:
+            self.success += 1
+        self.total_ms += ms
+        self.recent.append((time.monotonic(), success, first_ms))
+
+    def recent_window(self, window_s: float = 300.0) -> Tuple[int, float, float]:
+        """最近 window_s 秒内（最多 50 次）完成的调用：样本数、成功率、平均首字耗时（没有流式样本时为 0）。"""
+        cutoff = time.monotonic() - window_s
+        rows = [r for r in self.recent if r[0] >= cutoff]
+        if not rows:
+            return 0, 1.0, 0.0
+        firsts = [r[2] for r in rows if r[2] is not None]
+        return (
+            len(rows),
+            sum(1 for r in rows if r[1]) / len(rows),
+            sum(firsts) / len(firsts) if firsts else 0.0,
+        )
 
     def routing_score(self) -> float:
         """路由评分：成功率高、延迟低的 Agent 得分高。"""
@@ -98,6 +133,7 @@ class AgentResponse:
     tools_used:  List[str] = field(default_factory=list)
     tool_traces: List[Dict[str, Any]] = field(default_factory=list)
     skills_applied: List[Dict[str, Any]] = field(default_factory=list)
+    streamed:    bool = False        # 失败前是否已经有文字流给了用户
 
 
 @dataclass
@@ -235,20 +271,19 @@ class BaseAgent:
         t0 = time.monotonic()
         self.stats.total += 1
         run = _RunRecord()
+        first_ms: Optional[float] = None
         if on_delta is not None:
-            forward, seen = on_delta, False
+            forward = on_delta
 
             async def on_delta(text: str) -> None:
-                nonlocal seen
-                if not seen:
-                    seen = True
-                    self.stats.first_output(t0)
+                nonlocal first_ms
+                if first_ms is None:
+                    first_ms = self.stats.first_output(t0)
                 await forward(text)
         try:
             content = await self._call_llm(req, on_delta=on_delta, run=run)
             ms = (time.monotonic() - t0) * 1000
-            self.stats.success += 1
-            self.stats.total_ms += ms
+            self.stats.finish(True, ms, first_ms)
             escalate = self._needs_escalation(content)
             return AgentResponse(
                 agent_type=self.agent_type,
@@ -262,13 +297,14 @@ class BaseAgent:
             )
         except Exception as ex:
             ms = (time.monotonic() - t0) * 1000
-            self.stats.total_ms += ms
+            self.stats.finish(False, ms, first_ms)
             logger.error(f"{self.agent_type.value} 处理失败: {ex}")
             return AgentResponse(
                 agent_type=self.agent_type,
                 content="抱歉，处理您的请求时出现问题，请稍后重试。",
                 success=False,
                 latency_ms=ms,
+                streamed=first_ms is not None,
                 tool_traces=list(run.tool_traces),
                 skills_applied=list(run.skills),
             )

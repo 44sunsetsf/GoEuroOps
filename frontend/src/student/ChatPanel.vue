@@ -121,6 +121,7 @@ async function send(text) {
   try {
     await streamChat(settings, content, {
       onToken(t) { reply.content += t; scrollDown() },
+      onReset() { reply.content = '' },
       onDone(res) {
         if (!reply.content) reply.content = res.response
         if (res.conversationId) { settings.conversationId = res.conversationId; persist() }

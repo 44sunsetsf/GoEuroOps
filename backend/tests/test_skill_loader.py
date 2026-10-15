@@ -214,11 +214,15 @@ def test_intent_group_alone_does_not_trigger(tmp_path):
 
 
 def test_composite_detection_ignores_service_names_in_refund_questions():
-    from agents.agent_orchestrator import AgentOrchestrator, AgentType, Request
+    from types import SimpleNamespace
+
+    from agents.agent_orchestrator import AgentOrchestrator, AgentStats, AgentType, Request
     from core.intent_recognizer import IntentCategory
 
     orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
-    orchestrator._pool = {t: [object()] for t in (AgentType.GENERAL, AgentType.CONSULTING, AgentType.BILLING)}
+    orchestrator._pool = {
+        t: [SimpleNamespace(stats=AgentStats())] for t in (AgentType.GENERAL, AgentType.CONSULTING, AgentType.BILLING)
+    }
     req = Request(message="全程陪跑交了定金，还没开始能退吗", user_id="u", conv_id="c",
                   intent=IntentCategory.REFUND, intent_confidence=0.8)
     decision = orchestrator._route_decision(req)

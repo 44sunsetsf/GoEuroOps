@@ -252,12 +252,12 @@ class EscalationAgent(BaseAgent):
             "请不要发送身份证号、护照号、银行卡号或任何密码。",
         ]
         content = "\n".join(lines)
+        first_ms = None
         if on_delta is not None:
-            self.stats.first_output(t0)
+            first_ms = self.stats.first_output(t0)
             await on_delta(content)
         ms = (time.monotonic() - t0) * 1000
-        self.stats.success += 1
-        self.stats.total_ms += ms
+        self.stats.finish(True, ms, first_ms)
         return AgentResponse(
             agent_type=self.agent_type,
             content=content,

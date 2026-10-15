@@ -202,10 +202,10 @@ sequenceDiagram
     O-->>C: OrchestratorResult
     C->>M: 写入本轮问答；后台按时机整理记忆（第 8.2 节）
     C->>C: chat_log.record（站长后台按访客查看）
-    C-->>U: SSE：delta … done（带意图、Agent、工具、Skill、门控明细）
+    C-->>U: SSE：token … done（带意图、Agent、工具、Skill、门控明细）
 ```
 
-`/chat` 和 `/chat/stream` 共用 `_run_chat`。只有单 Agent 路径是逐 token 转发；澄清追问和多 Agent 合并是拿到全文后一次转发。
+`/chat` 和 `/chat/stream` 共用 `_run_chat`。只有单 Agent 路径是逐 token 转发；澄清追问和多 Agent 合并是拿到全文后一次转发。专属 Agent 流到一半失败、改由 GeneralAgent 回答时，先发一个 `reset` 事件让前端清掉半段文字。
 
 **提示词的组成**（`agents/base.py::_call_llm`），按顺序：
 
@@ -250,7 +250,8 @@ flowchart TD
 - **意图体系**在 `core/intent_categories.py`，共 19 个值，包括通用大类（query、request、complaint 等）和细粒度业务意图（study_consult、service_inquiry、refund、data_privacy 等），细粒度优先。
 - **意图到 Agent 的映射**在 `agents/routing.py` 的 `_GENERAL_INTENTS`、`_CONSULTING_INTENTS`、`_BILLING_INTENTS` 三个集合里。
 - **领域关键词**集中在 `business/domain_terms.py`，意图识别和路由共用。
-- **在线降权**：`monitor/` 定期把各 Agent 的成功率、延迟写回编排器（`update_routing_penalties`），同类 Agent 有多个时选表现好的。
+- **在线降权**：`monitor/` 每 10 秒把各 Agent **最近 5 分钟**（最多 50 次、至少 5 次）的成功率和首字耗时折算成惩罚写回编排器（`update_routing_penalties`）。同类有多个实例时选表现好的；每类只有一个实例，所以咨询或费用 Agent 的惩罚达到 0.5（`GOEUROOPS_MONITOR_FALLBACK_PENALTY`）时，Router 把这一类从本次路由里拿掉，问题交给 GeneralAgent，`routing_reason` 记 `monitor_fallback=[...]`。只靠延迟最多罚 0.4，单纯变慢不会触发；成功率掉到 65% 以下才会。被排除后没有新样本，窗口清空后惩罚归零，自动重新接流量。
+- **执行失败回退**：专属 Agent 这一次失败时改由 GeneralAgent 回答，两次尝试的工具轨迹都保留，中间插一条 `agent_fallback`。如果失败前已经流出半段文字，SSE 先发 `reset`，前端清掉再接新回答。
 
 ## 7. Agent 角色与工具
 
@@ -488,6 +489,7 @@ flowchart LR
 ```
 
 - **两条入口**：门控 `prefetch` 时在意图识别的同时做纯向量召回（不改写、不重排），用来压延迟；模型主动调用 `search_knowledge_base` 时走完整链路。
+- **降级结果不当证据**：知识库超时、出错或熔断时，两条入口都把降级条目滤掉。预取得到空结果；检索工具返回 `success=false` 和“知识库暂时不可用”，由模型告诉用户稍后再问或请顾问确认。
 - **向量模型**（`retrieval/embeddings.py`）：本地默认 fastembed bge-small-zh（ONNX，约 90MB）；线上用向量 API（bge-large-zh），省内存。换模型时集合名跟着变，两个模型的数据不会混在一起。
 - **种子**由 `business/kb_seed.py` 从业务目录生成，带内容版本号，内容变了启动时自动重建；后台也能上传文档（`/knowledge/add`、`/knowledge/upload`）。
 
@@ -501,9 +503,9 @@ flowchart LR
     b -->|否| x1[拒绝]
     b -->|是| c[Pydantic 入参校验]
     c -->|失败| x2[把校验错误返回给模型]
-    c --> d{熔断器打开？}
-    d -->|是| x3["返回“暂时不可用，请稍后或转顾问”"]
-    d -->|否| e["在超时内执行<br/>同步函数放线程"]
+    c --> d{熔断器放行？}
+    d -->|否| x3["返回“暂时不可用，请稍后或转顾问”"]
+    d -->|是| e["在超时内执行<br/>同步函数放线程"]
     e --> f["返回值校验<br/>报价 / 退款检查业务不变量"]
     f -->|不满足| x4[返回“请转顾问核算”]
     f --> g["超过 max_result_chars 时截断<br/>标 truncated"]
@@ -511,6 +513,8 @@ flowchart LR
 ```
 
 每个工具在定义时声明 `timeout_s`、`side_effect`（read / write / external）、`breaker`、`max_result_chars`。
+
+**熔断器**（`tooling/breaker.py`，网关和检索管理器共用）：连续失败 5 次打开，60 秒后半开，**只放行一个探测请求**，探测成功关闭、失败重新打开；探测被取消、迟迟不回时，过 60 秒再放一个。每次状态切换都换一代 ticket，调用结束时交回 ticket，旧 ticket 的结果直接忽略，所以熔断前发出、熔断后才返回的慢请求不会把熔断器提前关上。
 
 **金额护栏**（`tooling/amount_guard.py`）：回复里出现的人民币金额，必须能在本轮依据里找到。依据包括工具结果、用户原话、背景、知识库片段、Skill 和价目表。找不到时，这一句被替换成固定提示。流式输出按句放行，不会先发出错误数字再撤回。由 `GOEUROOPS_AMOUNT_GUARD` 控制：`enforce`（默认）/ `warn` / `off`。
 
@@ -593,7 +597,16 @@ flowchart TD
 **在线观测**
 
 - 每次回答都带 `skills_applied`、`rag_gate`、`tools_used`、`routing_reason`。完整明细可以用 `GET /trace/tool/{request_id}` 查到。
-- `monitor/performance_monitor.py` 定期采集 Agent 和工具的统计，用 Z-score 检测突变，可选 Webhook 告警，并把成功率、延迟写回路由。
+- `monitor/performance_monitor.py` 定期采集 Agent 和工具的统计，用 Z-score 检测突变，可选 Webhook 告警，并把最近 5 分钟的成功率、首字耗时写回路由（第 6 节）。
+
+几个字段容易读错：
+
+| 字段 | 实际含义 |
+|---|---|
+| `knowledge_used` | 本轮门控预取到了片段，或检索工具真的查到了内容（查空、知识库降级都不算）；不代表回答真的用了这些片段 |
+| `primary_agent` 和 `agent_type` | 前者是路由的决定，后者是实际给出回答的 Agent；专属 Agent 失败回退后两者不同 |
+| trace 里的 `success` 和 `result_success` | 前者表示网关执行没出错（白名单、校验、超时、熔断都过了），后者是工具自己返回的 `success`；知识库查空或降级时前者为真、后者为假 |
+| trace 里的 `amount_guard`、`agent_fallback` | 不是真的工具调用，是金额护栏改写、专属 Agent 回退的事件记录 |
 - 主要的 Prometheus 指标有 `goeuroops_tool_calls_total{tool,outcome}`、`goeuroops_tool_latency_seconds`、`goeuroops_amount_guard_total`。
 
 **离线评测**（`backend/evaluation/`）
@@ -606,6 +619,12 @@ flowchart TD
 | `skills/*/evals/cases.json` | 每个 Skill 的命中回归 | `GET /skills/evals`，单元测试里也会跑 |
 
 评测报告写在 `backend/evaluation/reports/`。报告里会记下所用模型，**不同模型的数字不能直接比较**。
+
+`/eval/run` 的口径：
+- **评测用单独的编排器**：线上的 Agent 统计、监控降权和 trace 不被评测流量污染；报价登记、转顾问生成的线索和交接单只写进内存。知识库和检索管理器（缓存、熔断）仍然共用，也会消耗真实的模型额度。
+- **Judge 评分失败不计分**：输出为空、被截断、JSON 不合法、字段缺失或不在 0–1 都算失败，最多试两次（401/403 不重试）。失败的样本不进均分和通过率，`pass_rate` 的分母是 `scored`。
+- **报告状态**：`complete` / `partial`（部分对话评分失败）/ `failed`（对话评分全部失败）/ `empty`。只有 `complete` 才做回归对比、才更新基线。
+- **回归只在同一套件之间比**：`suite_id` 是用例、Judge 模型和评测选项的指纹；换了用例或模型就不比，旧基线没有 `suite_id`，第一次跑完整评测后才开始对比。
 
 ## 19. 开发、测试与发布
 
@@ -662,5 +681,5 @@ flowchart LR
 - **单机、单进程**：编排器的统计、trace、记忆的后台整理和空闲计时器都在进程内，不能直接横向扩成多副本。要扩容时，这些状态得先移到 Redis 或独立的任务队列。
 - **鉴权是演示级别**：站长靠 Caddy basic auth 和可选的 `X-Admin-Token`，没有顾问账号体系，CORS 是 `*`。
 - **价目和五国资料是草案**，需要创始人逐条核实。
-- **评测会写真实线索库**：端到端评测跑的是真实编排器，转顾问用例会生成交接单，没有评测沙箱。
+- **评测只隔离了编排器**：线索写进内存，但知识库、检索缓存和熔断器跟线上共用，评测期间检索出问题会影响线上；评测仍是同步接口，用例多了要等。
 - **意图基准是用本地 bge-small-zh 测的**，线上换成向量 API 之后需要重测。

@@ -69,8 +69,10 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
         routing_confidence=result.routing_confidence,
         escalated=result.escalated,
         latency_ms=round(result.latency_ms, 1),
+        # 门控预取到片段，或检索工具真的查到了内容；只调用过、查空了或降级都不算
         knowledge_used=(
-            "search_knowledge_base" in result.tools_used
+            any(t.get("tool_name") == "search_knowledge_base" and t.get("result_success")
+                for t in result.tool_traces)
             or bool(result.rag_gate.get("prefetched"))
         ),
         entities=result.entities,
@@ -115,6 +117,7 @@ async def chat_stream(req: ChatRequest):
 
     事件类型：
       token — {"text": "..."}          增量文本片段
+      reset — {}                        丢掉已收到的文本：专属 Agent 中途失败，改由 GeneralAgent 重新回答
       done  — 完整 ChatResponse 字段     流结束时发一次，供前端更新侧栏统计
       error — {"message": "..."}        出错时发一次
     """
@@ -130,6 +133,11 @@ async def chat_stream(req: ChatRequest):
 
         async def on_delta(text: str) -> None:
             await queue.put(("token", text))
+
+        async def on_reset() -> None:
+            await queue.put(("reset", {}))
+
+        on_delta.reset = on_reset  # type: ignore[attr-defined]  —— 见 agents.base.reset_stream
 
         async def produce() -> None:
             try:

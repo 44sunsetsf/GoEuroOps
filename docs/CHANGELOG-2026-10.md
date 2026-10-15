@@ -125,3 +125,36 @@
 - 已有用户的关键事实不迁移到档案：线上是演示站，旧笔记照样能检索，档案从下一次整理开始积累。
 - 前端还没有档案面板，顾问接口先用 API 调。
 - 删除请求不删线索和交接单（业务记录，由顾问在线索面板处理），也还没有删除审计记录。
+
+## 4. 可靠性：参考 EchoMind 2026-09/10 的修复（2026-10-15）
+
+### 问题
+对照原项目 EchoMind 最近三次更新，逐条核对 GoEuroOps 的代码，以下几处它已修好、我们还没有：
+- 熔断器半开时放行所有请求，注释写的“放行一次探测”并没有做到；熔断前发出的慢请求返回成功，会把刚打开的熔断器关上。
+- 每类 Agent 只有一个实例，监控惩罚只在同类实例之间择优，等于不影响路由；惩罚还按进程启动以来的累计成功率计算，很久以前的故障会一直拖着。
+- 专属 Agent 失败改由 GeneralAgent 回答时，失败那次的工具轨迹被覆盖；流式输出时，失败前已经流出的半段文字和新回答拼在一起。
+- Judge 评分失败按 0.5 计入均分、通过率和回归对比，一次超时就可能误报回归，还会被存成基线；缺字段时也悄悄补 0.5。换了用例的评测也和基线比。
+- 评测用的是线上编排器：转顾问用例会在站长的线索库里生成交接单，评测流量也会进监控统计。
+- 知识库降级结果被当成检索成功交给模型；`knowledge_used` 只要调用过检索工具就为真，查空也算。
+
+### 改动
+| 改动 | 位置 |
+|---|---|
+| 熔断器改成 ticket 机制：半开只放一个探测，旧 ticket 的结果忽略，探测丢失 60 秒后再放一个 | `tooling/breaker.py`、`tooling/gateway.py`、`retrieval/manager.py` |
+| Agent 统计加最近 50 次调用的窗口；路由惩罚按最近 5 分钟、至少 5 次的成功率和首字耗时计算 | `agents/base.py`、`monitor/performance_monitor.py` |
+| 咨询、费用 Agent 惩罚达到 0.5 时本次路由交给 GeneralAgent，`routing_reason` 记 `monitor_fallback`；窗口清空后自动恢复 | `agents/agent_orchestrator.py` |
+| 回退时保留两次的工具轨迹，插一条 `agent_fallback`；已经流出文字时先发 SSE `reset`，前端清空 | `agents/agent_orchestrator.py`、`api/routes/chat.py`、前端 `backends.js`、`App.vue`、`ChatPanel.vue` |
+| Judge 输出严格校验（空、截断、JSON、缺字段、布尔、NaN、越界），最多试两次，401/403 不重试；失败的样本不计分 | `evaluation/evaluator.py` |
+| 报告加 `status`、`scored`、`judge_failed`、`suite_id`；只有完整报告才做回归对比、更新基线，回归只在同一套件之间比 | `evaluation/evaluator.py`、`api/routes/evals.py`、前端评测页 |
+| 评测用单独的编排器，线索写内存 | `api/main.py` |
+| 检索降级条目不进合并结果，全部降级时返回失败；`knowledge_used` 只在真的查到内容时为真 | `retrieval/manager.py`、`api/routes/chat.py` |
+
+### 验证
+- 后端测试 199 → 221，新增 `tests/test_reliability.py`：半开只放一个探测、旧结果不能关熔断、探测丢失后重放；降级 Agent 被跳过且原因可查、窗口清空后恢复、单纯变慢不触发；回退的事件顺序（token → reset → token）和轨迹合并；Judge 的 6 种坏输出、重试和鉴权不重试；部分失败的报告不进均分、不覆盖基线；不同套件不比回归；检索降级返回失败。
+- 前端构建通过。
+
+### 没做
+- EchoMind 的请求幂等（`client_request_id` + Redis 事务回执）：我们只有一个后端进程，前端也不自动重试，收益小。
+- 异步评测任务、Bearer Token 角色鉴权、标准 MCP 客户端：前两项等商业化，最后一项留学咨询用不上。
+- 旧基线没有 `suite_id`，上线后第一次完整评测只建基线、不报回归。
+

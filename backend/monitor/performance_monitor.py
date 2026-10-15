@@ -6,8 +6,8 @@
 本模块的答案：
   1. 实时采集 —— 每隔 N 秒从 Orchestrator 和 ToolManager 拉取最新统计
   2. 异常检测 —— Z-score 统计方法，自动发现指标突变
-  3. 路由反馈 —— 将 Agent 成功率/延迟写回 Orchestrator，
-     Orchestrator 的 _best_agent() 会据此动态调整路由权重
+  3. 路由反馈 —— 把 Agent 最近 5 分钟的成功率/首字延迟折算成惩罚写回 Orchestrator：
+     同类多实例时择优；某类专属 Agent 全部达到阈值时，本次路由改由 GeneralAgent 处理
   4. 优化建议 —— 基于规则生成可操作的优化建议（不是空话）
   5. 告警 —— 超阈值时打日志 + 可选 Webhook
 """
@@ -102,9 +102,9 @@ class PerformanceMonitor:
     Agent 在线表现监控。
 
     与 Orchestrator 的联动：
-      Monitor 采集 → 发现某 Agent 成功率下降 →
-      Orchestrator.get_stats() 中该 Agent 的 routing_score 自动降低 →
-      _best_agent() 路由时自动绕开该 Agent
+      Monitor 采集 → 发现某 Agent 最近成功率下降 → 写回 monitor_penalty →
+      同类有多个实例时 _best_agent() 选表现好的；只有一个实例且惩罚达到阈值时，
+      Router 把这一类排除，问题交给 GeneralAgent（routing_reason 记 monitor_fallback）
 
     这就是"利用 Monitor 监控在线表现"的闭环。
     """
@@ -217,7 +217,13 @@ class PerformanceMonitor:
                 self._prom["agent_success_rate"].labels(agent=agent_key).set(sr)
                 self._prom["agent_latency_ms"].labels(agent=agent_key).observe(ms)
 
-            routing_penalties[agent_key] = self._routing_penalty(sr, ms)
+            # 路由惩罚只看最近 5 分钟：样本不够就不罚，被排除出路由的 Agent 也因此能自动恢复
+            if s.get("recent_total", 0) >= self.MIN_SAMPLES:
+                routing_penalties[agent_key] = self._routing_penalty(
+                    s["recent_success_rate"], s.get("recent_first_ms", 0.0),
+                )
+            else:
+                routing_penalties[agent_key] = 0.0
 
         # ── 工具指标 ──────────────────────────────────────────────────────────
         for tool_name, s in tool_stats.items():
@@ -247,13 +253,17 @@ class PerformanceMonitor:
         self._generate_routing_suggestions(agent_stats)
 
     @staticmethod
-    def _routing_penalty(success_rate: float, avg_ms: float) -> float:
-        """把在线表现转成 0-0.9 的路由降权系数。"""
+    def _routing_penalty(success_rate: float, first_ms: float) -> float:
+        """
+        把最近的在线表现转成 0-0.9 的路由降权系数。延迟看首字耗时，理由同告警阈值。
+        达到 0.5（GOEUROOPS_MONITOR_FALLBACK_PENALTY）时专属 Agent 会被暂时排除出路由，
+        只靠延迟最多罚 0.4，所以单纯变慢不会触发；成功率掉到 65% 以下才会。
+        """
         penalty = 0.0
         if success_rate < 0.90:
             penalty += min(0.5, (0.90 - success_rate) * 2)
-        if avg_ms > 3000:
-            penalty += min(0.4, (avg_ms - 3000) / 10000)
+        if first_ms > 3000:
+            penalty += min(0.4, (first_ms - 3000) / 10000)
         return min(penalty, 0.9)
 
     # 样本太少时比率没有意义：第一次调用失败，成功率就是 0%，会立刻误报
@@ -307,7 +317,7 @@ class PerformanceMonitor:
                     title=f"Agent {agent_key} 成功率偏低",
                     detail=f"成功率 {s['success_rate']:.1%}，路由评分 {s['routing_score']:.3f}",
                     action=(
-                        "Orchestrator 的 _best_agent() 已自动降低该 Agent 的路由权重。\n"
+                        "路由惩罚按最近 5 分钟计算，达到阈值时这类问题会暂时改由 GeneralAgent 回答。\n"
                         "建议：1. 检查 system_prompt 是否需要优化\n"
                         "      2. 检查该类型问题的复杂度是否超出 Agent 能力\n"
                         "      3. 考虑增加同类型 Agent 实例"

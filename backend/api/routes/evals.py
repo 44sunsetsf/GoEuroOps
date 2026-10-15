@@ -68,8 +68,12 @@ async def _run_eval(body: Optional[EvalRunInput], save_baseline: bool = True) ->
         save_baseline=save_baseline,
     )
     return {
+        "status":          report.status,
+        "suite_id":        report.suite_id,
         "pass_rate":       report.pass_rate,
         "total":           report.total,
+        "scored":          report.scored,
+        "judge_failed":    report.judge_failed,
         "passed":          report.passed,
         "avg_scores":      report.avg_scores,
         "regressions":     report.regressions,

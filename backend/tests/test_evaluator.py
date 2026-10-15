@@ -42,8 +42,12 @@ def test_missing_expected_tool_is_reported():
 def test_judge_failures_are_excluded_and_reported():
     failed = dialog("x", completeness=0.5, relevance=0.5, accuracy=0.5, helpfulness=0.5, compliance=0.5)
     failed.metadata["judge_failed"] = True
+    failed.metadata["judge_error"] = "Judge 输出为空"
     recs = make_evaluator()._recommendations({}, {}, [failed])
-    assert recs == ["1 个样本 LLM Judge 调用失败（按 0.5 计分，未计入建议），请检查模型配置或重试"]
+    assert recs == [
+        "1 个样本 LLM Judge 评分失败（未计入分数和通过率，本次不做回归对比、不更新基线），"
+        "请检查模型配置或重试。第一条原因：Judge 输出为空"
+    ]
 
 
 def test_default_cases_use_valid_studio_intents():

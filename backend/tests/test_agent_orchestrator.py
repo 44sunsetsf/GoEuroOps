@@ -1,8 +1,10 @@
 import asyncio
+from types import SimpleNamespace
 
 from agents.agent_orchestrator import (
     AgentProfile,
     AgentResponse,
+    AgentStats,
     AgentType,
     AgentOrchestrator,
     BillingAgent,
@@ -130,9 +132,9 @@ def test_routing_decision_can_target_escalation_pool():
 def test_composite_request_routes_explicit_billing_signal_as_supporting_agent():
     orchestrator = AgentOrchestrator.__new__(AgentOrchestrator)
     orchestrator._pool = {
-        AgentType.GENERAL: [object()],
-        AgentType.CONSULTING: [object()],
-        AgentType.BILLING: [object()],
+        AgentType.GENERAL: [SimpleNamespace(stats=AgentStats())],
+        AgentType.CONSULTING: [SimpleNamespace(stats=AgentStats())],
+        AgentType.BILLING: [SimpleNamespace(stats=AgentStats())],
     }
 
     decision = orchestrator._route_decision(make_request())
@@ -351,7 +353,7 @@ def test_escalation_does_not_open_duplicate_tickets():
 
 def test_deliverable_name_does_not_pull_in_consulting_agent():
     orch = AgentOrchestrator.__new__(AgentOrchestrator)
-    orch._pool = {t: [object()] for t in AgentType}
+    orch._pool = {t: [SimpleNamespace(stats=AgentStats())] for t in AgentType}
     req = make_request(message="我想申请退款，选校报告还没交付", intent=IntentCategory.REFUND, entities={})
     targets = orch._collaboration_targets(req)
     assert AgentType.CONSULTING not in targets
