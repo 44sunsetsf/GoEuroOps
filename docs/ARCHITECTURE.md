@@ -491,7 +491,9 @@ flowchart LR
 - **两条入口**：门控 `prefetch` 时在意图识别的同时做纯向量召回（不改写、不重排），用来压延迟；模型主动调用 `search_knowledge_base` 时走完整链路。
 - **降级结果不当证据**：知识库超时、出错或熔断时，两条入口都把降级条目滤掉。预取得到空结果；检索工具返回 `success=false` 和“知识库暂时不可用”，由模型告诉用户稍后再问或请顾问确认。
 - **向量模型**（`retrieval/embeddings.py`）：本地默认 fastembed bge-small-zh（ONNX，约 90MB）；线上用向量 API（bge-large-zh），省内存。换模型时集合名跟着变，两个模型的数据不会混在一起。
-- **种子**由 `business/kb_seed.py` 从业务目录生成，带内容版本号，内容变了启动时自动重建；后台也能上传文档（`/knowledge/add`、`/knowledge/upload`）。
+- **文档生命周期**（`KnowledgeBase._upsert_document`）：每篇文档有稳定的 `doc_id`（导入时可以指定，不指定就按“来源 + 标题”生成）和内容版本 `doc_version`。再导入同一篇文档时，内容没变就跳过（不重复向量化）；变了就**先写新版本，写成功后再删旧版本**，库里不会新旧并存，向量化中途失败也会保留旧版本。
+- **种子**由 `business/kb_seed.py` 从业务目录生成。启动时逐篇比对版本：没变的跳过，变了的替换；全部写成功后才删掉业务目录里已经没有的种子和早期示例文档。向量 API 不可用时，旧种子原样保留。
+- **上传文档**：`/knowledge/add`、`/knowledge/upload` 导入；`GET /knowledge/documents` 按文档列出（版本、片段数），`DELETE /knowledge/documents/{doc_id}` 删除（种子文档不能删，改业务目录即可）。导入和删除后都会立刻清空检索缓存。
 
 ## 13. 工具网关与金额护栏
 
@@ -528,7 +530,7 @@ flowchart LR
 | Redis | `goeuroops:quota:chat:<日期>`、`goeuroops:quota:guest_eval:<日期>` | 每日对话、访客评测次数 | 当天 | `api/quota.py` |
 | Redis | `wm:<user>:<conv>` | 会话消息（最多 60 条） | 24 小时 | `memory/` |
 | Redis | `mem:profile:<user>`、`mem:cases:<user>`、`mem:open:<user>` | 客户档案、咨询记录、待写记录的会话 | 档案不过期；记录每人 10 份 | `memory/` |
-| ChromaDB | `kb_<向量模型>` | 知识库片段 | 种子按版本重建 | `retrieval/knowledge_base.py` |
+| ChromaDB | `kb_<向量模型>` | 知识库片段 | 按文档版本增量同步，先写后删 | `retrieval/knowledge_base.py` |
 | ChromaDB | `amem_notes_<向量模型>` | 原话笔记（A-Mem） | 180 天 | `memory/` |
 | 文件 | `business/*.yaml`、`business/articles/`、`backend/skills/` | 业务目录、文章、Skills | Git | 人工 |
 | 文件 | `/app/data/eval/baseline.json` | 评测基线 | 卷 | `evaluation/evaluator.py` |
@@ -549,7 +551,7 @@ flowchart LR
 | 线索 | `GET /leads`、`PATCH /leads/{id}` | 线索和交接单；访客看到的联系方式打码 | ✗ |
 | 记忆 | `GET /memory/{user_id}/profile`、`PUT /memory/{user_id}/profile/{slot}`、`DELETE /memory/{user_id}` | 看档案、顾问核实改字段、隐私删除 | ✗ |
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload`、`POST /skills/match`、`GET /skills/evals` | 查看、热加载、命中测试、跑回归用例 | 仅 match |
-| 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/stats` | 检索、导入、统计 | 仅 search |
+| 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/documents`、`DELETE /knowledge/documents/{doc_id}`、`GET /knowledge/stats` | 检索、导入（同一文档再导入即替换）、按文档列出和删除、统计 | 仅 search |
 | 评测 | `POST /eval/run` | 意图、Skill 路由、五维质量、工具调用、门控对照 | ✓（每天限次，只跑内置用例） |
 | 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /trace/tools`、`GET /tools/stats`、`GET /metrics` | 在线指标、单次请求明细、Prometheus | — |
 | 系统 | `GET /session`、`GET /health` | 当前身份（guest / owner）、健康检查 | — |
@@ -615,6 +617,7 @@ flowchart TD
 |---|---|---|
 | `evaluator.py` | 意图准确率、Skill 路由准确率、五维 LLM-as-Judge（按场景的期望行为校准，含边界合规）、工具调用检查、门控 A/B、与基线对比 | 后台「评测」或 `POST /eval/run` |
 | `intent_benchmark.py` | 意图识别基准 | `python -m evaluation.intent_benchmark` |
+| `retrieval_benchmark.py` | 知识库检索：106 条（含多轮追问、知识库里没有答案的问题），文档级 Hit@1/Hit@3/MRR、注入命中率、无答案误注入率 | `python -m evaluation.retrieval_benchmark [--deep]` |
 | `memory_benchmark.py`、`locomo_benchmark.py` | 记忆：自建 48 题 + LoCoMo（见 8.5） | 见 8.5 |
 | `skills/*/evals/cases.json` | 每个 Skill 的命中回归 | `GET /skills/evals`，单元测试里也会跑 |
 

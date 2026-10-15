@@ -64,6 +64,7 @@ class DocInput(BaseModel):
     title:   str
     content: str
     domain:  Optional[str] = None  # 归属 Agent 领域（consulting/billing/general 等），不填则所有 Agent 可见
+    doc_id:  Optional[str] = None  # 文档的稳定 ID；不填时按“来源 + 标题”识别同一篇文档，再导入即替换旧版本
 
 
 class BatchDocInput(BaseModel):
