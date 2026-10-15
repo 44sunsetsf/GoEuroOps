@@ -1,0 +1,392 @@
+{
+  "dataset": "retrieval_v1",
+  "label": "baseline",
+  "run_at": "2026-10-15T06:53:49",
+  "embedding_model": "BAAI/bge-small-zh-v1.5",
+  "chunks": 45,
+  "gate": {
+    "top_k": 3,
+    "min_score": 0.4
+  },
+  "summary": {
+    "overall": {
+      "n": 93,
+      "hit@1": 0.7634,
+      "hit@3": 0.9785,
+      "mrr": 0.8674,
+      "injected_hit": 0.9032
+    },
+    "by_tag": {
+      "colloquial": {
+        "n": 20,
+        "hit@1": 0.8,
+        "hit@3": 1.0,
+        "mrr": 0.875,
+        "injected_hit": 0.9
+      },
+      "cross_domain": {
+        "n": 4,
+        "hit@1": 0.75,
+        "hit@3": 1.0,
+        "mrr": 0.8333,
+        "injected_hit": 0.75
+      },
+      "followup": {
+        "n": 6,
+        "hit@1": 0.8333,
+        "hit@3": 1.0,
+        "mrr": 0.9167,
+        "injected_hit": 0.8333
+      },
+      "normal": {
+        "n": 46,
+        "hit@1": 0.8478,
+        "hit@3": 0.9783,
+        "mrr": 0.9149,
+        "injected_hit": 0.9783
+      },
+      "out_of_scope": {
+        "n": 3,
+        "hit@1": 0.0,
+        "hit@3": 1.0,
+        "mrr": 0.5,
+        "injected_hit": 0.6667
+      },
+      "term": {
+        "n": 14,
+        "hit@1": 0.5714,
+        "hit@3": 0.9286,
+        "mrr": 0.7679,
+        "injected_hit": 0.7857
+      }
+    },
+    "by_domain": {
+      "billing": {
+        "n": 16,
+        "hit@1": 0.875,
+        "hit@3": 1.0,
+        "mrr": 0.9271,
+        "injected_hit": 0.875
+      },
+      "consulting": {
+        "n": 70,
+        "hit@1": 0.7286,
+        "hit@3": 0.9714,
+        "mrr": 0.8476,
+        "injected_hit": 0.9
+      },
+      "general": {
+        "n": 7,
+        "hit@1": 0.8571,
+        "hit@3": 1.0,
+        "mrr": 0.9286,
+        "injected_hit": 1.0
+      }
+    },
+    "no_answer": {
+      "n": 13,
+      "false_inject": 0.5385
+    },
+    "injected_chars_avg": 766,
+    "latency_ms_avg": 14.4
+  },
+  "misses": [
+    {
+      "id": "r006",
+      "query": "KTH 和 Chalmers 有哪些 CS 项目",
+      "expected": [
+        "瑞典（Sweden）"
+      ],
+      "ranked": [
+        "荷兰（Netherlands）CS 硕士申请概览",
+        "瑞典（Sweden）CS 硕士申请概览",
+        "关于指北：工作室介绍"
+      ],
+      "injected": [
+        "荷兰（Netherlands）CS 硕士申请概览",
+        "关于指北：工作室介绍",
+        "丹麦（Denmark）CS 硕士申请概览"
+      ],
+      "top_score": 0.4765,
+      "tags": [
+        "term"
+      ]
+    },
+    {
+      "id": "r018",
+      "query": "Studielink 是干什么的",
+      "expected": [
+        "荷兰（Netherlands）"
+      ],
+      "ranked": [
+        "CS 硕士申请材料清单与准备建议",
+        "关于指北：工作室介绍",
+        "德国（Germany）CS 硕士申请概览"
+      ],
+      "injected": [],
+      "top_score": 0.3857,
+      "tags": [
+        "term"
+      ]
+    },
+    {
+      "id": "r019",
+      "query": "TU Delft 什么时候截止",
+      "expected": [
+        "荷兰（Netherlands）"
+      ],
+      "ranked": [
+        "2027 年秋季入学申请时间线（五国通用参考）",
+        "荷兰（Netherlands）CS 硕士申请概览",
+        "德国（Germany）CS 硕士申请概览"
+      ],
+      "injected": [
+        "2027 年秋季入学申请时间线（五国通用参考）"
+      ],
+      "top_score": 0.439,
+      "tags": [
+        "term"
+      ]
+    },
+    {
+      "id": "r039",
+      "query": "你们都提供哪些服务",
+      "expected": [
+        "套餐对比与怎么选",
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "付款方式与定金规则",
+        "服务介绍：免费初步沟通（免费）"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）",
+        "付款方式与定金规则",
+        "服务介绍：免费初步沟通（免费）"
+      ],
+      "top_score": 0.4781,
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "id": "r063",
+      "query": "能不能再给我便宜一点",
+      "expected": [
+        "优惠规则"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "服务介绍：签证/居留材料指导（¥699 / 次）",
+        "优惠规则（早鸟、团报、老带新）"
+      ],
+      "injected": [],
+      "top_score": 0.3585,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r066",
+      "query": "报价能保留多久",
+      "expected": [
+        "付款方式与定金规则"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "付款方式与定金规则",
+        "退款政策"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）"
+      ],
+      "top_score": 0.4059,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r082",
+      "query": "德国申请要交多少钱的定金",
+      "expected": [
+        "付款方式与定金规则"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "关于指北：工作室介绍",
+        "付款方式与定金规则"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）",
+        "关于指北：工作室介绍"
+      ],
+      "top_score": 0.4099,
+      "tags": [
+        "cross_domain"
+      ]
+    },
+    {
+      "id": "r089",
+      "query": "这个多少钱",
+      "expected": [
+        "服务介绍：模拟面试"
+      ],
+      "ranked": [
+        "服务介绍：模拟面试（¥399 / 次（45 分钟））",
+        "服务介绍：签证/居留材料指导（¥699 / 次）",
+        "付款方式与定金规则"
+      ],
+      "injected": [],
+      "top_score": 0.3334,
+      "tags": [
+        "followup"
+      ]
+    },
+    {
+      "id": "r092",
+      "query": "日本留学你们做吗",
+      "expected": [
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "关于指北：工作室介绍",
+        "服务介绍：免费初步沟通（免费）"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）"
+      ],
+      "top_score": 0.4523,
+      "tags": [
+        "out_of_scope"
+      ]
+    },
+    {
+      "id": "r093",
+      "query": "英国一年制硕士怎么申请",
+      "expected": [],
+      "ranked": [
+        "CS 硕士申请材料清单与准备建议",
+        "芬兰（Finland）CS 硕士申请概览",
+        "荷兰（Netherlands）CS 硕士申请概览"
+      ],
+      "injected": [
+        "CS 硕士申请材料清单与准备建议",
+        "芬兰（Finland）CS 硕士申请概览",
+        "荷兰（Netherlands）CS 硕士申请概览"
+      ],
+      "top_score": 0.5255,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r094",
+      "query": "美国 CS PhD 需要几封推荐信",
+      "expected": [],
+      "ranked": [
+        "服务介绍：推荐信指导（¥599 / 封）",
+        "CS 硕士申请材料清单与准备建议",
+        "服务介绍：文书套餐 · 5 个项目（¥8,499 / 套）"
+      ],
+      "injected": [
+        "服务介绍：推荐信指导（¥599 / 封）",
+        "CS 硕士申请材料清单与准备建议",
+        "服务介绍：文书套餐 · 5 个项目（¥8,499 / 套）"
+      ],
+      "top_score": 0.567,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r095",
+      "query": "瑞典个人所得税税率是多少",
+      "expected": [],
+      "ranked": [
+        "瑞典（Sweden）CS 硕士申请概览",
+        "关于指北：工作室介绍",
+        "丹麦（Denmark）CS 硕士申请概览"
+      ],
+      "injected": [
+        "瑞典（Sweden）CS 硕士申请概览"
+      ],
+      "top_score": 0.4882,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r101",
+      "query": "出国退税怎么办理",
+      "expected": [],
+      "ranked": [
+        "退款政策",
+        "常见问题（关于指北工作室）",
+        "发票说明"
+      ],
+      "injected": [
+        "退款政策"
+      ],
+      "top_score": 0.4167,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r102",
+      "query": "德国驾照怎么换",
+      "expected": [],
+      "ranked": [
+        "德国（Germany）CS 硕士申请概览",
+        "德国 APS 审核与 uni-assist 申请说明",
+        "2027 年秋季入学申请时间线（五国通用参考）"
+      ],
+      "injected": [
+        "德国（Germany）CS 硕士申请概览",
+        "德国 APS 审核与 uni-assist 申请说明",
+        "2027 年秋季入学申请时间线（五国通用参考）"
+      ],
+      "top_score": 0.437,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r105",
+      "query": "Python 和 Java 哪个好学",
+      "expected": [],
+      "ranked": [
+        "关于指北：工作室介绍",
+        "常见问题（关于指北工作室）",
+        "优惠规则（早鸟、团报、老带新）"
+      ],
+      "injected": [
+        "关于指北：工作室介绍"
+      ],
+      "top_score": 0.4097,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r106",
+      "query": "奥地利的大学怎么申请",
+      "expected": [],
+      "ranked": [
+        "德国（Germany）CS 硕士申请概览",
+        "芬兰（Finland）CS 硕士申请概览",
+        "瑞典（Sweden）CS 硕士申请概览"
+      ],
+      "injected": [
+        "德国（Germany）CS 硕士申请概览",
+        "芬兰（Finland）CS 硕士申请概览"
+      ],
+      "top_score": 0.4785,
+      "tags": [
+        "no_answer"
+      ]
+    }
+  ]
+}

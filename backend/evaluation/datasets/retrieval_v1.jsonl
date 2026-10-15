@@ -1,0 +1,106 @@
+{"id": "r001", "query": "瑞典 CS 硕士什么时候开放申请、什么时候截止？", "domain": "consulting", "expected": ["瑞典（Sweden）", "2027 年秋季入学申请时间线"], "tags": ["normal"]}
+{"id": "r002", "query": "瑞典的申请费是多少", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["normal"]}
+{"id": "r003", "query": "去瑞典读计算机一年学费大概多少钱", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["colloquial"]}
+{"id": "r004", "query": "瑞典要求的 English 6 相当于雅思多少分", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["term"]}
+{"id": "r005", "query": "universityadmissions.se 上最多能填几个志愿", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["term"]}
+{"id": "r006", "query": "KTH 和 Chalmers 有哪些 CS 项目", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["term"]}
+{"id": "r007", "query": "瑞典读完硕士能留下来找工作吗", "domain": "consulting", "expected": ["瑞典（Sweden）", "选校基本思路"], "tags": ["colloquial"]}
+{"id": "r008", "query": "瑞典有什么奖学金可以申请", "domain": "consulting", "expected": ["瑞典（Sweden）"], "tags": ["normal"]}
+{"id": "r009", "query": "德国冬季学期的申请截止时间是什么时候", "domain": "consulting", "expected": ["德国（Germany）"], "tags": ["normal"]}
+{"id": "r010", "query": "TUM 用什么系统申请", "domain": "consulting", "expected": ["德国（Germany）", "德国 APS 审核与 uni-assist"], "tags": ["term"]}
+{"id": "r011", "query": "uni-assist 申请一个志愿要交多少钱", "domain": "consulting", "expected": ["德国 APS 审核与 uni-assist", "德国（Germany）"], "tags": ["term"]}
+{"id": "r012", "query": "APS 审核要提前多久办", "domain": "consulting", "expected": ["德国 APS 审核与 uni-assist", "2027 年秋季入学申请时间线"], "tags": ["term"]}
+{"id": "r013", "query": "申请德国是不是一定要先过 APS", "domain": "consulting", "expected": ["德国 APS 审核与 uni-assist", "德国（Germany）"], "tags": ["term"]}
+{"id": "r014", "query": "德国公立大学是不是不要学费", "domain": "consulting", "expected": ["德国（Germany）", "选校基本思路"], "tags": ["colloquial"]}
+{"id": "r015", "query": "巴符州对国际学生收学费吗", "domain": "consulting", "expected": ["德国（Germany）", "选校基本思路"], "tags": ["term"]}
+{"id": "r016", "query": "德国的语言成绩要求高吗", "domain": "consulting", "expected": ["德国（Germany）"], "tags": ["normal"]}
+{"id": "r017", "query": "荷兰硕士申请用什么平台", "domain": "consulting", "expected": ["荷兰（Netherlands）"], "tags": ["normal"]}
+{"id": "r018", "query": "Studielink 是干什么的", "domain": "consulting", "expected": ["荷兰（Netherlands）"], "tags": ["term"]}
+{"id": "r019", "query": "TU Delft 什么时候截止", "domain": "consulting", "expected": ["荷兰（Netherlands）"], "tags": ["term"]}
+{"id": "r020", "query": "荷兰读 CS 一年学费多少", "domain": "consulting", "expected": ["荷兰（Netherlands）"], "tags": ["normal"]}
+{"id": "r021", "query": "荷兰的项目要面试吗", "domain": "consulting", "expected": ["荷兰（Netherlands）", "服务介绍：模拟面试"], "tags": ["normal"]}
+{"id": "r022", "query": "芬兰申请季一般几月开放", "domain": "consulting", "expected": ["芬兰（Finland）", "2027 年秋季入学申请时间线"], "tags": ["normal"]}
+{"id": "r023", "query": "芬兰申请费多少", "domain": "consulting", "expected": ["芬兰（Finland）"], "tags": ["normal"]}
+{"id": "r024", "query": "Studyinfo.fi 最多能报几个项目", "domain": "consulting", "expected": ["芬兰（Finland）", "选校基本思路"], "tags": ["term"]}
+{"id": "r025", "query": "芬兰的奖学金能减免多少学费", "domain": "consulting", "expected": ["芬兰（Finland）"], "tags": ["normal"]}
+{"id": "r026", "query": "丹麦申请需要交申请费吗", "domain": "consulting", "expected": ["丹麦（Denmark）"], "tags": ["normal"]}
+{"id": "r027", "query": "DTU 和哥本哈根大学是统一申请吗", "domain": "consulting", "expected": ["丹麦（Denmark）"], "tags": ["term"]}
+{"id": "r028", "query": "丹麦硕士截止日期一般在什么时候", "domain": "consulting", "expected": ["丹麦（Denmark）"], "tags": ["normal"]}
+{"id": "r029", "query": "丹麦一年学费换成欧元大概多少", "domain": "consulting", "expected": ["丹麦（Denmark）"], "tags": ["colloquial"]}
+{"id": "r030", "query": "申请欧洲 CS 硕士要准备哪些材料", "domain": "consulting", "expected": ["CS 硕士申请材料清单"], "tags": ["normal"]}
+{"id": "r031", "query": "推荐信一般要几封", "domain": "consulting", "expected": ["CS 硕士申请材料清单", "服务介绍：推荐信指导"], "tags": ["normal"]}
+{"id": "r032", "query": "课程描述是什么，哪些国家要", "domain": "consulting", "expected": ["CS 硕士申请材料清单"], "tags": ["normal"]}
+{"id": "r033", "query": "还没毕业能申请吗，毕业证怎么办", "domain": "consulting", "expected": ["CS 硕士申请材料清单"], "tags": ["colloquial"]}
+{"id": "r034", "query": "选校的冲刺匹配保底各占多少比例合适", "domain": "consulting", "expected": ["选校基本思路"], "tags": ["normal"]}
+{"id": "r035", "query": "预算不多的话五个国家里选哪个好", "domain": "consulting", "expected": ["选校基本思路"], "tags": ["colloquial"]}
+{"id": "r036", "query": "毕业后想留在欧洲工作，选哪个国家", "domain": "consulting", "expected": ["选校基本思路"], "tags": ["colloquial"]}
+{"id": "r037", "query": "2027 年秋季入学，现在这个时间点应该做什么", "domain": "consulting", "expected": ["2027 年秋季入学申请时间线"], "tags": ["normal"]}
+{"id": "r038", "query": "什么时候开始写文书比较合适", "domain": "consulting", "expected": ["2027 年秋季入学申请时间线"], "tags": ["colloquial"]}
+{"id": "r039", "query": "你们都提供哪些服务", "domain": "consulting", "expected": ["套餐对比与怎么选", "关于指北：工作室介绍"], "tags": ["normal"]}
+{"id": "r040", "query": "选校全案多少钱，包括什么", "domain": "consulting", "expected": ["服务介绍：选校定位全案"], "tags": ["normal"]}
+{"id": "r041", "query": "选校报告多久能交付", "domain": "consulting", "expected": ["服务介绍：选校定位全案"], "tags": ["normal"]}
+{"id": "r042", "query": "只想花一个小时聊聊方向，有这种服务吗", "domain": "consulting", "expected": ["服务介绍：单次选校咨询", "服务介绍：免费初步沟通"], "tags": ["colloquial"]}
+{"id": "r043", "query": "单次咨询之后升级全案能抵扣吗", "domain": "consulting", "expected": ["服务介绍：单次选校咨询"], "tags": ["normal"]}
+{"id": "r044", "query": "免费的初步沟通有多长时间", "domain": "consulting", "expected": ["服务介绍：免费初步沟通"], "tags": ["normal"]}
+{"id": "r045", "query": "动机信单独辅导一篇怎么收费", "domain": "consulting", "expected": ["服务介绍：PS/动机信单篇辅导"], "tags": ["normal"]}
+{"id": "r046", "query": "PS 改几轮", "domain": "consulting", "expected": ["服务介绍：PS/动机信单篇辅导"], "tags": ["term"]}
+{"id": "r047", "query": "CV 优化包含几轮修改", "domain": "consulting", "expected": ["服务介绍：学术简历（CV）优化"], "tags": ["term"]}
+{"id": "r048", "query": "推荐信你们能帮忙写吗", "domain": "consulting", "expected": ["服务介绍：推荐信指导", "常见问题（关于指北工作室）"], "tags": ["colloquial"]}
+{"id": "r049", "query": "套餐的修改轮次用完了还能加吗", "domain": "consulting", "expected": ["服务介绍：文书额外修改轮"], "tags": ["colloquial"]}
+{"id": "r050", "query": "申 3 个项目的文书套餐包括哪些", "domain": "consulting", "expected": ["服务介绍：文书套餐 · 3 个项目"], "tags": ["normal"]}
+{"id": "r051", "query": "5 个项目的文书套餐一共多少轮修改", "domain": "consulting", "expected": ["服务介绍：文书套餐 · 5 个项目"], "tags": ["normal"]}
+{"id": "r052", "query": "全程陪跑包括哪些内容", "domain": "consulting", "expected": ["服务介绍：全程陪跑（", "套餐对比与怎么选"], "tags": ["normal"]}
+{"id": "r053", "query": "陪跑 Plus 比普通陪跑多了什么", "domain": "consulting", "expected": ["服务介绍：全程陪跑 Plus", "套餐对比与怎么选"], "tags": ["normal"]}
+{"id": "r054", "query": "提交网申前能帮我检查一下材料吗", "domain": "consulting", "expected": ["服务介绍：网申材料审核"], "tags": ["colloquial"]}
+{"id": "r055", "query": "有英文模拟面试吗", "domain": "consulting", "expected": ["服务介绍：模拟面试"], "tags": ["normal"]}
+{"id": "r056", "query": "居留许可材料你们能指导吗", "domain": "consulting", "expected": ["服务介绍：签证/居留材料指导"], "tags": ["normal"]}
+{"id": "r057", "query": "全案和陪跑我该选哪个", "domain": "consulting", "expected": ["套餐对比与怎么选"], "tags": ["colloquial"]}
+{"id": "r058", "query": "怎么预约你们的顾问", "domain": "consulting", "expected": ["预约咨询流程"], "tags": ["normal"]}
+{"id": "r059", "query": "约好的时间能改期吗", "domain": "consulting", "expected": ["预约咨询流程"], "tags": ["normal"]}
+{"id": "r060", "query": "有早鸟优惠吗", "domain": "consulting", "expected": ["优惠规则"], "tags": ["normal"]}
+{"id": "r061", "query": "和同学一起报名能便宜点吗", "domain": "consulting", "expected": ["优惠规则"], "tags": ["colloquial"]}
+{"id": "r062", "query": "老带新减多少，能和早鸟一起用吗", "domain": "consulting", "expected": ["优惠规则"], "tags": ["normal"]}
+{"id": "r063", "query": "能不能再给我便宜一点", "domain": "consulting", "expected": ["优惠规则"], "tags": ["colloquial"]}
+{"id": "r064", "query": "定金要付多少", "domain": "billing", "expected": ["付款方式与定金规则"], "tags": ["normal"]}
+{"id": "r065", "query": "可以用支付宝付吗", "domain": "billing", "expected": ["付款方式与定金规则"], "tags": ["normal"]}
+{"id": "r066", "query": "报价能保留多久", "domain": "billing", "expected": ["付款方式与定金规则"], "tags": ["colloquial"]}
+{"id": "r067", "query": "签合同吗", "domain": "billing", "expected": ["付款方式与定金规则", "常见问题（关于指北工作室）"], "tags": ["colloquial"]}
+{"id": "r068", "query": "服务还没开始，钱能全退吗", "domain": "billing", "expected": ["退款政策"], "tags": ["colloquial"]}
+{"id": "r069", "query": "套餐开始以后定金还能退吗", "domain": "billing", "expected": ["退款政策"], "tags": ["normal"]}
+{"id": "r070", "query": "没被录取可以退款吗", "domain": "billing", "expected": ["退款政策"], "tags": ["colloquial"]}
+{"id": "r071", "query": "退款多久能到账", "domain": "billing", "expected": ["退款政策"], "tags": ["normal"]}
+{"id": "r072", "query": "单次咨询临时去不了怎么办", "domain": "billing", "expected": ["退款政策"], "tags": ["colloquial"]}
+{"id": "r073", "query": "能开发票吗", "domain": "billing", "expected": ["发票说明"], "tags": ["normal"]}
+{"id": "r074", "query": "发票可以开公司抬头吗", "domain": "billing", "expected": ["发票说明"], "tags": ["normal"]}
+{"id": "r075", "query": "你们是留学中介吗", "domain": "general", "expected": ["常见问题（关于指北工作室）", "关于指北：工作室介绍"], "tags": ["normal"]}
+{"id": "r076", "query": "能保证录取吗", "domain": "general", "expected": ["常见问题（关于指北工作室）"], "tags": ["normal"]}
+{"id": "r077", "query": "你们会代写文书吗", "domain": "general", "expected": ["常见问题（关于指北工作室）"], "tags": ["normal"]}
+{"id": "r078", "query": "顾问在哪个国家，和国内有时差吗", "domain": "general", "expected": ["关于指北：工作室介绍", "常见问题（关于指北工作室）"], "tags": ["normal"]}
+{"id": "r079", "query": "你们做本科申请吗", "domain": "general", "expected": ["关于指北：工作室介绍"], "tags": ["out_of_scope"]}
+{"id": "r080", "query": "我的个人信息会给别人吗", "domain": "general", "expected": ["常见问题（关于指北工作室）"], "tags": ["normal"]}
+{"id": "r081", "query": "咨询是线上还是线下", "domain": "general", "expected": ["常见问题（关于指北工作室）"], "tags": ["normal"]}
+{"id": "r082", "query": "德国申请要交多少钱的定金", "domain": "billing", "expected": ["付款方式与定金规则"], "tags": ["cross_domain"]}
+{"id": "r083", "query": "瑞典申请的退款政策", "domain": "billing", "expected": ["退款政策"], "tags": ["cross_domain"]}
+{"id": "r084", "query": "全程陪跑交了定金能退吗", "domain": "billing", "expected": ["退款政策"], "tags": ["cross_domain"]}
+{"id": "r085", "query": "选校报告还没交付想退款", "domain": "billing", "expected": ["退款政策"], "tags": ["cross_domain"]}
+{"id": "r086", "query": "那德国呢", "history": ["瑞典 CS 硕士申请什么时候截止？"], "domain": "consulting", "expected": ["德国（Germany）"], "tags": ["followup"]}
+{"id": "r087", "query": "荷兰的呢", "history": ["丹麦一年学费多少？"], "domain": "consulting", "expected": ["荷兰（Netherlands）"], "tags": ["followup"]}
+{"id": "r088", "query": "那申请费呢", "history": ["芬兰硕士用什么平台申请？"], "domain": "consulting", "expected": ["芬兰（Finland）"], "tags": ["followup"]}
+{"id": "r089", "query": "这个多少钱", "history": ["你们有模拟面试服务吗？"], "domain": "consulting", "expected": ["服务介绍：模拟面试"], "tags": ["followup"]}
+{"id": "r090", "query": "Plus 版呢", "history": ["全程陪跑多少钱？"], "domain": "consulting", "expected": ["服务介绍：全程陪跑 Plus"], "tags": ["followup"]}
+{"id": "r091", "query": "要多久能退回来", "history": ["服务还没启动可以退款吗？"], "domain": "billing", "expected": ["退款政策"], "tags": ["followup"]}
+{"id": "r092", "query": "日本留学你们做吗", "domain": "consulting", "expected": ["关于指北：工作室介绍"], "tags": ["out_of_scope"]}
+{"id": "r093", "query": "英国一年制硕士怎么申请", "domain": "consulting", "expected": [], "tags": ["no_answer"]}
+{"id": "r094", "query": "美国 CS PhD 需要几封推荐信", "domain": "consulting", "expected": [], "tags": ["no_answer"]}
+{"id": "r095", "query": "瑞典个人所得税税率是多少", "domain": "consulting", "expected": [], "tags": ["no_answer"]}
+{"id": "r096", "query": "瑞典的冬天有多冷", "domain": "consulting", "expected": [], "tags": ["no_answer"]}
+{"id": "r097", "query": "帮我写一个快速排序", "domain": "general", "expected": [], "tags": ["no_answer"]}
+{"id": "r098", "query": "今天天气怎么样", "domain": "general", "expected": [], "tags": ["no_answer"]}
+{"id": "r099", "query": "推荐一家好吃的火锅店", "domain": "general", "expected": [], "tags": ["no_answer"]}
+{"id": "r100", "query": "信用卡分期手续费怎么算", "domain": "billing", "expected": [], "tags": ["no_answer"]}
+{"id": "r101", "query": "出国退税怎么办理", "domain": "billing", "expected": [], "tags": ["no_answer"]}
+{"id": "r102", "query": "德国驾照怎么换", "domain": "consulting", "expected": [], "tags": ["no_answer"]}
+{"id": "r103", "query": "MBA 申请你们接吗", "domain": "consulting", "expected": ["关于指北：工作室介绍"], "tags": ["out_of_scope"]}
+{"id": "r104", "query": "高考志愿怎么填", "domain": "general", "expected": [], "tags": ["no_answer"]}
+{"id": "r105", "query": "Python 和 Java 哪个好学", "domain": "general", "expected": [], "tags": ["no_answer"]}
+{"id": "r106", "query": "奥地利的大学怎么申请", "domain": "consulting", "expected": [], "tags": ["no_answer"]}

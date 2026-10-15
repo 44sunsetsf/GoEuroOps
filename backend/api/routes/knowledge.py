@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _knowledge_base():
+    tool = services.tool_manager._tools.get("knowledge_search") if services.tool_manager else None
+    if tool is None:
+        raise HTTPException(503, "知识库未初始化")
+    return tool.handler.__self__
+
+
 @router.post("/search")
 async def search(request: Request, query: str, top_k: int = 5, domain: Optional[str] = None):
     """
@@ -49,12 +56,9 @@ async def add_knowledge(body: BatchDocInput):
     }
     ```
     """
-    tool = services.tool_manager._tools.get("knowledge_search") if services.tool_manager else None
-    if tool is None:
-        raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
+    kb = _knowledge_base()
     count = await kb.add_documents_async([
-        {"title": d.title, "content": d.content, "domain": d.domain} for d in body.documents
+        {"title": d.title, "content": d.content, "domain": d.domain, "doc_id": d.doc_id} for d in body.documents
     ])
     # 知识库变了，旧的检索缓存可能不含新文档，立即失效而不是等 TTL
     services.tool_manager.invalidate_cache("knowledge_search")
@@ -76,10 +80,7 @@ async def upload_knowledge(file: UploadFile = File(...), domain: Optional[str] =
 
     文件大小限制：10MB
     """
-    tool = services.tool_manager._tools.get("knowledge_search") if services.tool_manager else None
-    if tool is None:
-        raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
+    kb = _knowledge_base()
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
@@ -119,8 +120,24 @@ async def upload_knowledge(file: UploadFile = File(...), domain: Optional[str] =
 @router.get("/knowledge/stats", tags=["知识库"])
 async def knowledge_stats():
     """查看知识库统计信息（文档片段总数）。"""
-    tool = services.tool_manager._tools.get("knowledge_search") if services.tool_manager else None
-    if tool is None:
-        raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
+    kb = _knowledge_base()
     return await kb.stats_async()
+
+
+@router.get("/knowledge/documents", tags=["知识库"])
+async def list_documents():
+    """按文档列出知识库：标题、领域、来源、版本和片段数。"""
+    return {"documents": await _knowledge_base().list_documents_async()}
+
+
+@router.delete("/knowledge/documents/{doc_id}", tags=["知识库"])
+async def delete_document(doc_id: str):
+    """删除一篇上传的文档（种子文档由业务目录生成，不能在这里删）。"""
+    try:
+        removed = await _knowledge_base().delete_document_async(doc_id)
+    except ValueError as ex:
+        raise HTTPException(400, str(ex))
+    if not removed:
+        raise HTTPException(404, "没有这篇文档")
+    services.tool_manager.invalidate_cache("knowledge_search")
+    return {"doc_id": doc_id, "removed_chunks": removed}

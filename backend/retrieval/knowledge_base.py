@@ -88,6 +88,7 @@ class KnowledgeBase:
                 name=self.collection_name,
                 metadata={"description": "GoEuroOps RAG 知识库"},
             )
+        self._backfill_doc_ids()
 
         # 按版本同步业务目录生成的种子文档（改了 catalog.yaml 重启即生效）
         try:
@@ -105,41 +106,92 @@ class KnowledgeBase:
         seed_version: Optional[str] = None,
     ) -> int:
         """
-        批量导入文档到知识库。
+        批量导入文档到知识库，返回新写入的片段数。
 
-        documents 格式: [{"title": "...", "content": "...", "domain": "..."}, ...]
+        documents 格式: [{"title": "...", "content": "...", "domain": "...", "doc_id": "..."}, ...]
         长文档会自动切片（每片 500 字）。
 
         domain 标注文档归属哪个 Agent（如 "consulting"/"billing"/"general"），
         检索时按调用方 Agent 的 domain 过滤，避免不同业务线的知识互相串场；
         不填时默认为 "shared"，对所有 Agent 可见。
 
+        每篇文档有稳定的 doc_id（不传时由来源 + 标题生成）和内容版本 doc_version：
+        同一篇文档再导入时，内容没变就跳过；变了就先写新版本，写成功后再删旧版本，
+        库里任何时刻都至少有一个完整版本，也不会新旧并存。
+
         每个片段前会加上【标题】再做向量化：切片后的正文经常缺少主题词，
         带上标题能明显改善中文短片段的召回。
         """
-        ids, docs, metas = [], [], []
+        written = sum(self._upsert_document(doc, source=source, seed_version=seed_version) for doc in documents)
+        if written:
+            logger.info(f"知识库导入 {written} 个文档片段")
+        return written
 
-        for doc in documents:
-            title   = doc.get("title", "")
-            content = doc.get("content", "")
-            domain  = str(doc.get("domain") or "shared")
-            chunks  = self._chunk_text(content, chunk_size=500)
+    def _upsert_document(self, doc: Dict[str, str], *, source: str, seed_version: Optional[str]) -> int:
+        title   = doc.get("title", "")
+        content = doc.get("content", "")
+        domain  = str(doc.get("domain") or "shared")
+        doc_id  = str(doc.get("doc_id") or "").strip() or document_id(source, title)
+        version = document_version(title, domain, content)
 
-            for i, chunk in enumerate(chunks):
-                doc_id = hashlib.md5(f"{source}_{title}_{i}_{chunk[:50]}".encode()).hexdigest()
-                ids.append(doc_id)
-                docs.append(f"【{title}】{chunk}" if title else chunk)
-                meta = {"title": title, "chunk_index": i, "total_chunks": len(chunks), "domain": domain, "source": source}
-                if seed_version:
-                    meta["seed_version"] = seed_version
-                metas.append(meta)
+        existing = self._collection.get(where={"doc_id": doc_id}, include=["metadatas"])
+        old = [(i, m or {}) for i, m in zip(existing.get("ids") or [], existing.get("metadatas") or [])]
+        current = [(i, m) for i, m in old if m.get("doc_version") == version]
+        if current:
+            stale = [i for i, m in old if m.get("doc_version") != version]
+            if stale:                                   # 上次换版本时删旧块失败，这次补删
+                self._collection.delete(ids=stale)
+            if seed_version and any(m.get("seed_version") != seed_version for _, m in current):
+                self._collection.update(ids=[i for i, _ in current],
+                                        metadatas=[{**m, "seed_version": seed_version} for _, m in current])
+            return 0
 
+        chunks = self._chunk_text(content, chunk_size=500)
+        if chunks:
+            meta = {"title": title, "total_chunks": len(chunks), "domain": domain, "source": source,
+                    "doc_id": doc_id, "doc_version": version}
+            if seed_version:
+                meta["seed_version"] = seed_version
+            # ChromaDB 会自动生成 Embedding；先写新版本，失败就抛出，旧版本原样保留
+            self._collection.upsert(
+                ids=[hashlib.md5(f"{doc_id}:{version}:{i}".encode()).hexdigest() for i in range(len(chunks))],
+                documents=[f"【{title}】{chunk}" if title else chunk for chunk in chunks],
+                metadatas=[{**meta, "chunk_index": i} for i in range(len(chunks))],
+            )
+        if old:
+            self._collection.delete(ids=[i for i, _ in old])
+        return len(chunks)
+
+    def delete_document(self, doc_id: str) -> int:
+        """删除一篇文档的所有片段，返回删除的片段数。种子文档由业务目录生成，不能在这里删。"""
+        got = self._collection.get(where={"doc_id": doc_id}, include=["metadatas"])
+        ids = got.get("ids") or []
+        if any((m or {}).get("source") == "seed" for m in got.get("metadatas") or []):
+            raise ValueError("种子文档由业务目录生成，请修改 business/ 下的 YAML 或文章后重启")
         if ids:
-            # ChromaDB 会自动生成 Embedding；upsert 保证重复导入同一文档不会报错
-            self._collection.upsert(ids=ids, documents=docs, metadatas=metas)
-            logger.info(f"知识库导入 {len(ids)} 个文档片段")
-
+            self._collection.delete(ids=ids)
         return len(ids)
+
+    def list_documents(self) -> List[Dict[str, Any]]:
+        """按文档汇总：标题、领域、来源、版本和片段数。同一 doc_id 出现多个版本说明有残留。"""
+        data = self._collection.get(include=["metadatas"])
+        docs: Dict[str, Dict[str, Any]] = {}
+        for meta in data.get("metadatas") or []:
+            meta = meta or {}
+            doc = docs.setdefault(meta.get("doc_id", ""), {
+                "doc_id": meta.get("doc_id", ""), "title": meta.get("title", ""), "domain": meta.get("domain", "shared"),
+                "source": meta.get("source", "upload"), "versions": set(), "chunks": 0,
+            })
+            doc["versions"].add(meta.get("doc_version", ""))
+            doc["chunks"] += 1
+        return sorted(({**d, "versions": sorted(d["versions"])} for d in docs.values()),
+                      key=lambda d: (d["source"], d["title"]))
+
+    async def list_documents_async(self) -> List[Dict[str, Any]]:
+        return await asyncio.to_thread(self.list_documents)
+
+    async def delete_document_async(self, doc_id: str) -> int:
+        return await asyncio.to_thread(self.delete_document, doc_id)
 
     async def add_documents_async(self, documents: List[Dict[str, str]]) -> int:
         """异步导入文档；ChromaDB 客户端为同步实现，因此放入线程池执行。"""
@@ -245,29 +297,52 @@ class KnowledgeBase:
 
     def sync_seed_documents(self) -> Dict[str, Any]:
         """
-        按 seed_version 同步种子文档。
+        把种子文档同步到业务目录的当前内容。
 
-        种子由 business/ 下的业务目录生成（见 business/kb_seed.py）。版本一致时
-        什么都不做；不一致时删除旧种子（以及早期版本遗留的电商示例文档）后重新写入，
+        种子由 business/ 下的业务目录生成（见 business/kb_seed.py）。逐篇比对 doc_version：
+        没变的跳过，变了的先写新版再删旧版；全部写成功后，才删掉业务目录里已经没有的种子文档
+        和早期版本遗留的示例文档。中途失败（比如向量 API 不可用）就抛出，旧种子原样保留。
         用户自己导入的文档不受影响。
         """
         from business.kb_seed import build_seed_documents
 
         version, docs = build_seed_documents()
-        current = self._collection.get(where={"seed_version": version}, limit=1)
-        if current.get("ids"):
+        expected = {document_id("seed", d["title"]): document_version(d["title"], str(d.get("domain") or "shared"), d["content"])
+                    for d in docs}
+        seeds = self._collection.get(where={"source": "seed"}, include=["metadatas"])
+        present = {((m or {}).get("doc_id"), (m or {}).get("doc_version")) for m in seeds.get("metadatas") or []}
+        if present == set(expected.items()):
             logger.info("知识库种子已是最新版本: %s", version)
             return {"seed_version": version, "reseeded": False}
 
-        self._collection.delete(where={"source": "seed"})
-        legacy = self._collection.get(where={"title": {"$in": LEGACY_SEED_TITLES}})
-        if legacy.get("ids"):
-            self._collection.delete(ids=legacy["ids"])
-            logger.info("已清理 %d 个旧版示例文档片段", len(legacy["ids"]))
+        added = sum(self._upsert_document({**d, "doc_id": document_id("seed", d["title"])}, source="seed",
+                                          seed_version=version) for d in docs)
 
-        added = self.add_documents(docs, source="seed", seed_version=version)
-        logger.info("知识库种子已更新: version=%s docs=%d chunks=%d", version, len(docs), added)
-        return {"seed_version": version, "reseeded": True, "documents": len(docs), "chunks": added}
+        # 只保留和当前种子完全一致的片段；旧示例里也有“退款政策”这种和现有种子同名的标题，不能按标题删
+        current = set(expected.items())
+        old = self._collection.get(where={"$or": [{"source": "seed"}, {"title": {"$in": LEGACY_SEED_TITLES}}]},
+                                   include=["metadatas"])
+        stale = [i for i, m in zip(old.get("ids") or [], old.get("metadatas") or [])
+                 if ((m or {}).get("doc_id"), (m or {}).get("doc_version")) not in current]
+        if stale:
+            self._collection.delete(ids=stale)
+        logger.info("知识库种子已更新: version=%s docs=%d 新写入片段=%d 删除片段=%d", version, len(docs), added, len(stale))
+        return {"seed_version": version, "reseeded": True, "documents": len(docs), "chunks": added, "removed": len(stale)}
+
+    def _backfill_doc_ids(self) -> None:
+        """早期写入的片段没有 doc_id：按来源 + 标题补上（只改元数据，不重算向量），之后才能按文档替换和删除。"""
+        try:
+            data = self._collection.get(include=["metadatas"])
+            todo = [(i, m or {}) for i, m in zip(data.get("ids") or [], data.get("metadatas") or [])
+                    if not (m or {}).get("doc_id")]
+            if todo:
+                self._collection.update(
+                    ids=[i for i, _ in todo],
+                    metadatas=[{**m, "doc_id": document_id(m.get("source", "upload"), m.get("title", ""))} for _, m in todo],
+                )
+                logger.info("已给 %d 个旧片段补上 doc_id", len(todo))
+        except Exception as ex:                     # noqa: BLE001 —— 迁移失败不影响检索
+            logger.warning("补 doc_id 失败: %s", ex)
 
     def _migrate_legacy_collection(self) -> None:
         """
@@ -331,6 +406,15 @@ LEGACY_SEED_TITLES = [
     "丹麦CS硕士申请概览（示例参考信息）",
     "申请材料与时间线概览（示例参考信息）",
 ]
+
+
+def document_id(source: str, title: str) -> str:
+    """没有显式 doc_id 时，同一来源下同一标题就是同一篇文档。"""
+    return hashlib.md5(f"{source}\x1f{title}".encode()).hexdigest()
+
+
+def document_version(title: str, domain: str, content: str) -> str:
+    return hashlib.sha256(f"{title}\x1f{domain}\x1f{content}".encode()).hexdigest()[:12]
 
 
 def _lexical_coverage(query: str, document: str) -> float:
