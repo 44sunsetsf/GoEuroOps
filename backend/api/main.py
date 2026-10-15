@@ -71,6 +71,7 @@ async def lifespan(app: FastAPI):
     from evaluation.evaluator import EndToEndEvaluator
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
+    from retrieval.rerank import load_reranker
     from memory.manager import build_memory_manager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
@@ -142,6 +143,7 @@ async def lifespan(app: FastAPI):
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        reranker=load_reranker(),
     )
     kb = KnowledgeBase(
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),

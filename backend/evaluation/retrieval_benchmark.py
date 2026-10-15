@@ -28,10 +28,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from core.rag_gate import RagGate
+from core.rag_gate import RagGate, retrieval_query
 from evaluation.intent_benchmark import load_env_file
 from retrieval.knowledge_base import KnowledgeBase
 from retrieval.manager import RetrievalManager, Tool
+from retrieval.rerank import load_reranker
 
 HERE = Path(__file__).parent
 DATASETS = HERE / "datasets"
@@ -50,6 +51,7 @@ def build_manager(chroma_path: str) -> tuple[RetrievalManager, KnowledgeBase]:
         api_key=os.getenv("ANTHROPIC_API_KEY", "benchmark"),
         base_url=os.getenv("ANTHROPIC_BASE_URL") or None,
         model=os.getenv("ANTHROPIC_MODEL", "") or "benchmark",
+        reranker=load_reranker(),
     )
     kb = KnowledgeBase(chroma_host="", chroma_path=chroma_path)
     manager.register(Tool(
@@ -69,28 +71,37 @@ def doc_titles(items: List[Dict[str, Any]]) -> List[str]:
     return list(dict.fromkeys(str(i.get("title", "")) for i in items))
 
 
-async def prefetch(gate: RagGate, row: Dict[str, Any]) -> List[Dict[str, Any]]:
+def history_of(row: Dict[str, Any]) -> List[Dict[str, str]]:
+    return [{"role": "user", "content": h} for h in row.get("history") or []]
+
+
+async def prefetch(gate: RagGate, row: Dict[str, Any], query: str) -> List[Dict[str, Any]]:
     """走线上的门控链路：投机召回 → 按路由到的领域取结果 → 分数阈值 → Top-K。"""
-    speculative = gate.speculate(row["query"])
+    speculative = gate.speculate(query)
     decision = await gate.resolve(speculative, intent="study_consult", confidence=1.0,
-                                  domain=row["domain"], message=row["query"])
+                                  domain=row["domain"], message=query)
     return decision.items
 
 
-async def run_one(manager: RetrievalManager, gate: RagGate, row: Dict[str, Any], deep: bool) -> Dict[str, Any]:
+async def run_one(manager: RetrievalManager, gate: RagGate, row: Dict[str, Any], deep: bool,
+                  followup: bool) -> Dict[str, Any]:
     t0 = time.monotonic()
-    ranked = await manager.search_fast("knowledge_search", row["query"], top_k=RANK_DEPTH, domain=row["domain"])
-    injected = await prefetch(gate, row)
+    # 和编排器一样：很短的追问拼上上一轮用户的话再检索（--no-followup 时只用原话，做对照）
+    query = retrieval_query(row["query"], history_of(row)) if followup else row["query"]
+    ranked = await manager.search_fast("knowledge_search", query, top_k=RANK_DEPTH, domain=row["domain"])
+    injected = await prefetch(gate, row, query)
     out: Dict[str, Any] = {
         **row,
         "ranked": doc_titles(ranked),
         "injected": doc_titles(injected),
         "injected_chars": sum(len(str(i.get("content", ""))) for i in injected),
         "top_score": round(float(ranked[0]["score"]), 4) if ranked else 0.0,
+        "top_hybrid": round(float(ranked[0].get("hybrid_score", ranked[0]["score"])), 4) if ranked else 0.0,
         "ms": (time.monotonic() - t0) * 1000,
     }
     if deep:
-        result = await manager.search_with_rewrite("knowledge_search", row["query"], top_k=3, domain=row["domain"])
+        result = await manager.search_with_rewrite("knowledge_search", row["query"], top_k=3, domain=row["domain"],
+                                                   history=history_of(row) if followup else None)
         out["deep"] = doc_titles(result.data) if result.success else []
     return out
 
@@ -140,7 +151,7 @@ def summarize(results: List[Dict[str, Any]], deep: bool) -> Dict[str, Any]:
     return summary
 
 
-async def main(dataset: str, deep: bool, label: str) -> Path:
+async def main(dataset: str, deep: bool, label: str, followup: bool = True) -> Path:
     load_env_file()
     rows = load_dataset(dataset)
     with tempfile.TemporaryDirectory(prefix="kb-bench-") as tmp:
@@ -150,7 +161,7 @@ async def main(dataset: str, deep: bool, label: str) -> Path:
             return await manager.search_fast("knowledge_search", query, top_k=top_k, domain=domain)
 
         gate = RagGate(search_fn, enabled=True)
-        results = [await run_one(manager, gate, r, deep) for r in rows]
+        results = [await run_one(manager, gate, r, deep, followup) for r in rows]
         stats = kb.stats()
 
     report = {
@@ -159,8 +170,15 @@ async def main(dataset: str, deep: bool, label: str) -> Path:
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "embedding_model": stats["embedding_model"],
         "chunks": stats["total_chunks"],
-        "gate": {"top_k": gate.top_k, "min_score": gate.min_score},
+        "gate": {"top_k": gate.top_k, "min_score": gate.min_score, "min_rerank_score": gate.min_rerank_score},
+        "reranker": manager._reranker.model_name if manager._reranker else None,
+        "followup_completion": followup,
         "summary": summarize(results, deep),
+        # 每条的最高分（重排后是重排分数），用来校准阈值
+        "rows": [{"id": r["id"], "tags": r["tags"], "top_score": r["top_score"], "top_hybrid": r["top_hybrid"],
+                  "top_correct": bool(r["expected"]) and rank_of(r["ranked"], r["expected"]) == 1,
+                  "hit": bool(rank_of(r["injected"], r["expected"])) if r["expected"] else not r["injected"]}
+                 for r in results],
         "misses": [
             {"id": r["id"], "query": r["query"], "expected": r["expected"], "ranked": r["ranked"][:3],
              "injected": r["injected"], "top_score": r["top_score"], "tags": r["tags"]}
@@ -190,7 +208,8 @@ def render_markdown(r: Dict[str, Any]) -> str:
         f"# 知识库检索基准：{r['dataset']}{'（' + r['label'] + '）' if r['label'] else ''}",
         "",
         f"- 运行于 {r['run_at']}；向量模型 `{r['embedding_model']}`；知识库 {r['chunks']} 个片段",
-        f"- 门控：注入 Top-{r['gate']['top_k']}，分数下限 {r['gate']['min_score']}",
+        f"- 门控：注入 Top-{r['gate']['top_k']}，分数下限：混合分 {r['gate']['min_score']}"
+        + (f"，重排分 {r['gate']['min_rerank_score']}（重排模型 `{r['reranker']}`）" if r.get("reranker") else "（未启用重排）"),
         f"- 无答案问题 {s['no_answer']['n']} 条，误注入率 **{s['no_answer']['false_inject']:.1%}**"
         + (f"，深查误答率 {s['no_answer']['deep_false_answer']:.1%}" if deep else ""),
         f"- 平均每次注入 {s['injected_chars_avg']} 字；平均耗时 {s['latency_ms_avg']} ms",
@@ -214,5 +233,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default="retrieval_v1")
     parser.add_argument("--deep", action="store_true", help="另跑深查链路（查询改写 + 重排，会调模型）")
     parser.add_argument("--label", default="", help="写进报告文件名，例如 baseline")
+    parser.add_argument("--no-followup", action="store_true", help="不做追问补全（对照用）")
     args = parser.parse_args()
-    asyncio.run(main(args.dataset, args.deep, args.label))
+    asyncio.run(main(args.dataset, args.deep, args.label, followup=not args.no_followup))

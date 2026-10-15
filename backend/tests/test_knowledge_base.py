@@ -153,3 +153,13 @@ def test_old_chunks_get_doc_ids_and_are_replaced(tmp_path, monkeypatch, seeds):
     kb.add_documents([{"title": "旧上传", "content": "新内容。"}])
     got = _chunks(kb, "旧上传")
     assert got["documents"] == ["【旧上传】新内容。"]
+
+
+
+def test_search_keeps_one_chunk_per_document(kb):
+    long = "。".join(f"德国第{i}项申请说明" + "内容很长" * 20 for i in range(12))
+    kb.add_documents([{"title": "德国长文", "content": long, "domain": "consulting"}])
+    assert len(_chunks(kb, "德国长文")["ids"]) > 1
+    hits = kb.search("德国申请说明", top_k=5, domain="consulting")
+    assert [h["title"] for h in hits].count("德国长文") == 1
+    assert len({h["doc_id"] for h in hits}) == len(hits)

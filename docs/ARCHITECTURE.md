@@ -482,13 +482,17 @@ backend/skills/<skill_id>/
 flowchart LR
     q[查询] --> rm["RetrievalManager（retrieval/manager.py）<br/>TTL 缓存 → 熔断 → 查询改写（LLM）"]
     rm --> kb["KnowledgeBase（retrieval/knowledge_base.py）<br/>ChromaDB 集合 kb_{向量模型}"]
-    kb --> score["混合打分：向量相似度 + 字面覆盖"]
-    score --> rr["LLM 重排（可选）"]
-    rr --> out[片段 + 来源]
+    kb --> score["混合打分：向量相似度 + 字面覆盖<br/>同一文档只留一块"]
+    score --> rr["重排：bge-reranker API（retrieval/rerank.py）<br/>失败退回混合分"]
+    rr --> th["阈值：重排分 ≥ 0.1（未重排时混合分 ≥ 0.4）"]
+    th --> out[片段 + 来源]
     rm -.故障.-> fb[降级结果：“知识库暂时不可用”]
 ```
 
-- **两条入口**：门控 `prefetch` 时在意图识别的同时做纯向量召回（不改写、不重排），用来压延迟；模型主动调用 `search_knowledge_base` 时走完整链路。
+- **两条入口**：门控 `prefetch` 时在意图识别的同时做向量召回 + 重排（不改写），重排的几百毫秒被意图识别藏住；模型主动调用 `search_knowledge_base` 时再加上 LLM 查询改写。
+- **重排**（`retrieval/rerank.py`）：调硅基流动的 `/rerank`（`BAAI/bge-reranker-v2-m3`，和向量 API 共用密钥），候选取前 8 篇文档，给“问题-片段”打 0–1 分。接口超时（1.5 秒）、出错或熔断（连续 3 次失败，60 秒后探测）时退回混合分排序，结果里 `reranked=false`。环境变量：`GOEUROOPS_RERANK=off` 关闭，`GOEUROOPS_RERANK_MODEL`、`GOEUROOPS_RERANK_MIN_SCORE`（默认 0.1）、`GOEUROOPS_RERANK_TIMEOUT`。
+- **阈值看分数来源**（`passes_threshold`）：重排过的看重排分（默认 0.1），没重排的看混合分（`GOEUROOPS_RAG_PREFETCH_MIN_SCORE`，默认 0.4）。两种分数刻度不同，不能共用一个阈值。0.1 是按检索评测集的逐条分数选的：0.2 能把无答案误注入压到 7.7%，但正确文档的注入率从 82.8% 降到 77.4%；漏注入时模型还能自己检索，所以取 0.1。
+- **追问补全**（`core/rag_gate.py` 的 `retrieval_query`）：当前这句不超过 12 字、并且以“那/这个/还有”开头或以“呢”结尾时，把上一轮用户的话拼在前面再检索（规则，不调模型，因为预取和意图识别并行）。深查链路把上一轮用户的话交给查询改写，重排也按补全后的问题打分。
 - **降级结果不当证据**：知识库超时、出错或熔断时，两条入口都把降级条目滤掉。预取得到空结果；检索工具返回 `success=false` 和“知识库暂时不可用”，由模型告诉用户稍后再问或请顾问确认。
 - **向量模型**（`retrieval/embeddings.py`）：本地默认 fastembed bge-small-zh（ONNX，约 90MB）；线上用向量 API（bge-large-zh），省内存。换模型时集合名跟着变，两个模型的数据不会混在一起。
 - **文档生命周期**（`KnowledgeBase._upsert_document`）：每篇文档有稳定的 `doc_id`（导入时可以指定，不指定就按“来源 + 标题”生成）和内容版本 `doc_version`。再导入同一篇文档时，内容没变就跳过（不重复向量化）；变了就**先写新版本，写成功后再删旧版本**，库里不会新旧并存，向量化中途失败也会保留旧版本。

@@ -398,6 +398,7 @@ def build_shared_rag_tools(tool_manager: Any, domain: Optional[str] = None) -> D
             query,
             top_k=top_k,
             domain=domain,
+            history=req.history,
         )
         if not getattr(result, "success", False):
             return {

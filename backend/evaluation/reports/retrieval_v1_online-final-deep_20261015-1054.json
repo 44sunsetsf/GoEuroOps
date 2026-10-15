@@ -1,0 +1,1448 @@
+{
+  "dataset": "retrieval_v1",
+  "label": "online-final-deep",
+  "run_at": "2026-10-15T10:54:06",
+  "embedding_model": "BAAI/bge-large-zh-v1.5",
+  "chunks": 45,
+  "gate": {
+    "top_k": 3,
+    "min_score": 0.4,
+    "min_rerank_score": 0.1
+  },
+  "reranker": "BAAI/bge-reranker-v2-m3",
+  "followup_completion": true,
+  "summary": {
+    "overall": {
+      "n": 93,
+      "hit@1": 0.914,
+      "hit@3": 0.9785,
+      "mrr": 0.9435,
+      "injected_hit": 0.8495,
+      "deep_hit@3": 0.8387
+    },
+    "by_tag": {
+      "colloquial": {
+        "n": 20,
+        "hit@1": 1.0,
+        "hit@3": 1.0,
+        "mrr": 1.0,
+        "injected_hit": 0.75,
+        "deep_hit@3": 0.75
+      },
+      "cross_domain": {
+        "n": 4,
+        "hit@1": 0.75,
+        "hit@3": 1.0,
+        "mrr": 0.875,
+        "injected_hit": 0.5,
+        "deep_hit@3": 0.5
+      },
+      "followup": {
+        "n": 6,
+        "hit@1": 0.8333,
+        "hit@3": 1.0,
+        "mrr": 0.8889,
+        "injected_hit": 1.0,
+        "deep_hit@3": 1.0
+      },
+      "normal": {
+        "n": 46,
+        "hit@1": 0.9565,
+        "hit@3": 1.0,
+        "mrr": 0.9746,
+        "injected_hit": 0.9348,
+        "deep_hit@3": 0.9348
+      },
+      "out_of_scope": {
+        "n": 3,
+        "hit@1": 0.0,
+        "hit@3": 0.3333,
+        "mrr": 0.25,
+        "injected_hit": 0.0,
+        "deep_hit@3": 0.0
+      },
+      "term": {
+        "n": 14,
+        "hit@1": 0.9286,
+        "hit@3": 1.0,
+        "mrr": 0.9524,
+        "injected_hit": 0.9286,
+        "deep_hit@3": 0.8571
+      }
+    },
+    "by_domain": {
+      "billing": {
+        "n": 16,
+        "hit@1": 0.875,
+        "hit@3": 1.0,
+        "mrr": 0.9375,
+        "injected_hit": 0.6875,
+        "deep_hit@3": 0.6875
+      },
+      "consulting": {
+        "n": 70,
+        "hit@1": 0.9286,
+        "hit@3": 0.9714,
+        "mrr": 0.9464,
+        "injected_hit": 0.8857,
+        "deep_hit@3": 0.8714
+      },
+      "general": {
+        "n": 7,
+        "hit@1": 0.8571,
+        "hit@3": 1.0,
+        "mrr": 0.9286,
+        "injected_hit": 0.8571,
+        "deep_hit@3": 0.8571
+      }
+    },
+    "no_answer": {
+      "n": 13,
+      "false_inject": 0.1538,
+      "deep_false_answer": 0.1538
+    },
+    "injected_chars_avg": 476,
+    "latency_ms_avg": 956.8
+  },
+  "rows": [
+    {
+      "id": "r001",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9989,
+      "top_hybrid": 0.5939,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r002",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9353,
+      "top_hybrid": 0.4912,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r003",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.9167,
+      "top_hybrid": 0.5743,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r004",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.8903,
+      "top_hybrid": 0.4414,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r005",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.6417,
+      "top_hybrid": 0.3769,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r006",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.9351,
+      "top_hybrid": 0.4301,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r007",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.9574,
+      "top_hybrid": 0.5004,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r008",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.8884,
+      "top_hybrid": 0.517,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r009",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9736,
+      "top_hybrid": 0.5013,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r010",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.8135,
+      "top_hybrid": 0.4306,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r011",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.8865,
+      "top_hybrid": 0.4566,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r012",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.7235,
+      "top_hybrid": 0.4463,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r013",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.9719,
+      "top_hybrid": 0.5669,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r014",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.5539,
+      "top_hybrid": 0.4985,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r015",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.8234,
+      "top_hybrid": 0.4097,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r016",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.1729,
+      "top_hybrid": 0.4577,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r017",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9899,
+      "top_hybrid": 0.5615,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r018",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.0177,
+      "top_hybrid": 0.1955,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r019",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.7396,
+      "top_hybrid": 0.3292,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r020",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9928,
+      "top_hybrid": 0.5979,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r021",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.6067,
+      "top_hybrid": 0.5017,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r022",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9715,
+      "top_hybrid": 0.5611,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r023",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.4083,
+      "top_hybrid": 0.5648,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r024",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.3462,
+      "top_hybrid": 0.4146,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r025",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.4023,
+      "top_hybrid": 0.4705,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r026",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.8099,
+      "top_hybrid": 0.4962,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r027",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.5877,
+      "top_hybrid": 0.5346,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r028",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9357,
+      "top_hybrid": 0.5163,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r029",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.143,
+      "top_hybrid": 0.5022,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r030",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9491,
+      "top_hybrid": 0.6142,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r031",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.2793,
+      "top_hybrid": 0.3652,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r032",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.0959,
+      "top_hybrid": 0.4101,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r033",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.0176,
+      "top_hybrid": 0.4107,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r034",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9896,
+      "top_hybrid": 0.3707,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r035",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.7778,
+      "top_hybrid": 0.392,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r036",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.834,
+      "top_hybrid": 0.4781,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r037",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9795,
+      "top_hybrid": 0.5017,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r038",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.0135,
+      "top_hybrid": 0.3813,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r039",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.0358,
+      "top_hybrid": 0.3029,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r040",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9918,
+      "top_hybrid": 0.5347,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r041",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9094,
+      "top_hybrid": 0.4101,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r042",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.3273,
+      "top_hybrid": 0.3914,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r043",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.8369,
+      "top_hybrid": 0.3818,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r044",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9912,
+      "top_hybrid": 0.457,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r045",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9968,
+      "top_hybrid": 0.5553,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r046",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.7628,
+      "top_hybrid": 0.3894,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r047",
+      "tags": [
+        "term"
+      ],
+      "top_score": 0.9809,
+      "top_hybrid": 0.4631,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r048",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.735,
+      "top_hybrid": 0.4297,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r049",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.6753,
+      "top_hybrid": 0.4484,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r050",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9953,
+      "top_hybrid": 0.575,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r051",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9947,
+      "top_hybrid": 0.5678,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r052",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9927,
+      "top_hybrid": 0.4234,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r053",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.5707,
+      "top_hybrid": 0.383,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r054",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.7884,
+      "top_hybrid": 0.484,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r055",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9493,
+      "top_hybrid": 0.6187,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r056",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9379,
+      "top_hybrid": 0.5964,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r057",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.9761,
+      "top_hybrid": 0.436,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r058",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9039,
+      "top_hybrid": 0.5224,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r059",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.5688,
+      "top_hybrid": 0.3443,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r060",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.7685,
+      "top_hybrid": 0.3928,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r061",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.2368,
+      "top_hybrid": 0.447,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r062",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9339,
+      "top_hybrid": 0.3654,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r063",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.0128,
+      "top_hybrid": 0.25,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r064",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.1739,
+      "top_hybrid": 0.432,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r065",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.1408,
+      "top_hybrid": 0.338,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r066",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.0579,
+      "top_hybrid": 0.2841,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r067",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.2197,
+      "top_hybrid": 0.4017,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r068",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.9403,
+      "top_hybrid": 0.4145,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r069",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9264,
+      "top_hybrid": 0.4244,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r070",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.8765,
+      "top_hybrid": 0.4645,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r071",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.3929,
+      "top_hybrid": 0.3716,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r072",
+      "tags": [
+        "colloquial"
+      ],
+      "top_score": 0.079,
+      "top_hybrid": 0.3903,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r073",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.6384,
+      "top_hybrid": 0.4235,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r074",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9664,
+      "top_hybrid": 0.408,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r075",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9846,
+      "top_hybrid": 0.6415,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r076",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9849,
+      "top_hybrid": 0.5204,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r077",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.9635,
+      "top_hybrid": 0.4568,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r078",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.1161,
+      "top_hybrid": 0.3329,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r079",
+      "tags": [
+        "out_of_scope"
+      ],
+      "top_score": 0.1602,
+      "top_hybrid": 0.32,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r080",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.3018,
+      "top_hybrid": 0.4042,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r081",
+      "tags": [
+        "normal"
+      ],
+      "top_score": 0.5272,
+      "top_hybrid": 0.3468,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r082",
+      "tags": [
+        "cross_domain"
+      ],
+      "top_score": 0.0078,
+      "top_hybrid": 0.3397,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r083",
+      "tags": [
+        "cross_domain"
+      ],
+      "top_score": 0.1367,
+      "top_hybrid": 0.4317,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r084",
+      "tags": [
+        "cross_domain"
+      ],
+      "top_score": 0.0664,
+      "top_hybrid": 0.3984,
+      "top_correct": true,
+      "hit": false
+    },
+    {
+      "id": "r085",
+      "tags": [
+        "cross_domain"
+      ],
+      "top_score": 0.8789,
+      "top_hybrid": 0.5138,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r086",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.9896,
+      "top_hybrid": 0.6229,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r087",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.2129,
+      "top_hybrid": 0.46,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r088",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.9925,
+      "top_hybrid": 0.5918,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r089",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.9698,
+      "top_hybrid": 0.578,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r090",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.9949,
+      "top_hybrid": 0.5767,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r091",
+      "tags": [
+        "followup"
+      ],
+      "top_score": 0.3651,
+      "top_hybrid": 0.3299,
+      "top_correct": true,
+      "hit": true
+    },
+    {
+      "id": "r092",
+      "tags": [
+        "out_of_scope"
+      ],
+      "top_score": 0.0352,
+      "top_hybrid": 0.3451,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r093",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0546,
+      "top_hybrid": 0.4954,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r094",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.4785,
+      "top_hybrid": 0.5005,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r095",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0004,
+      "top_hybrid": 0.265,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r096",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0004,
+      "top_hybrid": 0.3262,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r097",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.001,
+      "top_hybrid": 0.2501,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r098",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0,
+      "top_hybrid": 0.1752,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r099",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0002,
+      "top_hybrid": 0.1859,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r100",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0028,
+      "top_hybrid": 0.3595,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r101",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.1862,
+      "top_hybrid": 0.3638,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r102",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0005,
+      "top_hybrid": 0.3753,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r103",
+      "tags": [
+        "out_of_scope"
+      ],
+      "top_score": 0.0165,
+      "top_hybrid": 0.3935,
+      "top_correct": false,
+      "hit": false
+    },
+    {
+      "id": "r104",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0028,
+      "top_hybrid": 0.2761,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r105",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0001,
+      "top_hybrid": 0.2539,
+      "top_correct": false,
+      "hit": true
+    },
+    {
+      "id": "r106",
+      "tags": [
+        "no_answer"
+      ],
+      "top_score": 0.0492,
+      "top_hybrid": 0.4489,
+      "top_correct": false,
+      "hit": true
+    }
+  ],
+  "misses": [
+    {
+      "id": "r018",
+      "query": "Studielink 是干什么的",
+      "expected": [
+        "荷兰（Netherlands）"
+      ],
+      "ranked": [
+        "荷兰（Netherlands）CS 硕士申请概览",
+        "服务介绍：单次选校咨询（¥699 / 次（60 分钟））",
+        "服务介绍：全程陪跑（¥11,800 / 套）"
+      ],
+      "injected": [],
+      "top_score": 0.0177,
+      "tags": [
+        "term"
+      ]
+    },
+    {
+      "id": "r032",
+      "query": "课程描述是什么，哪些国家要",
+      "expected": [
+        "CS 硕士申请材料清单"
+      ],
+      "ranked": [
+        "CS 硕士申请材料清单与准备建议",
+        "德国 APS 审核与 uni-assist 申请说明",
+        "瑞典（Sweden）CS 硕士申请概览"
+      ],
+      "injected": [],
+      "top_score": 0.0959,
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "id": "r033",
+      "query": "还没毕业能申请吗，毕业证怎么办",
+      "expected": [
+        "CS 硕士申请材料清单"
+      ],
+      "ranked": [
+        "CS 硕士申请材料清单与准备建议",
+        "服务介绍：网申材料审核（¥499 / 所学校）",
+        "德国 APS 审核与 uni-assist 申请说明"
+      ],
+      "injected": [],
+      "top_score": 0.0176,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r038",
+      "query": "什么时候开始写文书比较合适",
+      "expected": [
+        "2027 年秋季入学申请时间线"
+      ],
+      "ranked": [
+        "2027 年秋季入学申请时间线（五国通用参考）",
+        "服务介绍：文书套餐 · 5 个项目（¥8,499 / 套）",
+        "服务介绍：文书套餐 · 3 个项目（¥5,999 / 套）"
+      ],
+      "injected": [],
+      "top_score": 0.0135,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r039",
+      "query": "你们都提供哪些服务",
+      "expected": [
+        "套餐对比与怎么选",
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "服务介绍：PS/动机信单篇辅导（¥2,499 / 篇）",
+        "服务介绍：全程陪跑（¥11,800 / 套）",
+        "套餐对比与怎么选"
+      ],
+      "injected": [],
+      "top_score": 0.0358,
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "id": "r063",
+      "query": "能不能再给我便宜一点",
+      "expected": [
+        "优惠规则"
+      ],
+      "ranked": [
+        "优惠规则（早鸟、团报、老带新）",
+        "服务介绍：PS/动机信单篇辅导（¥2,499 / 篇）",
+        "服务介绍：学术简历（CV）优化（¥899 / 份）"
+      ],
+      "injected": [],
+      "top_score": 0.0128,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r065",
+      "query": "可以用支付宝付吗",
+      "expected": [
+        "付款方式与定金规则"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "付款方式与定金规则",
+        "退款政策"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）"
+      ],
+      "top_score": 0.1408,
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "id": "r066",
+      "query": "报价能保留多久",
+      "expected": [
+        "付款方式与定金规则"
+      ],
+      "ranked": [
+        "付款方式与定金规则",
+        "退款政策",
+        "优惠规则（早鸟、团报、老带新）"
+      ],
+      "injected": [],
+      "top_score": 0.0579,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r072",
+      "query": "单次咨询临时去不了怎么办",
+      "expected": [
+        "退款政策"
+      ],
+      "ranked": [
+        "退款政策",
+        "付款方式与定金规则",
+        "常见问题（关于指北工作室）"
+      ],
+      "injected": [],
+      "top_score": 0.079,
+      "tags": [
+        "colloquial"
+      ]
+    },
+    {
+      "id": "r079",
+      "query": "你们做本科申请吗",
+      "expected": [
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "关于指北：工作室介绍",
+        "优惠规则（早鸟、团报、老带新）"
+      ],
+      "injected": [
+        "常见问题（关于指北工作室）"
+      ],
+      "top_score": 0.1602,
+      "tags": [
+        "out_of_scope"
+      ]
+    },
+    {
+      "id": "r082",
+      "query": "德国申请要交多少钱的定金",
+      "expected": [
+        "付款方式与定金规则"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "付款方式与定金规则",
+        "优惠规则（早鸟、团报、老带新）"
+      ],
+      "injected": [],
+      "top_score": 0.0078,
+      "tags": [
+        "cross_domain"
+      ]
+    },
+    {
+      "id": "r084",
+      "query": "全程陪跑交了定金能退吗",
+      "expected": [
+        "退款政策"
+      ],
+      "ranked": [
+        "退款政策",
+        "优惠规则（早鸟、团报、老带新）",
+        "付款方式与定金规则"
+      ],
+      "injected": [],
+      "top_score": 0.0664,
+      "tags": [
+        "cross_domain"
+      ]
+    },
+    {
+      "id": "r092",
+      "query": "日本留学你们做吗",
+      "expected": [
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "服务介绍：单次选校咨询（¥699 / 次（60 分钟））",
+        "服务介绍：免费初步沟通（免费）"
+      ],
+      "injected": [],
+      "top_score": 0.0352,
+      "tags": [
+        "out_of_scope"
+      ]
+    },
+    {
+      "id": "r094",
+      "query": "美国 CS PhD 需要几封推荐信",
+      "expected": [],
+      "ranked": [
+        "CS 硕士申请材料清单与准备建议",
+        "服务介绍：文书套餐 · 5 个项目（¥8,499 / 套）",
+        "服务介绍：文书套餐 · 3 个项目（¥5,999 / 套）"
+      ],
+      "injected": [
+        "CS 硕士申请材料清单与准备建议"
+      ],
+      "top_score": 0.4785,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r101",
+      "query": "出国退税怎么办理",
+      "expected": [],
+      "ranked": [
+        "发票说明",
+        "退款政策",
+        "付款方式与定金规则"
+      ],
+      "injected": [
+        "发票说明"
+      ],
+      "top_score": 0.1862,
+      "tags": [
+        "no_answer"
+      ]
+    },
+    {
+      "id": "r103",
+      "query": "MBA 申请你们接吗",
+      "expected": [
+        "关于指北：工作室介绍"
+      ],
+      "ranked": [
+        "常见问题（关于指北工作室）",
+        "服务介绍：选校定位全案（¥2,999 / 套）",
+        "服务介绍：全程陪跑（¥11,800 / 套）"
+      ],
+      "injected": [],
+      "top_score": 0.0165,
+      "tags": [
+        "out_of_scope"
+      ]
+    }
+  ]
+}

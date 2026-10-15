@@ -225,6 +225,7 @@ class KnowledgeBase:
                 vector_score = 1.0 - dist  # cosine 空间下即余弦相似度
                 lexical = _lexical_coverage(query, doc)
                 items.append({
+                    "doc_id":   meta.get("doc_id", title),
                     "title":    title,
                     "content":  doc[len(prefix):] if title and doc.startswith(prefix) else doc,
                     "score":    round(VECTOR_WEIGHT * vector_score + LEXICAL_WEIGHT * lexical, 4),
@@ -235,7 +236,11 @@ class KnowledgeBase:
                 })
 
         items.sort(key=lambda item: item["score"], reverse=True)
-        return items[:top_k]
+        # 同一篇文档的多个块只保留得分最高的一个，不重复占 Top-K
+        best: Dict[str, Dict[str, Any]] = {}
+        for item in items:
+            best.setdefault(item["doc_id"], item)
+        return list(best.values())[:top_k]
 
     async def search_async(self, query: str, top_k: int = 5, domain: Optional[str] = None) -> List[Dict[str, Any]]:
         """异步检索；ChromaDB 客户端为同步实现，因此放入线程池执行。"""

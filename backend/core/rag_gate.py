@@ -20,11 +20,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 from core.config import env_float, env_int
+from retrieval.rerank import HYBRID_MIN_SCORE, RERANK_MIN_SCORE, passes_threshold
 
 logger = logging.getLogger(__name__)
 
@@ -103,13 +105,15 @@ class RagGate:
         min_confidence: Optional[float] = None,
         top_k: Optional[int] = None,
         min_score: Optional[float] = None,
+        min_rerank_score: Optional[float] = None,
         enabled: Optional[bool] = None,
     ):
         self._search_fn = search_fn
         self.min_confidence = min_confidence if min_confidence is not None else env_float("GOEUROOPS_RAG_GATE_MIN_CONF", 0.6)
         self.top_k = top_k if top_k is not None else env_int("GOEUROOPS_RAG_PREFETCH_TOP_K", 3)
-        # 混合检索分数下限（向量 0.75 + 字面覆盖 0.25），低于它的片段不注入
-        self.min_score = min_score if min_score is not None else env_float("GOEUROOPS_RAG_PREFETCH_MIN_SCORE", 0.4)
+        # 分数下限，低于它的片段不注入：重排过的看重排分数，重排不可用时看混合分（向量 0.75 + 字面覆盖 0.25）
+        self.min_score = min_score if min_score is not None else HYBRID_MIN_SCORE
+        self.min_rerank_score = min_rerank_score if min_rerank_score is not None else RERANK_MIN_SCORE
         if enabled is None:
             enabled = os.getenv("GOEUROOPS_RAG_GATE_ENABLED", "true").lower() not in {"0", "false", "no", "off"}
         self.enabled = enabled
@@ -180,7 +184,7 @@ class RagGate:
         cancel_speculative({k: v for k, v in (speculative or {}).items() if k != domain})
         decision.wait_ms = (time.monotonic() - t0) * 1000
 
-        kept = [item for item in items if float(item.get("score", 0) or 0) >= self.min_score]
+        kept = [item for item in items if passes_threshold(item, self.min_rerank_score, self.min_score)]
         decision.dropped_low_score = len(items) - len(kept)
         decision.items = kept[: self.top_k]
         if not decision.items:
@@ -204,6 +208,26 @@ class RagGate:
         for idx, item in enumerate(items, start=1):
             lines.append(f"[{idx}] 《{item.get('title', '未命名')}》\n{item.get('content', '')}")
         return "\n\n".join(lines)
+
+
+_FOLLOWUP = re.compile(r"^(那么?|还有|这个|那个|它)|呢[？?]?\s*$")
+FOLLOWUP_MAX_CHARS = 12
+
+
+def retrieval_query(message: str, history: Optional[List[Dict[str, str]]] = None) -> str:
+    """预取用的检索查询：很短的追问（“那德国呢”“这个多少钱”）拼上上一轮用户的话，否则就是原话。
+
+    预取和意图识别并行，不能等大模型改写，所以只用规则；只处理明显省略了主语的短句，
+    避免把上一轮的话题带进一个已经换了话题的新问题。
+    """
+    msg = (message or "").strip()
+    if len(msg) > FOLLOWUP_MAX_CHARS or not _FOLLOWUP.search(msg):
+        return msg
+    for turn in reversed(history or []):
+        prev = str(turn.get("content", "")).strip()
+        if turn.get("role") == "user" and prev and prev != msg:
+            return f"{prev} {msg}"
+    return msg
 
 
 def cancel_speculative(speculative: Optional[Dict[str, "asyncio.Task[Any]"]]) -> None:
