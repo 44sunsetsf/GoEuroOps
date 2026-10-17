@@ -37,7 +37,6 @@
 
     <div v-if="error" class="inline-error">
       {{ error }}
-      <span v-if="error.includes('401')">{{ t('请在「对话」页右侧的连接配置里填写 Admin Token。') }}</span>
     </div>
 
     <div v-if="leads.length" class="lead-list">

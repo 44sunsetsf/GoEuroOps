@@ -166,10 +166,6 @@
                 <span>{{ t('会话 ID') }}</span>
                 <input v-model="settings.conversationId" @change="persist" :placeholder="t('自动生成')" />
               </label>
-              <label>
-                <span>{{ t('Admin Token（线索面板）') }}</span>
-                <input v-model="settings.adminToken" type="password" @change="persist" :placeholder="t('未设置 GOEUROOPS_ADMIN_TOKEN 时留空')" />
-              </label>
               <div class="side-actions">
                 <button @click="checkHealth">{{ t('检查连接') }}</button>
                 <button class="quiet-button" @click="refreshConsole">{{ t('刷新') }}</button>
