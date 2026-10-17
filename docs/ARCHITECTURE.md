@@ -357,7 +357,7 @@ assistant: …（助手回复截到 300 字）
 
 - **降级**：Redis 读写超时 1 秒，失败就按“没有记忆”继续；笔记检索最多等 5 秒，向量查询报错时在这位用户的笔记里精确计算距离。任何失败都不影响回答。
 - **证件号**：身份证号、护照号在写入任何一层之前就换成 `[证件号已隐去]`。
-- **顾问接口**（需要后台口令或 `X-Admin-Token`，访客 403）：
+- **顾问接口**（线上靠 Caddy basic auth 保护，访客 403）：
 
 | 接口 | 作用 |
 |---|---|
@@ -566,7 +566,7 @@ flowchart LR
 
 ## 15. 接口清单
 
-网关路径前缀是 `/api`，下表省略。设置 `GOEUROOPS_ADMIN_TOKEN` 后，管理类接口需要请求头 `X-Admin-Token`；线上还有 Caddy basic auth（第 17 节）。
+网关路径前缀是 `/api`，下表省略。管理类接口没有应用层口令，线上靠 Caddy basic auth（第 17 节）保护。
 
 | 分类 | 接口 | 说明 | 访客可写 |
 |---|---|---|---|
@@ -696,7 +696,7 @@ flowchart LR
 | 加一个工具 | `tooling/schemas.py` 入参（和金额类的返回值）模型 → `agents/tools.py` 处理函数和 `AgentToolSpec`（声明超时、副作用、熔断）→ `roles.py` 的 `tool_scope` | 写入类工具要考虑幂等和降级；涉及金额的一定要有返回值不变量；单元测试 |
 | 加一个 Agent 角色 | `agents/base.py::AgentType`、`roles.py` 新类（提示词、契约、工具、转交条件）、`agent_orchestrator.py` 注册、`routing.py` 映射、`core/skill_loader.py::VALID_AGENTS` | 评测用例覆盖新角色 |
 | 加或改一个 Skill | `backend/skills/<id>/`（按 `skills/README.md`） | 必须带 `evals/cases.json`；`GET /skills/evals` 全过 |
-| 加一个后台写接口 | `api/routes/<模块>.py`，在 `api/main.py` 注册；需要鉴权时用 `leads._require_admin` | 访客默认 403，确实要开放才加进 `GUEST_WRITE_ALLOWED`；涉及个人信息的给访客打码 |
+| 加一个后台写接口 | `api/routes/<模块>.py`，在 `api/main.py` 注册；鉴权靠 Caddy basic auth 和访客拦截（`demo_guard`） | 访客默认 403，确实要开放才加进 `GUEST_WRITE_ALLOWED`；涉及个人信息的给访客打码 |
 | 加一个新的模型调用 | 用 `make_client(…, source)` | 新来源会出现在用量统计里，花费上限自动覆盖 |
 | 改前端文案 | 对应 `.vue` + `lib/en.js` | CI 构建通过 |
 | 改部署 | `deploy/`（Caddyfile、prod compose、deploy.sh） | CI 会检查语法；先在本地 compose 验证 |
@@ -707,7 +707,7 @@ flowchart LR
 完整的差距评估和计划见 [ROADMAP-commercial.md](ROADMAP-commercial.md)。和架构相关的主要几条：
 
 - **单机、单进程**：编排器的统计、trace、记忆的后台整理和空闲计时器都在进程内，不能直接横向扩成多副本。要扩容时，这些状态得先移到 Redis 或独立的任务队列。
-- **鉴权是演示级别**：站长靠 Caddy basic auth 和可选的 `X-Admin-Token`，没有顾问账号体系，CORS 是 `*`。
+- **鉴权是演示级别**：站长靠 Caddy basic auth，没有顾问账号体系，CORS 是 `*`。
 - **价目和五国资料是草案**，需要创始人逐条核实。
 - **评测只隔离了编排器**：线索写进内存，但知识库、检索缓存和熔断器跟线上共用，评测期间检索出问题会影响线上；评测仍是同步接口，用例多了要等。
 - **分歧检测阈值 0.8 是按 bge-small 校准的**。线上的 bge-large 在 0.8 以上精确率 96.2%（26 条），和边界规则加入后大模型的 96% 左右相当，样本太少不足以支持改阈值；分歧检测在线上配置下仍是 0 次触发。

@@ -39,7 +39,7 @@ python -m pytest -q
 |---|---|---|
 | 对话 | `POST /chat`、`POST /chat/stream` | 一次性返回 / SSE 流式；响应带 `skills_applied`、`rag_gate`、工具调用 |
 | 业务 | `GET /catalog` | 服务价目、优惠、付款退款政策、五国资料 |
-| 线索 | `GET /leads`、`PATCH /leads/{id}` | 咨询线索和转顾问交接单；设置 `GOEUROOPS_ADMIN_TOKEN` 后需要 `X-Admin-Token` |
+| 线索 | `GET /leads`、`PATCH /leads/{id}` | 咨询线索和转顾问交接单 |
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload` | 查看、热加载 |
 | | `POST /skills/match`、`GET /skills/evals` | 命中测试（得分明细）、跑命中回归用例 |
 | 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/stats` | 检索（改写 → 召回 → 重排）、导入、统计 |
@@ -140,7 +140,6 @@ claude mcp add goeuroops-studio -- python /绝对路径/backend/mcp_server.py
 | `GOEUROOPS_RAG_PREFETCH_TOP_K` | 3 | 预取片段数 |
 | `GOEUROOPS_RAG_PREFETCH_MIN_SCORE` | 0.4 | 预取片段的混合分数下限 |
 | `GOEUROOPS_EMBEDDING_MODEL` | BAAI/bge-small-zh-v1.5 | 知识库向量模型；`default` 使用 ChromaDB 默认英文模型 |
-| `GOEUROOPS_ADMIN_TOKEN` | 空 | 设置后线索接口需要 `X-Admin-Token` |
 | `GOEUROOPS_EVAL_DIM_THRESHOLD` | 0.75 | 评测建议的单维度阈值 |
 | `GOEUROOPS_AMOUNT_GUARD` | enforce | 金额护栏：`enforce` 替换没有依据的金额 / `warn` 只记录 / `off` |
 

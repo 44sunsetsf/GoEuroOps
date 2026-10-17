@@ -1,11 +1,8 @@
-"""线索与转顾问交接单接口（设置了 GOEUROOPS_ADMIN_TOKEN 时需要 X-Admin-Token）。"""
+"""线索与转顾问交接单接口。"""
 import logging
-import os
-import secrets
 from typing import Optional
 
-
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import HTTPException, Request
 
 from api.demo_guard import (
     is_guest, mask_pii,
@@ -19,14 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _require_admin(x_admin_token: Optional[str] = Header(default=None)) -> None:
-    """设置了 GOEUROOPS_ADMIN_TOKEN 时，线索接口必须带 X-Admin-Token。"""
-    expected = os.getenv("GOEUROOPS_ADMIN_TOKEN", "").strip()
-    if expected and not secrets.compare_digest(x_admin_token or "", expected):
-        raise HTTPException(401, "需要有效的 X-Admin-Token")
-
-
-@router.get("/leads", tags=["线索"], dependencies=[Depends(_require_admin)])
+@router.get("/leads", tags=["线索"])
 async def list_leads(request: Request, status: Optional[str] = None, type: Optional[str] = None, limit: int = 100):
     """咨询线索与转顾问交接单列表（按时间倒序）。演示访客看到的联系方式是打码的。"""
     if services.lead_store is None:
@@ -37,7 +27,7 @@ async def list_leads(request: Request, status: Optional[str] = None, type: Optio
     return {"items": items, "stats": await services.lead_store.stats()}
 
 
-@router.patch("/leads/{lead_id}", tags=["线索"], dependencies=[Depends(_require_admin)])
+@router.patch("/leads/{lead_id}", tags=["线索"])
 async def update_lead(lead_id: str, body: LeadUpdateInput):
     """更新线索状态（new / contacted / converted / closed）和跟进备注。"""
     if services.lead_store is None:

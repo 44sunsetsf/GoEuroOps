@@ -7,8 +7,7 @@ export function createInitialSettings() {
   return {
     userId: saved.userId || 'u1001',
     conversationId: saved.conversationId || '',
-    apiUrl: saved.apiUrl || DEFAULT_BASE_URL,
-    adminToken: saved.adminToken || ''
+    apiUrl: saved.apiUrl || DEFAULT_BASE_URL
   }
 }
 
@@ -65,13 +64,11 @@ export async function requestLeads(settings, { status = '', type = '' } = {}) {
   if (status) params.set('status', status)
   if (type) params.set('type', type)
   const query = params.toString() ? `?${params}` : ''
-  return requestJson(backendMeta(settings).baseUrl, `/leads${query}`, { headers: adminHeaders(settings) })
+  return requestJson(backendMeta(settings).baseUrl, `/leads${query}`)
 }
 
 export async function updateLead(settings, leadId, patch) {
-  const request = jsonRequest('PATCH', patch)
-  request.headers = { ...request.headers, ...adminHeaders(settings) }
-  return requestJson(backendMeta(settings).baseUrl, `/leads/${encodeURIComponent(leadId)}`, request)
+  return requestJson(backendMeta(settings).baseUrl, `/leads/${encodeURIComponent(leadId)}`, jsonRequest('PATCH', patch))
 }
 
 export async function requestKnowledgeStats(settings) {
@@ -228,10 +225,6 @@ function jsonRequest(method, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body ?? {})
   }
-}
-
-function adminHeaders(settings) {
-  return settings.adminToken ? { 'X-Admin-Token': settings.adminToken } : {}
 }
 
 async function requestJson(baseUrl, path, options = {}) {
