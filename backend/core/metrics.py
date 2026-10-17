@@ -25,6 +25,12 @@ LEAD_NOTIFY = Counter(
     ["type", "outcome"],   # ok / error / circuit_open
 )
 
+INTENT_CACHE = Counter(
+    "goeuroops_intent_cache_total",
+    "意图识别缓存：命中 / 未命中 / 大模型失败没缓存",
+    ["result", "turn"],    # result: hit / miss / skipped_degraded；turn: first（开场第一句）/ later
+)
+
 TOOL_CALLS = Counter(
     "goeuroops_tool_calls_total",
     "Agent 工具调用次数",

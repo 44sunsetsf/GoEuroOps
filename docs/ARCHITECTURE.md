@@ -226,7 +226,7 @@ flowchart TD
 
     subgraph fuse["三路融合意图识别（core/intent_recognizer.py）"]
         llm["LLM few-shot（权重 0.7）"]
-        vec["本地字符 n-gram 向量（0.2）"]
+        vec["bge 向量和模板句比相似度（0.2）<br/>线上 bge-large-zh（API），本地 bge-small-zh，都不可用退回字符 n-gram"]
         kw["关键词（0.1）"]
     end
     fuse --> res["intent / intent_group / urgency / 置信度 / 实体"]
@@ -250,6 +250,9 @@ flowchart TD
 - **意图体系**在 `core/intent_categories.py`，共 19 个值，包括通用大类（query、request、complaint 等）和细粒度业务意图（study_consult、service_inquiry、refund、data_privacy 等），细粒度优先。
 - **意图到 Agent 的映射**在 `agents/routing.py` 的 `_GENERAL_INTENTS`、`_CONSULTING_INTENTS`、`_BILLING_INTENTS` 三个集合里。
 - **领域关键词**集中在 `business/domain_terms.py`，意图识别和路由共用。
+- **提示词**：19 类名单、18 类各一条模板示例（other 没有）、9 个细分意图的一句话判定、**容易混淆的边界规则**（`_BOUNDARY_RULES`，和 `evaluation/datasets/LABELING.md` 一致：问工作室本身 vs 问服务、找真人 vs 找负责人、问“有没有人在线/是不是机器人”不算转人工等）和 10 条边界对比例句（`_BOUNDARY_EXAMPLES`，评测脚本检查它们不和测试样本重复），再加最近 3 轮对话。
+- **缓存**：进程内，键是“统一写法后的全文 + 最近 3 轮”的哈希（全角转半角、合并空白、去句末标点、小写；发给大模型的仍是原话），满 1000 条整批淘汰最早的 500 条。**大模型那一路失败时的降级结果不缓存**。命中情况看 `GET /intent/stats` 和 `goeuroops_intent_cache_total{result,turn}`（`turn` 分开场第一句和后续轮次）。
+- **基准**（`evaluation/intent_benchmark.py`）：每类按文本哈希固定分成调试集和留出集各 10 条（`--split dev|holdout`），改提示词只看调试集错例，效果只认留出集；报告另算误转人工率和漏转人工率。线上配置（deepseek-v4-flash + bge-large API）在留出集上：边界规则加入前 90.0%，加入后 96.3%–96.8%，误转人工 3 条 → 0 条，漏转人工 1 条（“有真人吗”），分歧检测触发 0 次；大模型失败时的降级准确率 69.5%–69.7%（bge-small 是 59.2%）。
 - **在线降权**：`monitor/` 每 10 秒把各 Agent **最近 5 分钟**（最多 50 次、至少 5 次）的成功率和首字耗时折算成惩罚写回编排器（`update_routing_penalties`）。同类有多个实例时选表现好的；每类只有一个实例，所以咨询或费用 Agent 的惩罚达到 0.5（`GOEUROOPS_MONITOR_FALLBACK_PENALTY`）时，Router 把这一类从本次路由里拿掉，问题交给 GeneralAgent，`routing_reason` 记 `monitor_fallback=[...]`。只靠延迟最多罚 0.4，单纯变慢不会触发；成功率掉到 65% 以下才会。被排除后没有新样本，窗口清空后惩罚归零，自动重新接流量。
 - **执行失败回退**：专属 Agent 这一次失败时改由 GeneralAgent 回答，两次尝试的工具轨迹都保留，中间插一条 `agent_fallback`。如果失败前已经流出半段文字，SSE 先发 `reset`，前端清掉再接新回答。
 
@@ -574,7 +577,7 @@ flowchart LR
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload`、`POST /skills/match`、`GET /skills/evals` | 查看、热加载、命中测试、跑回归用例 | 仅 match |
 | 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/documents`、`DELETE /knowledge/documents/{doc_id}`、`GET /knowledge/stats` | 检索、导入（同一文档再导入即替换）、按文档列出和删除、统计 | 仅 search |
 | 评测 | `POST /eval/run` | 意图、Skill 路由、五维质量、工具调用、门控对照 | ✓（每天限次，只跑内置用例） |
-| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /trace/tools`、`GET /tools/stats`、`GET /metrics` | 在线指标、单次请求明细、Prometheus | — |
+| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /trace/tools`、`GET /tools/stats`、`GET /intent/stats`、`GET /metrics` | 在线指标、单次请求明细、Prometheus | — |
 | 系统 | `GET /session`、`GET /health` | 当前身份（guest / owner）、健康检查 | — |
 
 **新增写接口默认只对站长开放**：访客能调用的写接口是白名单（`api/demo_guard.py::GUEST_WRITE_ALLOWED`），不在名单里的一律 403。
@@ -637,7 +640,7 @@ flowchart TD
 | 工具 | 测什么 | 怎么跑 |
 |---|---|---|
 | `evaluator.py` | 意图准确率、Skill 路由准确率、五维 LLM-as-Judge（按场景的期望行为校准，含边界合规）、工具调用检查、门控 A/B、与基线对比 | 后台「评测」或 `POST /eval/run` |
-| `intent_benchmark.py` | 意图识别基准 | `python -m evaluation.intent_benchmark` |
+| `intent_benchmark.py` | 意图识别基准：380 条，调试集 / 留出集各半，准确率、Macro-F1、领域准确率、误转人工 / 漏转人工、消融 | `python -m evaluation.intent_benchmark --split holdout` |
 | `retrieval_benchmark.py` | 知识库检索：106 条（含多轮追问、知识库里没有答案的问题），文档级 Hit@1/Hit@3/MRR、注入命中率、无答案误注入率 | `python -m evaluation.retrieval_benchmark [--deep]` |
 | `tool_benchmark.py` | 工具选择：39 条，走完整链路，统计完全正确率、必调召回、多调、误调禁用工具、平均调用次数（标注规则见 `datasets/LABELING.md`） | `python -m evaluation.tool_benchmark` |
 | `memory_benchmark.py`、`locomo_benchmark.py` | 记忆：自建 48 题 + LoCoMo（见 8.5） | 见 8.5 |
@@ -707,4 +710,4 @@ flowchart LR
 - **鉴权是演示级别**：站长靠 Caddy basic auth 和可选的 `X-Admin-Token`，没有顾问账号体系，CORS 是 `*`。
 - **价目和五国资料是草案**，需要创始人逐条核实。
 - **评测只隔离了编排器**：线索写进内存，但知识库、检索缓存和熔断器跟线上共用，评测期间检索出问题会影响线上；评测仍是同步接口，用例多了要等。
-- **意图基准是用本地 bge-small-zh 测的**，线上换成向量 API 之后需要重测。
+- **分歧检测阈值 0.8 是按 bge-small 校准的**。线上的 bge-large 在 0.8 以上精确率 96.2%（26 条），和边界规则加入后大模型的 96% 左右相当，样本太少不足以支持改阈值；分歧检测在线上配置下仍是 0 次触发。

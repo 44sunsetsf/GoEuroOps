@@ -80,6 +80,15 @@ async def tool_stats():
     return {"tools": get_gateway().stats()}
 
 
+@router.get("/intent/stats")
+async def intent_stats():
+    """意图识别缓存：条数、命中、未命中、命中率、大模型失败没缓存的次数（进程内，重启清零；
+    分开场第一句和后续轮次的累计看 Prometheus 的 goeuroops_intent_cache_total）。"""
+    if services.orchestrator is None:
+        raise HTTPException(503, "服务未就绪")
+    return {"cache": services.orchestrator.intent_cache_stats()}
+
+
 @router.get("/metrics")
 async def prometheus_metrics():
     """Prometheus 指标入口。"""

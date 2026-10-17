@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -50,6 +51,30 @@ class IntentResult:
 
 
 # ── Few-shot 模板（同时用于 LLM 示例和 Embedding 匹配）────────────────────────
+# 提示词里的边界对比例句（消息, 意图）。评测脚本会检查它们不和测试样本重复
+_BOUNDARY_EXAMPLES: List[tuple] = [
+    ("你们团队一共几个顾问", IntentCategory.QUERY),
+    ("选校全案包括几次会议", IntentCategory.SERVICE_INQUIRY),
+    ("你是机器人吧", IntentCategory.QUERY),
+    ("我想跟真人顾问聊聊", IntentCategory.HUMAN_HANDOFF),
+    ("这事客服处理不了，我要见你们老板", IntentCategory.ESCALATION),
+    ("请给我一份书面的正式回复", IntentCategory.ESCALATION),
+    ("又拖了一周，真的很失望", IntentCategory.COMPLAINT),
+    ("能刷信用卡吗", IntentCategory.BILLING),
+    ("你们做韩国留学吗", IntentCategory.OTHER),
+    ("麻烦把咨询时的录音发我", IntentCategory.REQUEST),
+]
+
+# 容易混淆的边界（和 evaluation/datasets/LABELING.md 的标注规则一致）
+_BOUNDARY_RULES = """容易混淆的边界：
+- 问工作室本身（团队、人数、资质、地点、沟通方式、和别家的区别）→ query；问服务内容、价格、优惠 → service_inquiry。
+- 只想和真人顾问说话 → human_handoff；要找负责人/老板/主管/创始人、要正式书面答复、要上报 → escalation。
+- 问“有没有人在线”“你是不是机器人” → greeting 或 query，不是 human_handoff；只有明确要求转人工、找真人才算。
+- 表达不满但没要求找负责人 → complaint。
+- 付款方式等泛泛的费用问题 → billing；要退钱 → refund；付款失败、多付、未到账 → payment_issue。
+- 请工作室做某件事、且不属于任何细分业务（发文件、开证明）→ request。
+- 工作室不提供的服务（非五国、非 CS、MBA 等）→ other。"""
+
 _TEMPLATES: Dict[IntentCategory, List[str]] = {
     IntentCategory.QUERY:      ["你们工作室在哪里？", "你们是做什么的？", "顾问都是什么背景？"],
     IntentCategory.COMPLAINT:  ["文书返回太慢了！", "说好的时间又拖了", "消息一直没人回"],
@@ -138,6 +163,28 @@ _URGENCY_KEYWORDS = {
 _cosine = cosine
 
 
+def _count_cache(result: str, turn: str) -> None:
+    try:
+        from core.metrics import INTENT_CACHE
+        INTENT_CACHE.labels(result=result, turn=turn).inc()
+    except Exception:  # noqa: BLE001 — 指标失败不影响识别
+        logger.debug("意图缓存指标记录失败", exc_info=True)
+
+
+_TRAILING_PUNCT = "。.！!？?～~…，,、 "
+
+
+def normalize_text(value: Any) -> str:
+    """统一写法，只用于缓存键和关键词匹配，不改发给大模型的原话。
+
+    全角转半角（ＡＰＳ → APS，１０００ → 1000）、合并空白、去掉句末标点、转小写，
+    让“你好”“你好！”“ 你好 ”算同一句。
+    """
+    text = unicodedata.normalize("NFKC", safe_text(value))
+    text = re.sub(r"\s+", " ", text).strip().rstrip(_TRAILING_PUNCT)
+    return text.lower()
+
+
 def _keyword_in(keyword: str, text: str) -> bool:
     """中文关键词做子串匹配；纯字母关键词按单词边界匹配，避免 "cs" 命中 "docs"。"""
     if keyword.isascii() and keyword[:1].isalnum():
@@ -172,6 +219,7 @@ class IntentRecognizer:
         self._cache: Dict[str, IntentResult] = {}
         self.cache_hits   = 0
         self.cache_misses = 0
+        self.cache_skipped_degraded = 0
 
     # ── 公开接口 ──────────────────────────────────────────────────────────────
 
@@ -186,10 +234,13 @@ class IntentRecognizer:
         history 格式：[{"role": "user"/"assistant", "content": "..."}]
         """
         key = self._cache_key(message, history)
+        turn = "later" if history else "first"
         if key in self._cache:
             self.cache_hits += 1
+            _count_cache("hit", turn)
             return self._cache[key]
         self.cache_misses += 1
+        _count_cache("miss", turn)
 
         t0 = time.monotonic()
 
@@ -219,7 +270,12 @@ class IntentRecognizer:
             source_scores=source_scores,
         )
 
-        # LRU 缓存
+        # 大模型这一路失败时是降级结果（准确率约六成），不缓存，下次同样的话重新识别
+        if llm.get("failed"):
+            self.cache_skipped_degraded += 1
+            _count_cache("skipped_degraded", turn)
+            return result
+        # 满了整批淘汰最早写入的一半（先进先出，不是 LRU）
         if len(self._cache) >= 1000:
             for k in list(self._cache)[:500]:
                 del self._cache[k]
@@ -250,6 +306,7 @@ class IntentRecognizer:
             for cat, tpls in _TEMPLATES.items()
             for t in tpls[:1]  # 每类取 1 条，控制 prompt 长度
         )
+        boundary_examples = "\n".join(f'  消息: "{t}" → 意图: {cat.value}' for t, cat in _BOUNDARY_EXAMPLES)
         # 最近 3 轮对话上下文
         ctx = ""
         if history:
@@ -264,8 +321,11 @@ class IntentRecognizer:
 申请材料/截止日期/语言成绩/APS → application_process；退款/定金能否退 → refund；发票 → invoice；
 付款失败/多付 → payment_issue；删除资料/隐私 → data_privacy；要求真人顾问 → human_handoff。
 
+{_BOUNDARY_RULES}
+
 示例:
 {examples}
+{boundary_examples}
 
         {ctx}
         用户消息: "{message}"
@@ -315,7 +375,7 @@ class IntentRecognizer:
 
     def _pattern_recognize(self, message: str) -> Dict[str, Any]:
         """策略 3：关键词模式匹配（同步，零延迟兜底）。"""
-        msg = message.lower()
+        msg = normalize_text(message)
         specific_patterns = INTENT_KEYWORDS_SPECIFIC
         generic_patterns = INTENT_KEYWORDS_GENERIC
 
@@ -517,12 +577,13 @@ class IntentRecognizer:
         return UrgencyLevel.LOW
 
     def _cache_key(self, message: str, history: Optional[List[Dict[str, str]]] = None) -> str:
-        payload = {"message": self._clean_text(message)[:200]}
+        # 用全文算哈希：大模型看到的是全文，键也必须是全文，否则前 200 字相同的两条长消息会共用结果
+        payload = {"message": normalize_text(message)}
         if history:
             payload["history"] = [
                 {
-                    "role": self._clean_text(item.get("role", ""))[:20],
-                    "content": self._clean_text(item.get("content", ""))[:160],
+                    "role": self._clean_text(item.get("role", "")),
+                    "content": normalize_text(item.get("content", "")),
                 }
                 for item in history[-3:]
             ]
@@ -566,4 +627,5 @@ class IntentRecognizer:
             "hits": self.cache_hits,
             "misses": self.cache_misses,
             "hit_rate": self.cache_hits / total if total else 0.0,
+            "skipped_degraded": self.cache_skipped_degraded,
         }

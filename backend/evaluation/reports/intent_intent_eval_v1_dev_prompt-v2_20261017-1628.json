@@ -1,0 +1,217 @@
+{
+  "dataset": "intent_eval_v1",
+  "split": "dev",
+  "label": "prompt-v2",
+  "samples": 190,
+  "model": "deepseek-v4-flash",
+  "intent_embedding": "bge",
+  "run_at": "2026-10-17T16:28:43",
+  "wall_seconds": 33.0,
+  "llm_failures": 0,
+  "llm_latency_ms": {
+    "p50": 1039.6,
+    "p95": 1246.4
+  },
+  "metrics": {
+    "fusion": {
+      "accuracy": 0.9947,
+      "macro_f1": 0.9947,
+      "group_accuracy": 0.9947
+    },
+    "fusion_v3_0": {
+      "accuracy": 0.9947,
+      "macro_f1": 0.9947,
+      "group_accuracy": 0.9947
+    },
+    "llm_only": {
+      "accuracy": 0.9895,
+      "macro_f1": 0.9895,
+      "group_accuracy": 0.9895
+    },
+    "embedding": {
+      "accuracy": 0.6053,
+      "macro_f1": 0.5831,
+      "group_accuracy": 0.6789
+    },
+    "pattern": {
+      "accuracy": 0.4105,
+      "macro_f1": 0.482,
+      "group_accuracy": 0.4421
+    },
+    "degraded": {
+      "accuracy": 0.6053,
+      "macro_f1": 0.5831,
+      "group_accuracy": 0.6789
+    }
+  },
+  "handoff": {
+    "false_handoff": 0,
+    "false_handoff_rate": 0.0,
+    "missed_handoff": 0,
+    "missed_handoff_rate": 0.0
+  },
+  "per_class": {
+    "query": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "complaint": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "request": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "greeting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "escalation": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "study_consult": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "billing": {
+      "precision": 1.0,
+      "recall": 0.9,
+      "f1": 0.9474,
+      "support": 10
+    },
+    "account": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "feedback": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "service_progress": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "booking": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "refund": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "invoice": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "payment_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "data_privacy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "application_process": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "service_inquiry": {
+      "precision": 0.9091,
+      "recall": 1.0,
+      "f1": 0.9524,
+      "support": 10
+    },
+    "human_handoff": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    },
+    "other": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 10
+    }
+  },
+  "by_tag": {
+    "boundary": {
+      "n": 20,
+      "accuracy": 0.95
+    },
+    "colloquial": {
+      "n": 13,
+      "accuracy": 1.0
+    },
+    "context": {
+      "n": 4,
+      "accuracy": 1.0
+    },
+    "long": {
+      "n": 1,
+      "accuracy": 1.0
+    },
+    "mixed": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "plain": {
+      "n": 140,
+      "accuracy": 1.0
+    }
+  },
+  "confusions": [
+    {
+      "gold": "billing",
+      "pred": "service_inquiry",
+      "count": 1
+    }
+  ],
+  "conflict_triggered": 0,
+  "fixed_by_v3_1": [],
+  "broken_by_v3_1": [],
+  "errors": [
+    {
+      "text": "费用包含申请费吗",
+      "gold": "billing",
+      "pred": "service_inquiry",
+      "llm": "service_inquiry",
+      "confidence": 0.595,
+      "tags": [
+        "boundary"
+      ]
+    }
+  ]
+}

@@ -1,8 +1,13 @@
 """意图识别离线基准：在固定标注集上跑三路融合，并输出消融对比。
 
 用法（在 backend/ 目录下）：
-    python -m evaluation.intent_benchmark                       # 默认数据集 v1
+    python -m evaluation.intent_benchmark                       # 默认数据集 v1，全部 380 条
+    python -m evaluation.intent_benchmark --split dev           # 只跑调试集（每类 10 条）
+    python -m evaluation.intent_benchmark --split holdout       # 只跑留出集（每类另外 10 条）
     python -m evaluation.intent_benchmark --limit 40 --concurrency 4
+
+调试集和留出集：每个类别按文本哈希固定分成两半。改提示词、加示例时只看调试集的错例，
+效果只认留出集的分数，否则"照着测试题改提示词"会让分数虚高。
 
 每条样本只调用一次 LLM：三路结果分别保存，再在本地计算以下几种"识别器"的预测：
   fusion       当前线上使用的两层投票 + 分歧检测（IntentRecognizer._vote）
@@ -18,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import statistics
@@ -28,6 +34,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from core.intent_recognizer import (
+    _BOUNDARY_EXAMPLES,
     _GENERIC_INTENTS,
     _SPECIFIC_INTENTS,
     _TEMPLATES,
@@ -53,9 +60,25 @@ def load_dataset(name: str) -> List[Dict[str, Any]]:
     return rows
 
 
+def split_rows(rows: List[Dict[str, Any]], split: str) -> List[Dict[str, Any]]:
+    """按类别、按文本哈希固定地一分为二：前一半 dev，后一半 holdout。"""
+    if split == "all":
+        return rows
+    by_label: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for r in rows:
+        by_label[r["label"]].append(r)
+    picked = []
+    for items in by_label.values():
+        items = sorted(items, key=lambda r: hashlib.sha1(r["text"].encode("utf-8")).hexdigest())
+        half = len(items) // 2
+        picked += items[:half] if split == "dev" else items[half:]
+    return picked
+
+
 def check_leakage(rows: List[Dict[str, Any]]) -> List[str]:
-    """测试样本不能和识别器内置的 few-shot / 向量模板重复，否则分数虚高。"""
+    """测试样本不能和识别器内置的 few-shot / 向量模板、提示词里的边界例句重复，否则分数虚高。"""
     templates = {t for tpls in _TEMPLATES.values() for t in tpls}
+    templates |= {text for text, _ in _BOUNDARY_EXAMPLES}
     return [r["text"] for r in rows if r["text"] in templates]
 
 
@@ -111,6 +134,23 @@ def classification_metrics(gold: List[str], pred: List[str]) -> Dict[str, Any]:
     }
 
 
+_HANDOFF = {"human_handoff", "escalation"}
+
+
+def handoff_metrics(gold: List[str], pred: List[str]) -> Dict[str, Any]:
+    """转人工的两类错：不该转的转了（会建交接单、推飞书打扰顾问），该转的没转。"""
+    neg = [(g, p) for g, p in zip(gold, pred) if g not in _HANDOFF]
+    pos = [(g, p) for g, p in zip(gold, pred) if g in _HANDOFF]
+    false_handoff = [g for g, p in neg if p in _HANDOFF]
+    missed = [p for g, p in pos if p not in _HANDOFF]
+    return {
+        "false_handoff": len(false_handoff),
+        "false_handoff_rate": round(len(false_handoff) / len(neg), 4) if neg else 0.0,
+        "missed_handoff": len(missed),
+        "missed_handoff_rate": round(len(missed) / len(pos), 4) if pos else 0.0,
+    }
+
+
 def confusion_pairs(gold: List[str], pred: List[str], top: int = 12) -> List[Dict[str, Any]]:
     pairs = Counter((g, p) for g, p in zip(gold, pred) if g != p)
     return [{"gold": g, "pred": p, "count": c} for (g, p), c in pairs.most_common(top)]
@@ -145,9 +185,9 @@ async def run_one(rec: IntentRecognizer, row: Dict[str, Any], sem: asyncio.Semap
     }
 
 
-async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
+async def main(dataset: str, limit: Optional[int], concurrency: int, split: str = "all", label: str = "") -> Path:
     load_env_file()
-    rows = load_dataset(dataset)
+    rows = split_rows(load_dataset(dataset), split)
     if limit:
         rows = rows[:limit]
     leaked = check_leakage(rows)
@@ -174,9 +214,11 @@ async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
 
     report = {
         "dataset": dataset,
+        "split": split,
+        "label": label,
         "samples": len(results),
         "model": model,
-        "intent_embedding": "bge" if rec._semantic_embedder() is not None else "ngram",
+        "intent_embedding": getattr(rec._semantic_embedder(), "model_name", None) or ("bge" if rec._semantic_embedder() is not None else "ngram"),
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "wall_seconds": round(wall_s, 1),
         "llm_failures": sum(r["llm_failed"] for r in results),
@@ -185,6 +227,7 @@ async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
             "p95": latencies[int(len(latencies) * 0.95) - 1],
         },
         "metrics": {s: {k: v for k, v in m.items() if k != "per_class"} for s, m in metrics.items()},
+        "handoff": handoff_metrics(gold, fused),
         "per_class": metrics["fusion"]["per_class"],
         "by_tag": {t: {"n": len(v), "accuracy": round(sum(v) / len(v), 4)} for t, v in sorted(by_tag.items())},
         "confusions": confusion_pairs(gold, fused),
@@ -199,7 +242,7 @@ async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
     }
 
     REPORTS.mkdir(exist_ok=True)
-    stem = f"intent_{dataset}_{datetime.now().strftime('%Y%m%d-%H%M')}"
+    stem = f"intent_{dataset}{'_' + split if split != 'all' else ''}{'_' + label if label else ''}_{datetime.now().strftime('%Y%m%d-%H%M')}"
     (REPORTS / f"{stem}.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     (REPORTS / f"{stem}.md").write_text(render_markdown(report), encoding="utf-8")
     print(render_markdown(report))
@@ -215,7 +258,9 @@ def render_markdown(r: Dict[str, Any]) -> str:
         "",
         f"- 样本 {r['samples']} 条，19 类；模型 `{r['model']}`；向量路 `{r.get('intent_embedding', 'ngram')}`；运行于 {r['run_at']}，耗时 {r['wall_seconds']} 秒",
         f"- LLM 调用失败 {r['llm_failures']} 次；LLM 单次延迟 p50 {r['llm_latency_ms']['p50']:.0f} ms，p95 {r['llm_latency_ms']['p95']:.0f} ms",
-        f"- 分歧检测触发 {r['conflict_triggered']} 次",
+        f"- 分歧检测触发 {r['conflict_triggered']} 次；子集 `{r.get('split', 'all')}`{('；' + r['label']) if r.get('label') else ''}",
+        f"- 误转人工 {r['handoff']['false_handoff']} 条（{r['handoff']['false_handoff_rate']:.1%}，不该转的样本里被判成转人工/升级）；"
+        f"漏转人工 {r['handoff']['missed_handoff']} 条（{r['handoff']['missed_handoff_rate']:.1%}）",
         "",
         "## 总体与消融",
         "",
@@ -245,5 +290,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default="intent_eval_v1")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--concurrency", type=int, default=6)
+    parser.add_argument("--split", choices=["all", "dev", "holdout"], default="all")
+    parser.add_argument("--label", default="", help="写进报告文件名的标签，如 baseline / prompt-v2")
     args = parser.parse_args()
-    asyncio.run(main(args.dataset, args.limit, args.concurrency))
+    asyncio.run(main(args.dataset, args.limit, args.concurrency, args.split, args.label))
