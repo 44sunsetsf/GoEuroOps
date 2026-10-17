@@ -499,6 +499,9 @@ class AgentOrchestrator:
 
     # ── 统计（供 Monitor 读取）────────────────────────────────────────────────
 
+    def intent_cache_stats(self) -> Dict[str, Any]:
+        return self._intent_recognizer.cache_stats
+
     def get_stats(self) -> Dict[str, Any]:
         result = {}
         for agent_type, agents in self._pool.items():
