@@ -77,6 +77,7 @@ async def lifespan(app: FastAPI):
     from core.skill_loader import SkillManager
     from business.catalog import get_catalog, get_countries
     from business.lead_store import LeadStore
+    from business.notifier import FeishuNotifier
 
     cfg = _anthropic_cfg()
     # 业务目录在启动时校验一次，YAML 写错直接启动失败，而不是等用户问价格时才暴露
@@ -117,6 +118,9 @@ async def lifespan(app: FastAPI):
 
     # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
     services.lead_store = LeadStore(redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"))
+    # 新线索 / 交接单推送到飞书群机器人（设置了 GOEUROOPS_FEISHU_WEBHOOK 才开启）；评测用的线索库不推送
+    services.lead_store.notifier = FeishuNotifier.from_env()
+    logger.info("线索推送: %s", "飞书机器人" if services.lead_store.notifier else "未配置")
 
     # Agent 编排器
     services.orchestrator = AgentOrchestrator(

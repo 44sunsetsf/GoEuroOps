@@ -55,3 +55,20 @@ def test_default_cases_use_valid_studio_intents():
     assert all(case.expected_intent in valid for case in DEFAULT_INTENT_CASES)
     assert any(case.get("expected_tools") for case in DEFAULT_DIALOG_CASES)
     assert any(case.get("knowledge") for case in DEFAULT_DIALOG_CASES)
+
+
+def test_tool_benchmark_judge():
+    from evaluation.tool_benchmark import judge, summarize
+
+    row = {"must": ["calculate_refund"], "allow": ["check_payment_fields"], "forbid": ["create_consultation_lead"]}
+    assert judge(row, ["calculate_refund", "check_payment_fields", "search_knowledge_base"])["correct"]
+    assert judge(row, ["check_payment_fields"])["missing"] == ["calculate_refund"]
+    assert judge(row, ["calculate_refund", "quote_service_bundle"])["extra"] == ["quote_service_bundle"]
+    bad = judge(row, ["calculate_refund", "create_consultation_lead"])
+    assert bad["forbidden"] == ["create_consultation_lead"] and not bad["correct"]
+    assert judge({"must": []}, [])["correct"]
+
+    rows = [{**judge(row, used), "must": row["must"], "used": used}
+            for used in (["calculate_refund"], [], ["calculate_refund", "calculate_refund"])]
+    s = summarize(rows)
+    assert s["accuracy"] == round(2 / 3, 4) and s["must_recall"] == round(2 / 3, 4) and s["avg_calls"] == 1.0

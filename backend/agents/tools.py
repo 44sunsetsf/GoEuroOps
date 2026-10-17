@@ -242,14 +242,18 @@ def build_lead_tool(lead_store: Optional[LeadStore]) -> AgentToolSpec:
         data = {k: v for k, v in args.items() if k != "consent"}
         data.update({"consent": True, "source": "chat", "user_id": req.user_id, "conv_id": req.conv_id,
                      "request_id": req.request_id})
-        lead = await lead_store.create(data, lead_type="lead")
-        _count_lead("lead")
+        lead = await lead_store.create_lead(data)
+        if not lead["deduplicated"]:
+            _count_lead("lead")
         catalog = get_catalog()
+        sla = catalog.studio.response_sla.split('；')[0]
         return {
             "success": True,
             "lead_id": lead["id"],
+            "deduplicated": lead["deduplicated"],
             "contact_masked": f"{CHANNEL_LABELS.get(args['contact_channel'], '')} {mask_contact(args['contact'])}",
-            "next_step": f"顾问会在{catalog.studio.response_sla.split('；')[0]}通过该联系方式联系用户。",
+            "next_step": (f"这个联系方式之前已登记过，已把这次的信息更新到原线索，顾问会在{sla}联系用户，不会重复排队。"
+                          if lead["deduplicated"] else f"顾问会在{sla}通过该联系方式联系用户。"),
             "timezone_note": catalog.studio.timezone_note,
         }
 

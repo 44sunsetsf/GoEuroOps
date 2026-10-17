@@ -406,8 +406,12 @@ flowchart TD
     b -->|否| c[先征得同意，不登记]
     b -->|是| d["create_consultation_lead<br/>校验称呼、联系方式格式、阶段<br/>拒绝身份证号、护照号"]
     d -->|校验失败| e[说明哪里不对，请用户改]
-    d -->|通过| f[("Redis goeuroops:lead:{id}<br/>Redis 不可用时降级到进程内存储")]
+    d -->|通过| k{"同一联系方式已有未关闭的线索？<br/>（SET NX 去重键）"}
+    k -->|是| l[更新原线索的称呼、国家、背景等，不重复排队]
+    k -->|否| f[("Redis goeuroops:lead:{id}<br/>Redis 不可用时降级到进程内存储")]
     f --> g[工作室后台「线索」面板<br/>状态 new → contacted → converted / closed]
+    l --> g
+    f --> n[后台推送飞书（见 9.5）]
 ```
 
 ### 9.3 退款估算
@@ -431,13 +435,25 @@ flowchart TD
 flowchart TD
     a["触发：转人工/找创始人/隐私意图，<br/>urgency=CRITICAL，或 Agent 回复判定需要升级"] --> b[EscalationAgent]
     b --> c["build_handoff_summary<br/>request_id、user/conv、原因、意图、紧急度、实体、最后一句话<br/>background：客户档案 + 以前的咨询记录"]
-    c --> d{"同一会话已有未关闭的交接单？"}
-    d -->|是| e[追加到原交接单的 followups（最多 10 条）]
-    d -->|否| f[("新建交接单 goeuroops:lead:H…")]
+    c --> d{"SET NX 抢占去重键<br/>goeuroops:lead_open:handoff:user:conv"}
+    d -->|已被未关闭的单占用| e["追加到原交接单的 followups（最多 10 条）<br/>紧急度只升不降，升到高/紧急时再推一次"]
+    d -->|抢到| f[("新建交接单 goeuroops:lead:H…")]
     e --> g[后台「线索」面板，顾问跟进]
     f --> g
+    f --> n["后台推送飞书群机器人（只推摘要，<br/>失败只记日志，见 9.5）"]
     b --> h["固定回复（不调模型）：交接单编号、转交原因、响应时效、时差提醒；<br/>隐私请求说明由顾问核实身份后处理；提醒不要发证件号、银行卡号和密码"]
 ```
+
+- **去重是原子的**：查重和建单靠 Redis `SET NX` 一步完成，用户连点两次“转人工”、两个请求同时到达，也只建一张单。顾问把单改成 `converted` / `closed` 时释放去重键，同一会话再要求真人会开新单。咨询线索同理，按“渠道 + 联系方式”去重（键里只放哈希），重复登记时用新值覆盖称呼、目标国家、背景等字段。
+
+### 9.5 新单推送（飞书）
+
+`business/notifier.py`：线索库建了新线索或交接单后，在后台把摘要推到飞书群自定义机器人，顾问不用一直盯着线索面板。
+
+- **只推摘要**：交接单推原因、意图、紧急度、截短并去掉证件号的最后一句话；线索推称呼、脱敏联系方式、目标国家和入学时间；都带线索面板链接。客户档案（`background`）和完整聊天不出站。
+- **不拖慢对话**：推送是后台任务，回复不等它；失败只记日志和 `goeuroops_lead_notify_total{type,outcome}`，交接单照样在线索库里。连续失败 5 次熔断 60 秒（同一个 `CircuitBreaker`）。
+- **签名**：开启机器人的“签名校验”时，按飞书规则用 `timestamp\nsecret` 做 HmacSHA256；飞书出错时 HTTP 也是 200，要看返回体的 `code`。
+- **配置**：`GOEUROOPS_FEISHU_WEBHOOK`（不设就不推）、`GOEUROOPS_FEISHU_SECRET`、`GOEUROOPS_LEADS_PANEL_URL`，都放服务器 `.env`。评测用的编排器用内存线索库，不推送。
 
 ## 10. 业务目录：单一数据源
 
@@ -522,13 +538,14 @@ flowchart LR
 
 **熔断器**（`tooling/breaker.py`，网关和检索管理器共用）：连续失败 5 次打开，60 秒后半开，**只放行一个探测请求**，探测成功关闭、失败重新打开；探测被取消、迟迟不回时，过 60 秒再放一个。每次状态切换都换一代 ticket，调用结束时交回 ticket，旧 ticket 的结果直接忽略，所以熔断前发出、熔断后才返回的慢请求不会把熔断器提前关上。
 
-**金额护栏**（`tooling/amount_guard.py`）：回复里出现的人民币金额，必须能在本轮依据里找到。依据包括工具结果、用户原话、背景、知识库片段、Skill 和价目表。找不到时，这一句被替换成固定提示。流式输出按句放行，不会先发出错误数字再撤回。由 `GOEUROOPS_AMOUNT_GUARD` 控制：`enforce`（默认）/ `warn` / `off`。
+**金额护栏**（`tooling/amount_guard.py`）：回复里出现的人民币金额，必须能在本轮依据里找到。依据包括工具结果、用户原话、背景、知识库片段、Skill 和价目表。找不到时，这一句被替换成固定提示。中文数字写的金额（“三千元”“一万二千块钱”“3千元”）也认，用户说“预算三千”时模型写“3,000 元”算有依据；“几千元”“上千元”这类约数不算具体金额。流式输出按句放行，不会先发出错误数字再撤回。由 `GOEUROOPS_AMOUNT_GUARD` 控制：`enforce`（默认）/ `warn` / `off`。
 
 ## 14. 数据存储清单
 
 | 存储 | 键 / 集合 | 内容 | 保留 | 写入方 |
 |---|---|---|---|---|
 | Redis | `goeuroops:lead:<id>`、`goeuroops:leads` | 线索和交接单、索引 | 不过期 | `business/lead_store.py` |
+| Redis | `goeuroops:lead_open:<handoff:user:conv / lead:哈希>` | 去重键：指向还在跟进的那张单 | 30 天，关单时删除 | `business/lead_store.py` |
 | Redis | `goeuroops:chatlog` | 每轮问答（站长后台按访客查看） | 最近 2000 条 | `core/chat_log.py` |
 | Redis | `goeuroops:usage:<北京日期>` | 按天、按来源的调用数、token、费用估算 | 120 天 | `core/llm_usage.py` |
 | Redis | `goeuroops:quota:chat:<日期>`、`goeuroops:quota:guest_eval:<日期>` | 每日对话、访客评测次数 | 当天 | `api/quota.py` |
@@ -613,7 +630,7 @@ flowchart TD
 | `primary_agent` 和 `agent_type` | 前者是路由的决定，后者是实际给出回答的 Agent；专属 Agent 失败回退后两者不同 |
 | trace 里的 `success` 和 `result_success` | 前者表示网关执行没出错（白名单、校验、超时、熔断都过了），后者是工具自己返回的 `success`；知识库查空或降级时前者为真、后者为假 |
 | trace 里的 `amount_guard`、`agent_fallback` | 不是真的工具调用，是金额护栏改写、专属 Agent 回退的事件记录 |
-- 主要的 Prometheus 指标有 `goeuroops_tool_calls_total{tool,outcome}`、`goeuroops_tool_latency_seconds`、`goeuroops_amount_guard_total`。
+- 主要的 Prometheus 指标有 `goeuroops_tool_calls_total{tool,outcome}`、`goeuroops_tool_latency_seconds`、`goeuroops_amount_guard_total`、`goeuroops_lead_notify_total{type,outcome}`。
 
 **离线评测**（`backend/evaluation/`）
 
@@ -622,6 +639,7 @@ flowchart TD
 | `evaluator.py` | 意图准确率、Skill 路由准确率、五维 LLM-as-Judge（按场景的期望行为校准，含边界合规）、工具调用检查、门控 A/B、与基线对比 | 后台「评测」或 `POST /eval/run` |
 | `intent_benchmark.py` | 意图识别基准 | `python -m evaluation.intent_benchmark` |
 | `retrieval_benchmark.py` | 知识库检索：106 条（含多轮追问、知识库里没有答案的问题），文档级 Hit@1/Hit@3/MRR、注入命中率、无答案误注入率 | `python -m evaluation.retrieval_benchmark [--deep]` |
+| `tool_benchmark.py` | 工具选择：39 条，走完整链路，统计完全正确率、必调召回、多调、误调禁用工具、平均调用次数（标注规则见 `datasets/LABELING.md`） | `python -m evaluation.tool_benchmark` |
 | `memory_benchmark.py`、`locomo_benchmark.py` | 记忆：自建 48 题 + LoCoMo（见 8.5） | 见 8.5 |
 | `skills/*/evals/cases.json` | 每个 Skill 的命中回归 | `GET /skills/evals`，单元测试里也会跑 |
 

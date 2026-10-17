@@ -4,7 +4,7 @@
 公开价目表。凭空出现的数字（算错的合计、编造的折扣、没调报价工具就报的价）所在的那句话会被替换成
 固定提示，而不是原样发给用户。
 
-只管人民币金额（¥、元、RMB、CNY），不管年份、轮次、百分比、折扣率（"9 折"），也不管工作室报价以外
+只管人民币金额（¥、元、RMB、CNY），也认中文数字写的金额（"三千元""一万二千块钱""3千元"）；不管年份、轮次、百分比、折扣率（"9 折"），也不管工作室报价以外
 的外币费用（学费、申请费等，来自知识库）。
 流式输出时按句放行：一句话确认没有问题才发出去，所以不会出现"先发出错的数字、再撤回"。
 """
@@ -28,6 +28,17 @@ _MONEY_PATTERNS = (
     re.compile(rf"({_NUM})\s*(万)?\s*(?:元|块钱|RMB|CNY)", re.IGNORECASE),
 )
 _ANY_NUMBER = re.compile(rf"({_NUM})\s*(万)?")
+
+# 中文数字金额：第一个字必须是数字（"几千元""上千元"这种约数不算具体金额）
+_CN = r"[一二两三四五六七八九十][零〇一二两三四五六七八九十百千万]*"
+_CN_MONEY = (
+    re.compile(rf"({_CN})\s*(?:元|块钱)"),
+    re.compile(rf"(?:人民币)\s*({_CN})"),
+)
+_DIGIT_QIAN_MONEY = re.compile(r"(\d+(?:\.\d+)?)\s*千\s*(?:元|块钱)")     # "3千元"
+_CN_ANY = re.compile(_CN)
+_CN_DIGITS = {"零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+_CN_UNITS = {"十": 10, "百": 100, "千": 1000}
 _SENTENCE_END = re.compile(r"[。！？!?；;\n]|(?<=[^\d])\.(?=\s)")
 _FORCE_FLUSH_CHARS = 600
 
@@ -37,12 +48,45 @@ def _to_float(token: str, wan: str | None) -> float:
     return round(value * 10000 if wan else value, 2)
 
 
+def cn_to_number(text: str) -> float:
+    """中文数字转数值：三千 → 3000，一万二千五百 → 12500，一千零五 → 1005。
+
+    口语省略末位单位的也认：一万二 → 12000，三千五 → 3500。
+    没有任何单位的（"二零二六"）按逐位读。
+    """
+    if not any(ch in _CN_UNITS or ch == "万" for ch in text):
+        return float("".join(str(_CN_DIGITS.get(ch, 0)) for ch in text) or 0)
+    total = section = 0
+    digit = None
+    last_unit = 1
+    zero_seen = False
+    for ch in text:
+        if ch in _CN_DIGITS:
+            digit = _CN_DIGITS[ch]
+            zero_seen = zero_seen or digit == 0
+        elif ch in _CN_UNITS:
+            unit = _CN_UNITS[ch]
+            section += (1 if digit is None else digit) * unit
+            digit, last_unit, zero_seen = None, unit, False
+        elif ch == "万":
+            total += (section + (digit or 0)) * 10000
+            section, digit, last_unit, zero_seen = 0, None, 10000, False
+    if digit:
+        section += digit * (1 if zero_seen or last_unit == 10 else last_unit // 10)
+    return float(total + section)
+
+
 def extract_amounts(text: str) -> List[float]:
     """抽出文本里所有带人民币标记的金额。"""
     found: List[float] = []
     for pattern in _MONEY_PATTERNS:
         for m in pattern.finditer(text):
             found.append(_to_float(m.group(1), m.group(2)))
+    for pattern in _CN_MONEY:
+        for m in pattern.finditer(text):
+            found.append(round(cn_to_number(m.group(1)), 2))
+    for m in _DIGIT_QIAN_MONEY.finditer(text):
+        found.append(round(float(m.group(1)) * 1000, 2))
     return found
 
 
@@ -60,6 +104,11 @@ class AmountGrounding:
             self._values.add(round(value, 2))
             if m.group(2):
                 self._values.add(round(value * 10000, 2))
+        # 用户说"预算三千"，模型回"3,000 元"也算有依据
+        for m in _CN_ANY.finditer(str(text)):
+            self._values.add(round(cn_to_number(m.group(0)), 2))
+        for m in _DIGIT_QIAN_MONEY.finditer(str(text)):
+            self._values.add(round(float(m.group(1)) * 1000, 2))
 
     def add_json(self, obj: Any) -> None:
         self.add_text(json.dumps(obj, ensure_ascii=False, default=str))
