@@ -5,8 +5,15 @@
         <h1>{{ t('服务价目') }}</h1>
         <p>
           {{ t('助手报价、退款计算和知识库都读取同一份业务目录') }}
-          <code>backend/business/catalog.yaml</code>{{ t('。改价格只改这个文件，重启后端即可生效。') }}
+          <code>backend/business/catalog.yaml</code>{{ t('。价格可以在这里直接改，保存后立即生效；改过的价格旁边会标出默认价。') }}
         </p>
+      </div>
+      <div class="heading-actions">
+        <template v-if="editing">
+          <button @click="savePrices" :disabled="saving">{{ saving ? t('保存中') : t('保存价格') }}</button>
+          <button class="quiet-button" @click="editing = false" :disabled="saving">{{ t('取消') }}</button>
+        </template>
+        <button v-else class="quiet-button" @click="startEditing" :disabled="readonly || !catalog" :title="readonly ? t('演示模式只读，这个操作只对站长开放') : ''">{{ t('改价格') }}</button>
       </div>
       <div v-if="catalog" class="count-display"><strong>{{ catalog.services.length }}</strong><span>{{ t('项服务') }} · {{ catalog.catalog_version }}</span></div>
     </div>
@@ -24,8 +31,13 @@
                 <code>{{ service.sku }}</code>
               </div>
               <div class="price-tag">
-                <b>{{ money(service.price) }}</b>
+                <template v-if="editing">
+                  <input v-model.number="draft[service.sku]" class="price-input" type="number" min="0" step="1" :aria-label="t('{name} 的价格', { name: service.name })" />
+                  <button v-if="draft[service.sku] !== defaults[service.sku]" class="link-button" @click="draft[service.sku] = defaults[service.sku]">{{ t('恢复默认') }}</button>
+                </template>
+                <b v-else>{{ money(service.price) }}</b>
                 <small v-if="service.price">/ {{ service.unit }}</small>
+                <small v-if="!editing && defaults[service.sku] !== undefined && service.price !== defaults[service.sku]">{{ t('默认 {p}', { p: money(defaults[service.sku]) }) }}</small>
               </div>
             </header>
             <p class="service-summary">{{ service.summary }}</p>
@@ -96,14 +108,22 @@
 <script setup>
 import { t } from '../lib/i18n.js'
 import { computed, onMounted, ref } from 'vue'
-import { requestCatalog } from '../lib/backends'
+import { requestCatalog, updatePrices } from '../lib/backends'
 import { CATEGORY_LABELS, CATEGORY_ORDER, money } from '../lib/labels'
 
-const props = defineProps({ settings: { type: Object, required: true } })
+const props = defineProps({
+  settings: { type: Object, required: true },
+  readonly: { type: Boolean, default: false }
+})
+const emit = defineEmits(['toast'])
 
 const catalog = ref(null)
 const countries = ref({ countries: [] })
+const defaults = ref({})
 const error = ref('')
+const editing = ref(false)
+const saving = ref(false)
+const draft = ref({})
 
 const groups = computed(() => {
   if (!catalog.value) return []
@@ -116,11 +136,47 @@ const groups = computed(() => {
     .filter((group) => group.services.length)
 })
 
+function apply(data) {
+  catalog.value = data.catalog
+  countries.value = data.countries
+  defaults.value = data.default_prices || {}
+}
+
+function startEditing() {
+  draft.value = Object.fromEntries(catalog.value.services.map((s) => [s.sku, s.price]))
+  editing.value = true
+}
+
+async function savePrices() {
+  const changes = Object.fromEntries(
+    catalog.value.services
+      .filter((s) => draft.value[s.sku] !== s.price)
+      .map((s) => [s.sku, draft.value[s.sku]])
+  )
+  if (Object.values(changes).some((p) => !Number.isInteger(p) || p < 0)) {
+    emit('toast', t('价格必须是不小于 0 的整数'))
+    return
+  }
+  if (!Object.keys(changes).length) {
+    editing.value = false
+    return
+  }
+  saving.value = true
+  try {
+    const data = await updatePrices(props.settings, changes)
+    apply(data)
+    editing.value = false
+    emit('toast', data.knowledge_synced === false ? t('价格已生效，知识库稍后同步') : t('价格已更新'))
+  } catch (err) {
+    emit('toast', t('保存失败：{m}', { m: err.message }))
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(async () => {
   try {
-    const data = await requestCatalog(props.settings)
-    catalog.value = data.catalog
-    countries.value = data.countries
+    apply(await requestCatalog(props.settings))
   } catch (err) {
     error.value = err.message
   }

@@ -1,12 +1,19 @@
 import asyncio
 from datetime import date
 
-from business.catalog import get_catalog, get_countries, match_service_mentions
+from business.catalog import (
+    default_prices, get_catalog, get_countries, match_service_mentions, read_price_overrides, set_service_prices,
+)
 from business.lead_store import LeadStore, mask_contact, validate_lead_input
 from business.pricing import calculate_refund, quote_bundle
 
 BEFORE_EARLY_BIRD = date(2026, 9, 1)
 AFTER_EARLY_BIRD = date(2026, 11, 1)
+
+
+def price(sku: str) -> int:
+    """价格随时会改，测试只从目录里取，不写死数字。"""
+    return get_catalog().service(sku).price
 
 
 # ── 目录 ─────────────────────────────────────────────────────────────────────
@@ -15,8 +22,8 @@ def test_catalog_loads_and_skus_unique():
     catalog = get_catalog()
     skus = [s.sku for s in catalog.services]
     assert len(skus) == len(set(skus))
-    assert catalog.service("full_journey").price == 11800
     assert catalog.service("intro_call").price == 0
+    assert all(s.price >= 0 for s in catalog.services)
 
 
 def test_country_lookup_by_alias():
@@ -39,10 +46,10 @@ def test_service_mentions_prefers_specific_alias():
 def test_quote_plain_sum_and_payment_plan():
     q = quote_bundle([{"sku": "selection_full"}, {"sku": "cv"}], today=AFTER_EARLY_BIRD)
     assert q["success"]
-    assert q["subtotal"] == 2999 + 899
-    assert q["total"] == 3898
+    assert q["subtotal"] == price("selection_full") + price("cv")
+    assert q["total"] == q["subtotal"]
     # 选校部分付 30% 定金，CV 全款
-    assert q["payment_plan"]["due_at_signing"] == round(2999 * 0.3) + 899
+    assert q["payment_plan"]["due_at_signing"] == round(price("selection_full") * 0.3) + price("cv")
 
 
 def test_quote_early_bird_only_on_eligible_items():
@@ -52,19 +59,21 @@ def test_quote_early_bird_only_on_eligible_items():
         today=BEFORE_EARLY_BIRD,
     )
     assert q["discounts"][0]["code"] == "early_bird"
-    assert q["discounts"][0]["amount"] == -round(2999 * 0.1)
-    assert q["total"] == 2999 + 2499 - 300
+    assert q["discounts"][0]["amount"] == -round(price("selection_full") * 0.1)
+    assert q["total"] == price("selection_full") + price("ps_single") - round(price("selection_full") * 0.1)
 
 
 def test_quote_early_bird_expired_adds_note():
     q = quote_bundle([{"sku": "full_journey"}], early_bird=True, today=AFTER_EARLY_BIRD)
-    assert q["total"] == 11800
+    assert q["total"] == price("full_journey")
     assert any("早鸟" in note for note in q["notes"])
 
 
 def test_quote_picks_better_of_early_bird_and_group_then_stacks_referral():
+    # 固定价格，让叠加后的折扣不碰到 85% 的保底线
+    set_service_prices({"selection_full": 3000, "full_journey": 10000})
     q = quote_bundle(
-        [{"sku": "full_journey"}],
+        [{"sku": "selection_full"}, {"sku": "full_journey"}],
         early_bird=True,
         group_size=2,
         referral=True,
@@ -72,13 +81,16 @@ def test_quote_picks_better_of_early_bird_and_group_then_stacks_referral():
     )
     codes = [d["code"] for d in q["discounts"]]
     assert codes == ["early_bird", "referral"]
-    assert q["total"] == 11800 - 1180 - 300
+    referral = get_catalog().discounts.referral.amount
+    assert q["total"] == 13000 - 1300 - referral
 
 
 def test_quote_floor_protection():
-    # 早鸟 9 折 + 老带新 300 对 ¥2,999 的选校全案：2999-300-300=2399 < 85%=2550
+    # 早鸟 9 折再叠老带新，¥1,000 的选校全案会低于 85% 保底，按 850 收
+    set_service_prices({"selection_full": 1000})
+    assert get_catalog().discounts.referral.amount > 50
     q = quote_bundle([{"sku": "selection_full"}], early_bird=True, referral=True, today=BEFORE_EARLY_BIRD)
-    assert q["total"] == 2550
+    assert q["total"] == 850
     assert q["discounts"][-1]["code"] == "floor_adjust"
 
 
@@ -91,37 +103,37 @@ def test_quote_rejects_unknown_sku():
 # ── 退款 ─────────────────────────────────────────────────────────────────────
 
 def test_refund_not_started_is_full():
-    r = calculate_refund("full_journey", 3540, "not_started")
-    assert r["estimated_refund"] == 3540
+    r = calculate_refund("full_journey", 420, "not_started")
+    assert r["estimated_refund"] == 420
     assert r["requires_human_review"]
 
 
 def test_refund_delivered_is_zero():
-    assert calculate_refund("selection_full", 2999, "delivered")["estimated_refund"] == 0
+    assert calculate_refund("selection_full", 600, "delivered")["estimated_refund"] == 0
 
 
 def test_refund_essay_by_remaining_rounds():
-    r = calculate_refund("ps_single", 2499, "in_progress", completed_rounds=1)
-    assert r["estimated_refund"] == round(2499 * 2 / 3, 2)
+    r = calculate_refund("ps_single", 600, "in_progress", completed_rounds=1)
+    assert r["estimated_refund"] == 400
 
 
 def test_refund_essay_without_rounds_asks_for_input():
-    r = calculate_refund("ps_single", 2499, "in_progress")
+    r = calculate_refund("ps_single", 600, "in_progress")
     assert "completed_rounds" in r["needs_input"]
 
 
 def test_refund_selection_in_progress_half():
-    assert calculate_refund("selection_full", 2999, "in_progress")["estimated_refund"] == 1499.5
+    assert calculate_refund("selection_full", 600, "in_progress")["estimated_refund"] == 300
 
 
 def test_refund_package_keeps_deposit():
-    r = calculate_refund("full_journey", 11800, "in_progress", progress_percent=50)
-    deposit = round(11800 * 0.3)
-    assert r["estimated_refund"] == round((11800 - deposit) * 0.5, 2)
+    set_service_prices({"full_journey": 1000})
+    r = calculate_refund("full_journey", 1000, "in_progress", progress_percent=50)
+    assert r["estimated_refund"] == (1000 - 300) * 0.5
 
 
 def test_refund_consult_in_progress_is_zero():
-    assert calculate_refund("consult_single", 699, "in_progress")["estimated_refund"] == 0
+    assert calculate_refund("consult_single", price("consult_single"), "in_progress")["estimated_refund"] == 0
 
 
 # ── 线索 ─────────────────────────────────────────────────────────────────────
@@ -302,3 +314,32 @@ def test_handoff_urgency_upgrade_renotifies():
         assert store.notifier.sent == [(first["id"], "MEDIUM"), (first["id"], "CRITICAL")]
 
     asyncio.run(run())
+
+
+# ── 改价 ─────────────────────────────────────────────────────────────────────
+
+def test_price_override_applies_without_touching_yaml():
+    default = default_prices()["cv"]
+    set_service_prices({"cv": default + 100})
+    assert get_catalog().service("cv").price == default + 100
+    assert default_prices()["cv"] == default
+    q = quote_bundle([{"sku": "cv"}], today=AFTER_EARLY_BIRD)
+    assert q["total"] == default + 100
+
+
+def test_price_back_to_default_drops_override():
+    default = default_prices()["cv"]
+    set_service_prices({"cv": default + 1})
+    set_service_prices({"cv": default})
+    assert read_price_overrides() == {}
+    assert get_catalog().service("cv").price == default
+
+
+def test_price_override_rejects_unknown_sku_and_negative():
+    for bad in ({"guaranteed_offer": 1}, {"cv": -1}, {"cv": 1.5}):
+        try:
+            set_service_prices(bad)
+        except ValueError:
+            continue
+        raise AssertionError(bad)
+    assert read_price_overrides() == {}

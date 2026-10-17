@@ -12,6 +12,7 @@ class Services:
         self.orchestrator: Optional[Any] = None
         self.memory: Optional[Any] = None
         self.tool_manager: Optional[Any] = None
+        self.knowledge_base: Optional[Any] = None
         self.monitor: Optional[Any] = None
         self.evaluator: Optional[Any] = None
         self.skill_manager: Optional[Any] = None

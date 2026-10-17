@@ -35,14 +35,14 @@ export const COUNTRIES = [
   }
 ]
 
-// Shown on the menu, in this order. Prices come live from /catalog; these are the fallback.
+// Shown on the menu, in this order. Prices are never written here: they come live from /catalog.
 export const MENU = [
-  { sku: 'intro_call', name: '免费初步沟通', price: 0, unit: '15 分钟', summary: '了解你的背景和目标，看看我们能不能帮上忙。' },
-  { sku: 'consult_single', name: '单次选校咨询', price: 699, unit: '60 分钟', summary: '已经有初步想法，想找过来人把方向快速定下来。' },
-  { sku: 'selection_full', name: '选校定位全案', price: 2999, unit: '一套', summary: '从背景评估到 8–12 个项目的选校清单和申请时间表。' },
-  { sku: 'essay_pack_3', name: '文书套餐 · 3 个项目', price: 5999, unit: '一套', summary: '一篇主文书打磨透，再为 3 个目标项目分别改写。' },
-  { sku: 'full_journey', name: '全程陪跑', price: 11800, unit: '一套', summary: '从选校到拿录取，一位创始人顾问全程跟进。' },
-  { sku: 'full_journey_plus', name: '全程陪跑 Plus', price: 15800, unit: '一套', summary: '再加上模拟面试、签证材料和落地前的北欧生活答疑。' }
+  { sku: 'intro_call', name: '免费初步沟通', unit: '15 分钟', summary: '了解你的背景和目标，看看我们能不能帮上忙。' },
+  { sku: 'consult_single', name: '单次选校咨询', unit: '60 分钟', summary: '已经有初步想法，想找过来人把方向快速定下来。' },
+  { sku: 'selection_full', name: '选校定位全案', unit: '一套', summary: '从背景评估到 8–12 个项目的选校清单和申请时间表。' },
+  { sku: 'essay_pack_3', name: '文书套餐 · 3 个项目', unit: '一套', summary: '一篇主文书打磨透，再为 3 个目标项目分别改写。' },
+  { sku: 'full_journey', name: '全程陪跑', unit: '一套', summary: '从选校到拿录取，一位创始人顾问全程跟进。' },
+  { sku: 'full_journey_plus', name: '全程陪跑 Plus', unit: '一套', summary: '再加上模拟面试、签证材料和落地前的北欧生活答疑。' }
 ]
 
 export const PROMISES = [

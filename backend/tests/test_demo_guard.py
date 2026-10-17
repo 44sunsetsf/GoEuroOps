@@ -164,3 +164,21 @@ def test_guest_eval_refused_while_another_runs(client, monkeypatch):
     monkeypatch.setattr(eval_routes, "cost_exceeded", not_spent)
     r = client.post("/eval/run", headers=GUEST)
     assert r.status_code == 429 and "在运行" in r.json()["detail"]
+
+
+def test_price_update_endpoint_owner_only(monkeypatch):
+    from api.main import app
+    from business.catalog import default_prices
+
+    monkeypatch.setattr(services, "knowledge_base", None)
+    monkeypatch.setattr(services, "tool_manager", None)
+    client = TestClient(app)
+    default = default_prices()["cv"]
+
+    assert client.put("/catalog/prices", json={"prices": {"cv": 1}}, headers=GUEST).status_code == 403
+
+    r = client.put("/catalog/prices", json={"prices": {"cv": default + 50}})
+    assert r.status_code == 200
+    cv = next(s for s in r.json()["catalog"]["services"] if s["sku"] == "cv")
+    assert cv["price"] == default + 50 and r.json()["default_prices"]["cv"] == default
+    assert client.put("/catalog/prices", json={"prices": {"nope": 1}}).status_code == 400

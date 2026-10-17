@@ -154,6 +154,7 @@ async def lifespan(app: FastAPI):
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
         chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
     )
+    services.knowledge_base = kb
     logger.info(f"知识库已加载: {await kb.doc_count_async()} 个文档片段")
 
     def knowledge_fallback(params: Dict[str, Any], context: Optional[Dict[str, Any]], error: str):
