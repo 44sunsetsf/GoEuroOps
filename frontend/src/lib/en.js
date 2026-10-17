@@ -168,7 +168,17 @@ export default {
 
   // ── studio: catalog ──
   '助手报价、退款计算和知识库都读取同一份业务目录': 'Quotes, refund calculations and the knowledge base all read the same business catalog, ',
-  '。改价格只改这个文件，重启后端即可生效。': '. Change a price there and restart the backend.',
+  '。价格可以在这里直接改，保存后立即生效；改过的价格旁边会标出默认价。': '. Prices can be edited here and take effect as soon as they are saved; changed prices show the default next to them.',
+  '改价格': 'Edit prices',
+  '取消': 'Cancel',
+  '保存价格': 'Save prices',
+  '保存中': 'Saving',
+  '恢复默认': 'Reset',
+  '默认 {p}': 'Default {p}',
+  '{name} 的价格': 'Price of {name}',
+  '价格必须是不小于 0 的整数': 'Prices must be whole numbers, 0 or more',
+  '价格已更新': 'Prices updated',
+  '价格已生效，知识库稍后同步': 'Prices are live; the knowledge base will sync later',
   '项服务': 'services',
   '{n} 轮修改': '{n} revision rounds',
   '参与早鸟 / 团报': 'Early-bird / group discount',

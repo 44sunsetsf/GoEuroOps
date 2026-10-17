@@ -12,9 +12,9 @@
 {"id": "c02", "message": "荷兰的计算机硕士语言要求是什么，雅思要几分", "must": [], "tags": ["国家资料", "可预取"], "allow": ["lookup_country_admissions_overview"]}
 {"id": "c03", "message": "丹麦有哪些代表性的CS项目？给我官网链接", "must": [], "tags": ["国家资料", "可预取"], "allow": ["lookup_country_admissions_overview"]}
 {"id": "c04", "message": "芬兰硕士毕业后居留许可怎么办", "must": [], "tags": ["国家资料", "可预取"], "allow": ["lookup_country_admissions_overview"]}
-{"id": "r01", "message": "选校全案付了全款2999元，服务还没开始，能退多少？", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
-{"id": "r02", "message": "文书套餐3个项目我付了5999元，已经改完2轮了，现在不想做了能退多少", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
-{"id": "r03", "message": "全程陪跑付了11800元，顾问说进度大概40%，退款怎么算", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
+{"id": "r01", "message": "选校全案付了全款699元，服务还没开始，能退多少？", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
+{"id": "r02", "message": "文书套餐3个项目我付了999元，已经改完2轮了，现在不想做了能退多少", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
+{"id": "r03", "message": "全程陪跑付了1399元，顾问说进度大概40%，退款怎么算", "must": ["calculate_refund"], "allow": ["check_payment_fields", "get_payment_policy", "lookup_service_offering"], "tags": ["退款"]}
 {"id": "p01", "message": "你们支持哪些付款方式？可以分期吗", "must": [], "tags": ["付款政策", "可预取"], "allow": ["get_payment_policy"]}
 {"id": "p02", "message": "退款政策是什么样的，写清楚一点", "must": [], "tags": ["付款政策", "可预取"], "allow": ["get_payment_policy"]}
 {"id": "p03", "message": "发票能开专票吗，多久能开出来", "must": [], "allow": ["check_payment_fields", "get_payment_policy", "suggest_required_fields"], "tags": ["付款政策", "发票", "可预取"]}

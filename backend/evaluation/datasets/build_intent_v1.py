@@ -11,7 +11,7 @@ from pathlib import Path
 H_SWEDEN = [{"role": "user", "content": "瑞典的CS硕士一般要读几年？"},
             {"role": "assistant", "content": "瑞典的计算机硕士大多是两年制。"}]
 H_QUOTE = [{"role": "user", "content": "选校定位全案多少钱？"},
-           {"role": "assistant", "content": "选校定位全案标价 ¥2,999。"}]
+           {"role": "assistant", "content": "选校定位全案标价 ¥699。"}]
 H_PAID = [{"role": "user", "content": "我上周签了全程陪跑，定金已经付了"},
           {"role": "assistant", "content": "收到，我们会尽快安排顾问启动服务。"}]
 H_BOOK = [{"role": "user", "content": "我想约一次选校咨询"},

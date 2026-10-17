@@ -50,6 +50,10 @@ class SkillMatchInput(BaseModel):
     history: Optional[List[Dict[str, str]]] = None
 
 
+class PriceUpdateInput(BaseModel):
+    prices: Dict[str, int] = Field(..., description="{sku: 新价格}；填回默认价即恢复默认")
+
+
 class LeadUpdateInput(BaseModel):
     status: Optional[str] = None
     notes: Optional[str] = None

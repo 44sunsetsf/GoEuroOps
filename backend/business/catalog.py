@@ -2,13 +2,18 @@
 
 `catalog.yaml`（工作室、服务、价格、政策）和 `countries.yaml`（五国资料）是
 整个系统的单一数据源：Agent 工具、知识库种子、Skill 参考资料和前端价目面板
-都从这里读取，改价格只需要改 YAML。
+都从这里读取。
+
+价格可以随时改：YAML 里是默认价，站长在后台价目页改的价格写进数据卷里的
+覆盖文件（`GOEUROOPS_PRICE_OVERRIDES`，默认 `/app/data/price_overrides.json`），
+加载时盖在默认价上，不用改代码、不用重启，部署也不会冲掉。
 
 加载时用 pydantic 做结构校验，配置写错会在启动时直接报错，而不是等到用户
 问价格时才暴露出来。
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 from functools import lru_cache
@@ -224,9 +229,63 @@ def _business_dir() -> Path:
     return Path(os.getenv("GOEUROOPS_BUSINESS_DIR", str(_DIR))).expanduser().resolve()
 
 
+def _price_overrides_path() -> Path:
+    return Path(os.getenv("GOEUROOPS_PRICE_OVERRIDES", "/app/data/price_overrides.json")).expanduser()
+
+
+def read_price_overrides() -> Dict[str, int]:
+    """后台改过的价格 {sku: 价格}；没改过就是空。"""
+    path = _price_overrides_path()
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} 顶层必须是对象")
+    return {str(sku): int(price) for sku, price in data.items()}
+
+
+def default_prices() -> Dict[str, int]:
+    """catalog.yaml 里写的默认价。"""
+    services = _read_yaml(_business_dir() / "catalog.yaml").get("services") or []
+    return {item["sku"]: int(item["price"]) for item in services}
+
+
 @lru_cache(maxsize=1)
 def get_catalog() -> Catalog:
-    return Catalog.model_validate(_read_yaml(_business_dir() / "catalog.yaml"))
+    data = _read_yaml(_business_dir() / "catalog.yaml")
+    overrides = read_price_overrides()
+    for item in data.get("services") or []:
+        if item.get("sku") in overrides:
+            item["price"] = overrides[item["sku"]]
+    return Catalog.model_validate(data)
+
+
+def set_service_prices(changes: Dict[str, int]) -> Dict[str, int]:
+    """
+    站长改价：写覆盖文件后清缓存，下一次报价就用新价格。
+
+    改回和默认价一样的数字，就去掉这条覆盖。返回改完后的全部覆盖。
+    """
+    defaults = default_prices()
+    unknown = sorted(sku for sku in changes if sku not in defaults)
+    if unknown:
+        raise ValueError(f"没有这些服务: {', '.join(unknown)}")
+    overrides = read_price_overrides()
+    for sku, price in changes.items():
+        if isinstance(price, bool) or not isinstance(price, int) or price < 0:
+            raise ValueError(f"{sku} 的价格必须是不小于 0 的整数")
+        if price == defaults[sku]:
+            overrides.pop(sku, None)
+        else:
+            overrides[sku] = price
+
+    path = _price_overrides_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(overrides, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(path)
+    reload_business_data()
+    return overrides
 
 
 @lru_cache(maxsize=1)

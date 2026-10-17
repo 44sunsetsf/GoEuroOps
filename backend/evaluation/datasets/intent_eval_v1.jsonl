@@ -335,7 +335,7 @@
 {"text": "加一个项目的文书多少钱", "label": "service_inquiry", "tags": [], "history": []}
 {"text": "全程陪跑一共多少", "label": "service_inquiry", "tags": [], "history": []}
 {"text": "有没有只改PS的服务", "label": "service_inquiry", "tags": [], "history": []}
-{"text": "那加上老带新呢", "label": "service_inquiry", "tags": ["context"], "history": [{"role": "user", "content": "选校定位全案多少钱？"}, {"role": "assistant", "content": "选校定位全案标价 ¥2,999。"}]}
+{"text": "那加上老带新呢", "label": "service_inquiry", "tags": ["context"], "history": [{"role": "user", "content": "选校定位全案多少钱？"}, {"role": "assistant", "content": "选校定位全案标价 ¥699。"}]}
 {"text": "how much is the full package", "label": "service_inquiry", "tags": ["mixed"], "history": []}
 {"text": "免费沟通包括什么内容", "label": "service_inquiry", "tags": ["boundary"], "history": []}
 {"text": "我要人工", "label": "human_handoff", "tags": [], "history": []}

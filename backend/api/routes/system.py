@@ -1,4 +1,5 @@
 """会话身份、健康检查、价目、监控、工具轨迹和指标接口。"""
+import asyncio
 import logging
 
 
@@ -10,7 +11,7 @@ from api.demo_guard import (
 )
 
 from fastapi import APIRouter
-from api.schemas import RecentToolTracesResponse, ToolTraceResponse
+from api.schemas import PriceUpdateInput, RecentToolTracesResponse, ToolTraceResponse
 from api.state import services
 
 logger = logging.getLogger(__name__)
@@ -31,12 +32,45 @@ async def health():
     return {"status": "ok", "agents": services.orchestrator.get_stats()}
 
 
+def _catalog_payload() -> dict:
+    from business.catalog import default_prices, get_catalog, get_countries
+
+    return {"catalog": get_catalog().model_dump(), "countries": get_countries().model_dump(),
+            "default_prices": default_prices()}
+
+
 @router.get("/catalog", tags=["业务"])
 async def catalog_view():
-    """服务价目、优惠、付款退款政策和五国资料（前端价目面板使用）。"""
-    from business.catalog import get_catalog, get_countries
+    """服务价目、优惠、付款退款政策和五国资料（前端价目面板使用）。default_prices 是 catalog.yaml 里的默认价。"""
+    return _catalog_payload()
 
-    return {"catalog": get_catalog().model_dump(), "countries": get_countries().model_dump()}
+
+@router.put("/catalog/prices", tags=["业务"])
+async def update_prices(body: PriceUpdateInput):
+    """
+    站长改价，立即生效（访客 403）。
+
+    新价格写进数据卷里的覆盖文件，不改 catalog.yaml；随后同步知识库里的服务介绍，
+    并清掉检索缓存，助手下一轮回答就用新价格。
+    """
+    from business.catalog import set_service_prices
+
+    try:
+        set_service_prices(body.prices)
+    except ValueError as ex:
+        raise HTTPException(400, str(ex))
+
+    knowledge_synced = None
+    if services.knowledge_base is not None:
+        try:
+            await asyncio.to_thread(services.knowledge_base.sync_seed_documents)
+            knowledge_synced = True
+        except Exception as ex:   # 向量 API 不可用时价格照样生效，知识库下次启动再同步
+            logger.error("改价后知识库同步失败: %s", ex)
+            knowledge_synced = False
+    if services.tool_manager is not None:
+        services.tool_manager.invalidate_cache("knowledge_search")
+    return {**_catalog_payload(), "knowledge_synced": knowledge_synced}
 
 
 @router.get("/monitor")

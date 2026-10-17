@@ -472,7 +472,9 @@ flowchart LR
     catalog_py --> routing["routing.py<br/>服务名用于去除歧义"]
 ```
 
-改价格、政策、国家资料只改 YAML。线上 `business/` 挂载进容器，改完 `docker compose restart backend` 即可，不用重建镜像。
+**价格随时改，不写死在代码里**：`catalog.yaml` 里是默认价；站长在后台“服务价目”页点“改价格”，保存后调 `PUT /catalog/prices`，新价格写进数据卷里的覆盖文件（`GOEUROOPS_PRICE_OVERRIDES`，默认 `/app/data/price_overrides.json`），立即生效：报价、退款、助手回答都用新价，知识库里的服务介绍随之重新同步，检索缓存清掉。改回默认价就去掉那条覆盖。覆盖文件在数据卷里，重启和部署都不会冲掉，也不会让服务器上的代码目录出现未提交改动。前端（含学生站）不写任何价格，全部从 `GET /catalog` 读。
+
+政策、国家资料和默认价仍改 YAML。线上 `business/` 挂载进容器，改完 `docker compose restart backend` 即可，不用重建镜像。
 
 ## 11. Skills
 
@@ -571,7 +573,8 @@ flowchart LR
 | 分类 | 接口 | 说明 | 访客可写 |
 |---|---|---|---|
 | 对话 | `POST /chat`、`POST /chat/stream` | 一次性 / SSE 流式；响应带意图、Agent、工具、Skill、门控明细 | ✓（计入额度） |
-| 业务 | `GET /catalog` | 价目、优惠、政策、五国资料 | — |
+| 业务 | `GET /catalog` | 价目、默认价、优惠、政策、五国资料 | — |
+| 业务 | `PUT /catalog/prices` | 站长改价，立即生效并同步知识库 | ✗ |
 | 线索 | `GET /leads`、`PATCH /leads/{id}` | 线索和交接单；访客看到的联系方式打码 | ✗ |
 | 记忆 | `GET /memory/{user_id}/profile`、`PUT /memory/{user_id}/profile/{slot}`、`DELETE /memory/{user_id}` | 看档案、顾问核实改字段、隐私删除 | ✗ |
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload`、`POST /skills/match`、`GET /skills/evals` | 查看、热加载、命中测试、跑回归用例 | 仅 match |
@@ -689,7 +692,8 @@ flowchart LR
 
 | 需求 | 要改的地方 | 必须一起做的事 |
 |---|---|---|
-| 改价格、优惠、退款规则 | `business/catalog.yaml` | 跑 `tests/test_business.py`；规则变了要补用例 |
+| 改价格 | 后台“服务价目”页（`PUT /catalog/prices`）；默认价在 `business/catalog.yaml` | 不用改代码；测试从目录取价，不写死数字 |
+| 改优惠、退款规则 | `business/catalog.yaml` | 跑 `tests/test_business.py`；规则变了要补用例 |
 | 加一项服务 | `catalog.yaml` | 服务名会自动进入路由的去歧义词表；检查 `service_sales` Skill 的话术 |
 | 更新五国资料 | `business/countries.yaml`（带官网链接和 `last_verified`） | 知识库种子自动重建 |
 | 加一个意图 | `core/intent_categories.py`、`business/domain_terms.py` 关键词、意图识别的 few-shot 示例、`agents/routing.py` 的映射集合、`core/rag_gate.py` 的门控策略 | 跑意图基准；相关 Skill 的 `intents` 也要加 |

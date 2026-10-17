@@ -1,11 +1,12 @@
 # 指北工作室 业务目录（单一数据源）
 #
 # 报价工具、退款计算、知识库种子、前端价目面板都从这里读取。
-# 改价格/政策只改这一个文件，然后重启后端（知识库会按 seed_version 自动重建种子文档）。
+# 这里的 price 是默认价。日常改价在后台“服务价目”页，立即生效，写进数据卷的覆盖文件，不改这里。
+# 改政策或默认价改这个文件，然后重启后端（知识库会按 seed_version 自动重建种子文档）。
 #
 # 注意：以下价格、政策为草案，需要创始人确认后再对外使用。
 
-catalog_version: "2026.09-v3"
+catalog_version: "2026.10-v4"
 currency: CNY
 currency_symbol: "¥"
 
@@ -51,7 +52,7 @@ services:
   - sku: consult_single
     name: 单次选校咨询
     category: consult
-    price: 699
+    price: 199
     unit: 次（60 分钟）
     duration: 60 分钟线上 1 对 1
     summary: 适合已经有初步想法、想找过来人快速把方向定下来的同学。
@@ -65,15 +66,15 @@ services:
     turnaround: 预约后 5 个工作日内安排
     extras:
       - name: 加时
-        price: 299
+        price: 99
         unit: 30 分钟
     discount_eligible: false
-    upgrade_note: 30 天内升级选校定位全案，可抵扣 ¥699。
+    upgrade_note: 30 天内升级选校定位全案，可抵扣 ¥199。
 
   - sku: selection_full
     name: 选校定位全案
     category: selection
-    price: 2999
+    price: 699
     unit: 套
     summary: 从背景评估到最终选校清单和时间规划，一次讲透。
     includes:
@@ -93,7 +94,7 @@ services:
   - sku: ps_single
     name: PS/动机信单篇辅导
     category: essay
-    price: 2499
+    price: 599
     unit: 篇
     summary: 由顾问陪你把经历梳理成有说服力的个人陈述或动机信（Motivation Letter）。
     includes:
@@ -110,7 +111,7 @@ services:
   - sku: cv
     name: 学术简历（CV）优化
     category: essay
-    price: 899
+    price: 299
     unit: 份
     summary: 按欧洲高校偏好的学术简历格式，突出课程、项目和科研经历。
     includes:
@@ -124,7 +125,7 @@ services:
   - sku: rl_guide
     name: 推荐信指导
     category: essay
-    price: 599
+    price: 199
     unit: 封
     summary: 帮你和推荐人准备素材、明确侧重点，让推荐信和其他材料互相印证。
     includes:
@@ -139,7 +140,7 @@ services:
   - sku: extra_round
     name: 文书额外修改轮
     category: addon
-    price: 399
+    price: 129
     unit: 轮
     summary: 任意文书超出套餐轮次后的追加修改。
     includes: [1 轮完整修改意见]
@@ -150,7 +151,7 @@ services:
   - sku: essay_pack_3
     name: 文书套餐 · 3 个项目
     category: package
-    price: 5999
+    price: 999
     unit: 套
     summary: 1 篇主文书打磨透，再针对 3 个目标项目做定制化改写。
     includes:
@@ -165,7 +166,7 @@ services:
   - sku: essay_pack_5
     name: 文书套餐 · 5 个项目
     category: package
-    price: 8499
+    price: 1299
     unit: 套
     summary: 适合申请项目多、各项目文书题目差异大的同学。
     includes:
@@ -180,7 +181,7 @@ services:
   - sku: full_journey
     name: 全程陪跑
     category: package
-    price: 11800
+    price: 1399
     unit: 套
     summary: 从选校到拿录取，一位创始人顾问全程跟进。
     includes:
@@ -196,7 +197,7 @@ services:
   - sku: full_journey_plus
     name: 全程陪跑 Plus
     category: package
-    price: 15800
+    price: 1499
     unit: 套
     summary: 在全程陪跑基础上延伸到面试、签证材料和落地准备。
     includes:
@@ -210,7 +211,7 @@ services:
   - sku: app_review
     name: 网申材料审核
     category: addon
-    price: 499
+    price: 149
     unit: 所学校
     summary: 提交前逐项核对网申表格和上传材料，降低低级错误。
     includes: [网申表格逐项核对, 材料完整性与格式检查]
@@ -221,7 +222,7 @@ services:
   - sku: mock_interview
     name: 模拟面试
     category: addon
-    price: 399
+    price: 149
     unit: 次（45 分钟）
     summary: 针对有面试环节的项目（如部分荷兰、丹麦项目）做英文模拟面试。
     includes: [45 分钟英文模拟, 书面反馈]
@@ -232,7 +233,7 @@ services:
   - sku: visa_guide
     name: 签证/居留材料指导
     category: addon
-    price: 699
+    price: 199
     unit: 次
     summary: 按目标国家整理学生居留许可材料清单并答疑。
     includes: [个性化材料清单, 1 次 45 分钟答疑]
@@ -253,8 +254,8 @@ discounts:
     rule: 同校或同班 2 人及以上一起报名任意套餐，每人享 95 折。
   referral:
     name: 老带新
-    amount: 300
-    rule: 由指北老学员推荐，新学员立减 ¥300（推荐人同样获得 ¥300 返现）；可与早鸟或团报叠加。
+    amount: 100
+    rule: 由指北老学员推荐，新学员立减 ¥100（推荐人同样获得 ¥100 返现）；可与早鸟或团报叠加。
   stacking_rule: 早鸟和团报二选一，自动取更优惠的一项；老带新可在此基础上叠加。
   floor_ratio: 0.85
   floor_rule: 所有优惠叠加后，实付不低于标价的 85%。

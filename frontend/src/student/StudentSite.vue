@@ -142,7 +142,7 @@ const catalog = ref(null)
 
 const menu = computed(() => {
   const live = Object.fromEntries((catalog.value?.services || []).map((s) => [s.sku, s]))
-  return MENU.map((item) => ({ ...item, price: live[item.sku]?.price ?? item.price }))
+  return MENU.map((item) => ({ ...item, price: live[item.sku]?.price }))
 })
 
 const earlyBird = computed(() => {
@@ -155,6 +155,7 @@ const earlyBird = computed(() => {
 })
 
 function formatPrice(price) {
+  if (price == null) return ''
   return price === 0 ? t('免费') : `¥${Number(price).toLocaleString('en-US')}`
 }
 
@@ -170,7 +171,7 @@ onMounted(async () => {
   window.addEventListener('scroll', onScroll, { passive: true })
   try {
     catalog.value = (await requestCatalog({ apiUrl: '' })).catalog
-  } catch { /* the static menu is already on screen */ }
+  } catch { /* the menu stays on screen without prices */ }
 })
 onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>

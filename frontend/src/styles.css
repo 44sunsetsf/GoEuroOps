@@ -1495,6 +1495,8 @@ button.stat-tile:hover:not(:disabled) { background: var(--panel-2); border-color
 .price-tag { text-align: right; white-space: nowrap; }
 .price-tag b { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--spark); color: var(--spark-ink); font: 700 17px var(--display-font); }
 .price-tag small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.price-tag .price-input { width: 96px; padding: 4px 8px; text-align: right; font: 700 15px var(--display-font); }
+.price-tag .link-button { display: block; margin: 3px 0 0 auto; font-size: 11px; }
 .service-summary { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.6; }
 .check-list, .cross-list, .policy-list { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; line-height: 1.55; }
 .check-list li::before { content: '✓ '; color: var(--green); font-weight: 800; }

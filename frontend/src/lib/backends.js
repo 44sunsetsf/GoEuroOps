@@ -59,6 +59,10 @@ export async function requestCatalog(settings) {
   return requestJson(backendMeta(settings).baseUrl, '/catalog')
 }
 
+export async function updatePrices(settings, prices) {
+  return requestJson(backendMeta(settings).baseUrl, '/catalog/prices', jsonRequest('PUT', { prices }))
+}
+
 export async function requestLeads(settings, { status = '', type = '' } = {}) {
   const params = new URLSearchParams()
   if (status) params.set('status', status)

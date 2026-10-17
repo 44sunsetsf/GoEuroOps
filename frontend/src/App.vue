@@ -300,7 +300,7 @@
     </section>
 
     <LeadsView v-else-if="activeView === 'leads'" :settings="settings" :readonly="readonly" @toast="showToast" />
-    <CatalogView v-else-if="activeView === 'catalog'" :settings="settings" />
+    <CatalogView v-else-if="activeView === 'catalog'" :settings="settings" :readonly="readonly" @toast="showToast" />
     <SkillsView v-else-if="activeView === 'skills'" :settings="settings" :readonly="readonly" @toast="showToast" />
 
     <section v-else class="page page-evaluation">

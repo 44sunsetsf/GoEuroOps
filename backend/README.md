@@ -38,7 +38,7 @@ python -m pytest -q
 | 分类 | 接口 | 说明 |
 |---|---|---|
 | 对话 | `POST /chat`、`POST /chat/stream` | 一次性返回 / SSE 流式；响应带 `skills_applied`、`rag_gate`、工具调用 |
-| 业务 | `GET /catalog` | 服务价目、优惠、付款退款政策、五国资料 |
+| 业务 | `GET /catalog`、`PUT /catalog/prices` | 服务价目（含默认价）、优惠、付款退款政策、五国资料；站长改价立即生效 |
 | 线索 | `GET /leads`、`PATCH /leads/{id}` | 咨询线索和转顾问交接单 |
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload` | 查看、热加载 |
 | | `POST /skills/match`、`GET /skills/evals` | 命中测试（得分明细）、跑命中回归用例 |
@@ -74,7 +74,7 @@ tooling/gateway.py             工具网关：入参校验、超时、熔断、�
 tooling/amount_guard.py        金额护栏：回复里的人民币金额必须有依据，否则这一句被替换（流式按句放行）
 tooling/breaker.py             三态熔断器（网关和检索管理器共用）
 mcp_server.py                  只读工具的 MCP 入口，给外部客户端用（依赖见 requirements-mcp.txt，不进后端镜像）
-business/catalog.yaml          服务、价格、优惠、付款退款发票政策（改价格改这里）
+business/catalog.yaml          服务、默认价、优惠、付款退款发票政策（日常改价在后台价目页）
 business/countries.yaml        五国 CS 硕士申请资料（带官网链接和核实日期）
 business/articles/*.md         知识库补充文章（时间线、材料清单、APS、FAQ 等）
 business/pricing.py            报价与退款的确定性计算
@@ -142,5 +142,6 @@ claude mcp add goeuroops-studio -- python /绝对路径/backend/mcp_server.py
 | `GOEUROOPS_EMBEDDING_MODEL` | BAAI/bge-small-zh-v1.5 | 知识库向量模型；`default` 使用 ChromaDB 默认英文模型 |
 | `GOEUROOPS_EVAL_DIM_THRESHOLD` | 0.75 | 评测建议的单维度阈值 |
 | `GOEUROOPS_AMOUNT_GUARD` | enforce | 金额护栏：`enforce` 替换没有依据的金额 / `warn` 只记录 / `off` |
+| `GOEUROOPS_PRICE_OVERRIDES` | /app/data/price_overrides.json | 后台改过的价格存这里，盖在 `catalog.yaml` 默认价上 |
 
 更详细的设计说明见 [wiki/Skills与意图门控RAG.md](wiki/Skills与意图门控RAG.md)。
