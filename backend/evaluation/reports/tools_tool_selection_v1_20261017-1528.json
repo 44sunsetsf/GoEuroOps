@@ -1,0 +1,1051 @@
+{
+  "dataset": "tool_selection_v1",
+  "model": "deepseek-v4-flash",
+  "run_at": "2026-10-17T15:28:33",
+  "wall_seconds": 39.1,
+  "summary": {
+    "samples": 39,
+    "accuracy": 0.9744,
+    "must_recall": 1.0,
+    "extra_rate": 0.0256,
+    "forbid_hits": 0,
+    "avg_calls": 0.95,
+    "search_rate": 0.0256,
+    "errors": 0
+  },
+  "by_tag": {
+    "不该调": {
+      "samples": 4,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "付款异常": {
+      "samples": 2,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.5,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "付款政策": {
+      "samples": 3,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "价目": {
+      "samples": 4,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.25,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "优惠叠加": {
+      "samples": 2,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.5,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "发票": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "可预取": {
+      "samples": 13,
+      "accuracy": 0.9231,
+      "must_recall": null,
+      "extra_rate": 0.0769,
+      "forbid_hits": 0,
+      "avg_calls": 0.31,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "国家资料": {
+      "samples": 4,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.25,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "多轮": {
+      "samples": 2,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.5,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "定金": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 3.0,
+      "search_rate": 1.0,
+      "errors": 0
+    },
+    "工作室信息": {
+      "samples": 2,
+      "accuracy": 0.5,
+      "must_recall": null,
+      "extra_rate": 0.5,
+      "forbid_hits": 0,
+      "avg_calls": 1.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "投诉": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "报价": {
+      "samples": 6,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 2.33,
+      "search_rate": 0.1667,
+      "errors": 0
+    },
+    "未同意": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "比金额": {
+      "samples": 2,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 2.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "登记线索": {
+      "samples": 4,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.75,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "缺金额": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "转顾问": {
+      "samples": 3,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "边界": {
+      "samples": 6,
+      "accuracy": 1.0,
+      "must_recall": null,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 0.33,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "退款": {
+      "samples": 4,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.5,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "隐私": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.0,
+      "search_rate": 0.0,
+      "errors": 0
+    },
+    "预约": {
+      "samples": 1,
+      "accuracy": 1.0,
+      "must_recall": 1.0,
+      "extra_rate": 0.0,
+      "forbid_hits": 0,
+      "avg_calls": 1.0,
+      "search_rate": 0.0,
+      "errors": 0
+    }
+  },
+  "wrong": [
+    {
+      "id": "g02",
+      "message": "你们和国内的时差是多少，晚上能找到人吗",
+      "tags": [
+        "工作室信息",
+        "可预取"
+      ],
+      "must": [],
+      "used": [
+        "create_handoff_summary"
+      ],
+      "agent": "escalation",
+      "intent": "human_handoff",
+      "latency_ms": 1121,
+      "error": "",
+      "missing": [],
+      "extra": [
+        "create_handoff_summary"
+      ],
+      "forbidden": [],
+      "correct": false
+    }
+  ],
+  "rows": [
+    {
+      "id": "q01",
+      "message": "选校全案加3个项目的文书套餐，一共多少钱？",
+      "tags": [
+        "报价"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "lookup_service_offering",
+        "lookup_service_offering",
+        "quote_service_bundle"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 5912,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "q02",
+      "message": "我和两个同学一起报全程陪跑，三个人每人要付多少？",
+      "tags": [
+        "报价",
+        "优惠叠加"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "lookup_service_offering",
+        "quote_service_bundle"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 4389,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "q03",
+      "message": "老学员推荐的，报文书套餐5个项目，月底前签，能便宜多少？",
+      "tags": [
+        "报价",
+        "优惠叠加"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "quote_service_bundle"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 4512,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "q04",
+      "message": "CV优化加推荐信指导加模拟面试，打包算一下价格",
+      "tags": [
+        "报价"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "lookup_service_offering",
+        "lookup_service_offering",
+        "lookup_service_offering",
+        "quote_service_bundle"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 5988,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "q05",
+      "message": "全程陪跑Plus签约的时候要先交多少定金？",
+      "tags": [
+        "报价",
+        "定金"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "quote_service_bundle",
+        "get_payment_policy",
+        "search_knowledge_base"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 6841,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "q06",
+      "message": "那加一个签证材料指导呢，总价变成多少",
+      "tags": [
+        "报价",
+        "多轮"
+      ],
+      "must": [
+        "quote_service_bundle"
+      ],
+      "used": [
+        "quote_service_bundle"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 3946,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "s01",
+      "message": "你们都有哪些服务？价格表发我看看",
+      "tags": [
+        "价目",
+        "可预取"
+      ],
+      "must": [],
+      "used": [
+        "lookup_service_offering"
+      ],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 5083,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "s02",
+      "message": "PS单篇辅导包括几轮修改？多久交付？",
+      "tags": [
+        "价目",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 3081,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "s03",
+      "message": "全程陪跑和全程陪跑Plus有什么区别",
+      "tags": [
+        "价目",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 3844,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "s04",
+      "message": "模拟面试是一对一的吗，具体怎么进行",
+      "tags": [
+        "价目",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 2410,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "c01",
+      "message": "德国CS硕士的申请费和学费大概多少？",
+      "tags": [
+        "国家资料",
+        "可预取"
+      ],
+      "must": [],
+      "used": [
+        "lookup_country_admissions_overview"
+      ],
+      "agent": "consulting",
+      "intent": "study_consult",
+      "latency_ms": 4891,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "c02",
+      "message": "荷兰的计算机硕士语言要求是什么，雅思要几分",
+      "tags": [
+        "国家资料",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "application_process",
+      "latency_ms": 3435,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "c03",
+      "message": "丹麦有哪些代表性的CS项目？给我官网链接",
+      "tags": [
+        "国家资料",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "study_consult",
+      "latency_ms": 3508,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "c04",
+      "message": "芬兰硕士毕业后居留许可怎么办",
+      "tags": [
+        "国家资料",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "study_consult",
+      "latency_ms": 4380,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "r01",
+      "message": "选校全案付了全款2999元，服务还没开始，能退多少？",
+      "tags": [
+        "退款"
+      ],
+      "must": [
+        "calculate_refund"
+      ],
+      "used": [
+        "calculate_refund",
+        "check_payment_fields"
+      ],
+      "agent": "billing",
+      "intent": "refund",
+      "latency_ms": 6264,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "r02",
+      "message": "文书套餐3个项目我付了5999元，已经改完2轮了，现在不想做了能退多少",
+      "tags": [
+        "退款"
+      ],
+      "must": [
+        "calculate_refund"
+      ],
+      "used": [
+        "calculate_refund",
+        "check_payment_fields"
+      ],
+      "agent": "billing",
+      "intent": "refund",
+      "latency_ms": 6406,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "r03",
+      "message": "全程陪跑付了11800元，顾问说进度大概40%，退款怎么算",
+      "tags": [
+        "退款"
+      ],
+      "must": [
+        "calculate_refund"
+      ],
+      "used": [
+        "check_payment_fields",
+        "calculate_refund"
+      ],
+      "agent": "billing",
+      "intent": "refund",
+      "latency_ms": 4203,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "p01",
+      "message": "你们支持哪些付款方式？可以分期吗",
+      "tags": [
+        "付款政策",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "billing",
+      "intent": "billing",
+      "latency_ms": 2962,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "p02",
+      "message": "退款政策是什么样的，写清楚一点",
+      "tags": [
+        "付款政策",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "billing",
+      "intent": "refund",
+      "latency_ms": 3377,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "p03",
+      "message": "发票能开专票吗，多久能开出来",
+      "tags": [
+        "付款政策",
+        "发票",
+        "可预取"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "billing",
+      "intent": "invoice",
+      "latency_ms": 2730,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "a01",
+      "message": "我付了3540元，合同上写的是3450元，差了多少？",
+      "tags": [
+        "比金额"
+      ],
+      "must": [
+        "compare_amounts"
+      ],
+      "used": [
+        "compare_amounts",
+        "check_payment_fields"
+      ],
+      "agent": "billing",
+      "intent": "payment_issue",
+      "latency_ms": 4027,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "a02",
+      "message": "第一次付了2000，第二次付了5798，合同总价7798，我是不是多付了",
+      "tags": [
+        "比金额",
+        "边界"
+      ],
+      "must": [],
+      "used": [
+        "compare_amounts",
+        "check_payment_fields"
+      ],
+      "agent": "billing",
+      "intent": "payment_issue",
+      "latency_ms": 3826,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "f01",
+      "message": "尾款昨天用支付宝付了但是一直显示未到账",
+      "tags": [
+        "付款异常"
+      ],
+      "must": [
+        "check_payment_fields"
+      ],
+      "used": [
+        "check_payment_fields",
+        "get_payment_policy"
+      ],
+      "agent": "billing",
+      "intent": "payment_issue",
+      "latency_ms": 4021,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "f02",
+      "message": "合同号GE2026-0315，我想确认一下定金付款成功没有",
+      "tags": [
+        "付款异常"
+      ],
+      "must": [
+        "check_payment_fields"
+      ],
+      "used": [
+        "check_payment_fields"
+      ],
+      "agent": "billing",
+      "intent": "payment_issue",
+      "latency_ms": 3932,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "l01",
+      "message": "我叫小王，微信 wang_2027，同意顾问联系我，想了解瑞典CS硕士申请",
+      "tags": [
+        "登记线索"
+      ],
+      "must": [
+        "create_consultation_lead"
+      ],
+      "used": [
+        "create_consultation_lead",
+        "lookup_country_admissions_overview"
+      ],
+      "agent": "consulting",
+      "intent": "study_consult",
+      "latency_ms": 5592,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "l02",
+      "message": "我叫李明，想约一次免费初步沟通，邮箱 li.ming@example.com，同意你们直接联系我",
+      "tags": [
+        "登记线索",
+        "预约"
+      ],
+      "must": [
+        "create_consultation_lead"
+      ],
+      "used": [
+        "create_consultation_lead"
+      ],
+      "agent": "consulting",
+      "intent": "booking",
+      "latency_ms": 4395,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "l03",
+      "message": "我想预约一次咨询，但联系方式先不给，你先说说流程",
+      "tags": [
+        "登记线索",
+        "边界"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "booking",
+      "latency_ms": 3579,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "l04",
+      "message": "我的手机是13800138000",
+      "tags": [
+        "登记线索",
+        "边界",
+        "未同意"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "general",
+      "intent": "account",
+      "latency_ms": 2489,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "h01",
+      "message": "我要找真人顾问",
+      "tags": [
+        "转顾问"
+      ],
+      "must": [
+        "create_handoff_summary"
+      ],
+      "used": [
+        "create_handoff_summary"
+      ],
+      "agent": "escalation",
+      "intent": "human_handoff",
+      "latency_ms": 938,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "h02",
+      "message": "请删除我之前留下的所有个人资料",
+      "tags": [
+        "转顾问",
+        "隐私"
+      ],
+      "must": [
+        "create_handoff_summary"
+      ],
+      "used": [
+        "create_handoff_summary"
+      ],
+      "agent": "escalation",
+      "intent": "data_privacy",
+      "latency_ms": 977,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "h03",
+      "message": "文书拖了两周还没给我，我要投诉，叫你们负责人来",
+      "tags": [
+        "转顾问",
+        "投诉"
+      ],
+      "must": [
+        "create_handoff_summary"
+      ],
+      "used": [
+        "create_handoff_summary"
+      ],
+      "agent": "escalation",
+      "intent": "escalation",
+      "latency_ms": 1061,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "g01",
+      "message": "你们工作室在哪里？一般多久回复消息",
+      "tags": [
+        "工作室信息",
+        "可预取"
+      ],
+      "must": [],
+      "used": [
+        "get_studio_profile"
+      ],
+      "agent": "general",
+      "intent": "query",
+      "latency_ms": 3828,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "g02",
+      "message": "你们和国内的时差是多少，晚上能找到人吗",
+      "tags": [
+        "工作室信息",
+        "可预取"
+      ],
+      "must": [],
+      "used": [
+        "create_handoff_summary"
+      ],
+      "agent": "escalation",
+      "intent": "human_handoff",
+      "latency_ms": 1121,
+      "error": "",
+      "missing": [],
+      "extra": [
+        "create_handoff_summary"
+      ],
+      "forbidden": [],
+      "correct": false
+    },
+    {
+      "id": "n01",
+      "message": "你好",
+      "tags": [
+        "不该调"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "general",
+      "intent": "greeting",
+      "latency_ms": 2148,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "n02",
+      "message": "谢谢，顾问很专业！",
+      "tags": [
+        "不该调"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "general",
+      "intent": "feedback",
+      "latency_ms": 2313,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "n03",
+      "message": "早上好，在吗",
+      "tags": [
+        "不该调"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "general",
+      "intent": "greeting",
+      "latency_ms": 2524,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "n04",
+      "message": "我均分85、雅思7，你直接告诉我能不能上KTH",
+      "tags": [
+        "不该调",
+        "边界"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "study_consult",
+      "latency_ms": 3980,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "n05",
+      "message": "能便宜点吗？给我打个八折",
+      "tags": [
+        "边界",
+        "多轮"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "consulting",
+      "intent": "service_inquiry",
+      "latency_ms": 3214,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    },
+    {
+      "id": "r04",
+      "message": "选校全案付了全款，服务还没开始，能退多少？",
+      "tags": [
+        "退款",
+        "边界",
+        "缺金额"
+      ],
+      "must": [],
+      "used": [],
+      "agent": "billing",
+      "intent": "refund",
+      "latency_ms": 4934,
+      "error": "",
+      "missing": [],
+      "extra": [],
+      "forbidden": [],
+      "correct": true
+    }
+  ]
+}

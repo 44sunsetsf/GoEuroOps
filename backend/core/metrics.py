@@ -19,6 +19,12 @@ LEADS_CREATED = Counter(
     ["type"],
 )
 
+LEAD_NOTIFY = Counter(
+    "goeuroops_lead_notify_total",
+    "新线索 / 交接单推送到飞书的次数",
+    ["type", "outcome"],   # ok / error / circuit_open
+)
+
 TOOL_CALLS = Counter(
     "goeuroops_tool_calls_total",
     "Agent 工具调用次数",

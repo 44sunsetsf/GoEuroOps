@@ -59,6 +59,10 @@ services:
       GOEUROOPS_EMBEDDING_PROVIDER: api
       GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:?在 .env 里设置 SILICONFLOW_API_KEY（向量 API）}
       CHROMA_HOST: ""
+      # 新线索 / 转顾问交接单推送到飞书群机器人；不设置就不推送
+      GOEUROOPS_FEISHU_WEBHOOK: ${GOEUROOPS_FEISHU_WEBHOOK:-}
+      GOEUROOPS_FEISHU_SECRET: ${GOEUROOPS_FEISHU_SECRET:-}
+      GOEUROOPS_LEADS_PANEL_URL: ${GOEUROOPS_LEADS_PANEL_URL:-}
       # 小内存机器：减少 glibc 内存碎片
       MALLOC_ARENA_MAX: "2"
       # 释放的内存及时还给系统，而不是留在 glibc 的空闲链表里

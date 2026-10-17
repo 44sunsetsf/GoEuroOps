@@ -201,3 +201,104 @@ def test_handoff_is_idempotent_per_open_conversation():
         assert reopened["deduplicated"] is False and reopened["id"] != first["id"]
 
     asyncio.run(run())
+
+
+class SlowRedis:
+    """内存版 Redis：每次操作都让出一次事件循环，模拟网络往返，用来暴露"先查后建"的竞态。"""
+
+    def __init__(self):
+        self.kv, self.zset = {}, {}
+
+    async def set(self, key, value, nx=False, ex=None):
+        await asyncio.sleep(0)
+        if nx and key in self.kv:
+            return None
+        self.kv[key] = value
+        return True
+
+    async def get(self, key):
+        await asyncio.sleep(0)
+        return self.kv.get(key)
+
+    async def delete(self, key):
+        await asyncio.sleep(0)
+        self.kv.pop(key, None)
+
+    async def zadd(self, key, mapping):
+        await asyncio.sleep(0)
+        self.zset.update(mapping)
+
+    async def zrevrange(self, key, start, end):
+        await asyncio.sleep(0)
+        return sorted(self.zset, key=self.zset.get, reverse=True)[start:end + 1]
+
+    async def mget(self, keys):
+        await asyncio.sleep(0)
+        return [self.kv.get(k) for k in keys]
+
+
+def test_concurrent_handoffs_create_one_ticket():
+    """用户连点两次"转人工"：两个请求同时到达，只建一张单，另一个并进 followups。"""
+    async def run():
+        store = LeadStore(redis_client=SlowRedis())
+        base = {"user_id": "u1", "conv_id": "c1", "reason": "用户要求真人顾问", "last_message": "转人工"}
+        a, b = await asyncio.gather(store.create_handoff(base), store.create_handoff(base))
+        assert store.backend == "redis"
+        assert a["id"] == b["id"]
+        assert sorted([a["deduplicated"], b["deduplicated"]]) == [False, True]
+        assert len(await store.list(lead_type="handoff")) == 1
+
+    asyncio.run(run())
+
+
+def test_handoff_dedup_survives_redis_and_reopens_after_close():
+    async def run():
+        store = LeadStore(redis_client=SlowRedis())
+        base = {"user_id": "u1", "conv_id": "c1", "reason": "r", "last_message": "转人工"}
+        first = await store.create_handoff(base)
+        await store.update(first["id"], status="converted")
+        again = await store.create_handoff(base)
+        assert again["deduplicated"] is False and again["id"] != first["id"]
+        # 占位键指向的单被删掉（如手工清理）时，不会卡死，释放后重新建单
+        store._redis.kv.pop("goeuroops:lead:" + again["id"])
+        third = await store.create_handoff(base)
+        assert third["deduplicated"] is False and third["id"] not in (first["id"], again["id"])
+
+    asyncio.run(run())
+
+
+def test_lead_dedup_by_contact_merges_new_fields():
+    async def run():
+        store = LeadStore(redis_client=SlowRedis())
+        first = await store.create_lead({**_lead(countries=["瑞典"]), "conv_id": "c1"})
+        # 换了会话、联系方式写法略有不同（大小写、空格），仍是同一个人
+        second = await store.create_lead({**_lead(countries=["德国"], contact=" WANG_2027 "), "conv_id": "c2"})
+        assert first["deduplicated"] is False
+        assert second["deduplicated"] is True and second["id"] == first["id"]
+        assert second["countries"] == ["德国"]
+        assert len(await store.list(lead_type="lead")) == 1
+        other = await store.create_lead(_lead(contact="lisi_2024"))
+        assert other["id"] != first["id"]
+
+    asyncio.run(run())
+
+
+def test_handoff_urgency_upgrade_renotifies():
+    class Recorder:
+        def __init__(self):
+            self.sent = []
+
+        def notify(self, lead):
+            self.sent.append((lead["id"], lead.get("urgency")))
+
+    async def run():
+        store = LeadStore()
+        store.notifier = Recorder()
+        base = {"user_id": "u1", "conv_id": "c1", "reason": "r", "urgency": "MEDIUM"}
+        first = await store.create_handoff(base)
+        await store.create_handoff(base)                          # 重复：不推
+        await store.create_handoff({**base, "urgency": "CRITICAL"})  # 升到紧急：再推一次
+        await store.create_handoff({**base, "urgency": "HIGH"})      # 不降级，也不推
+        assert store.notifier.sent == [(first["id"], "MEDIUM"), (first["id"], "CRITICAL")]
+
+    asyncio.run(run())

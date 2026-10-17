@@ -78,6 +78,9 @@ services:
       GOEUROOPS_SKILLS_DIR: /app/skills
       PROMETHEUS_PORT: "9091"
       MONITOR_INTERVAL: "10"
+      GOEUROOPS_FEISHU_WEBHOOK: ${GOEUROOPS_FEISHU_WEBHOOK:-}
+      GOEUROOPS_FEISHU_SECRET: ${GOEUROOPS_FEISHU_SECRET:-}
+      GOEUROOPS_LEADS_PANEL_URL: ${GOEUROOPS_LEADS_PANEL_URL:-}
     volumes:
       - backend-data:/app/data
       - backend-logs:/app/logs

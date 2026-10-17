@@ -61,6 +61,10 @@ GOEUROOPS_DAILY_COST_LIMIT=3
 GOEUROOPS_GUEST_KEY=...
 # 向量 API（硅基流动）：生产环境不在本机跑向量模型，省内存
 SILICONFLOW_API_KEY=你的硅基流动 key
+# 可选：新线索 / 转顾问交接单推送到飞书群（群设置 → 机器人 → 自定义机器人，开启“签名校验”）
+GOEUROOPS_FEISHU_WEBHOOK=https://open.feishu.cn/open-apis/bot/v2/hook/...
+GOEUROOPS_FEISHU_SECRET=签名校验的密钥
+GOEUROOPS_LEADS_PANEL_URL=https://你的地址/（线索面板入口）
 EOF
 chmod 600 .env
 ```

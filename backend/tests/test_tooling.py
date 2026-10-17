@@ -167,6 +167,26 @@ def test_extract_amounts_handles_rmb_formats_only():
     assert sorted(extract_amounts(text)) == [2000.0, 7798.0, 12000.0]
 
 
+def test_cn_to_number():
+    from tooling.amount_guard import cn_to_number
+    cases = {"三千": 3000, "一万二千五百": 12500, "一万二": 12000, "三千五": 3500, "一千零五": 1005,
+             "十五": 15, "两万零八百": 20800, "三十": 30, "二零二六": 2026, "五": 5}
+    assert {k: cn_to_number(k) for k in cases} == cases
+
+
+def test_extract_amounts_handles_chinese_numerals():
+    text = "全案三千元，加文书一万二千块钱，定金3千元；几千元、上千元都只是约数，第三轮修改。"
+    assert sorted(extract_amounts(text)) == [3000.0, 3000.0, 12000.0]
+
+
+def test_guard_catches_made_up_chinese_amount_and_accepts_user_wording():
+    guard = _guard('{"total": 7798}')
+    out = guard.sanitize("合计 7798 元。我再给你便宜五百元吧。")
+    assert "五百元" not in out and NOTICE in out
+    # 用户自己说的"预算三千"，模型写成阿拉伯数字也算有依据
+    assert _guard("我预算三千左右").sanitize("你的预算 3,000 元可以选单项服务。") == "你的预算 3,000 元可以选单项服务。"
+
+
 def _guard(*grounded, mode="enforce"):
     g = AmountGrounding()
     g.add_many(grounded)
