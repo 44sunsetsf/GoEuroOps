@@ -40,7 +40,7 @@ export default {
   '下面的快捷问题覆盖了咨询、报价、边界和售后几类场景，你也可以直接输入自己的测试用例。':
     'The shortcuts below cover consulting, quotes, boundaries and after-sales. You can also type your own test case.',
   '输入消息...': 'Type a message…',
-  '⌘ / Ctrl + Enter 发送': '⌘ / Ctrl + Enter to send',
+  'Enter 发送，Shift + Enter 换行': 'Enter to send, Shift + Enter for a new line',
   '处理中': 'Working',
   '发送': 'Send',
   '瑞典 CS 硕士': 'Swedish CS master\'s',

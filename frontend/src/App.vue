@@ -120,11 +120,10 @@
               v-model="draft"
               rows="3"
               :placeholder="t('输入消息...')"
-              @keydown.meta.enter.prevent="sendMessage"
-              @keydown.ctrl.enter.prevent="sendMessage"
+              @keydown.enter="onComposerEnter"
             ></textarea>
             <div class="composer-bottom">
-              <span>{{ t('⌘ / Ctrl + Enter 发送') }}</span>
+              <span>{{ t('Enter 发送，Shift + Enter 换行') }}</span>
               <button type="submit" :disabled="busy || !draft.trim()">{{ busy ? t('处理中') : t('发送') }}</button>
             </div>
           </form>
@@ -559,6 +558,14 @@ async function loadMonitor() {
   } catch {
     monitorData.value = { agent_stats: {}, tool_stats: {}, active_alerts: [], suggestions: [] }
   }
+}
+
+// 和常见聊天网站一样：Enter 发送，Shift + Enter 换行；
+// 中文输入法正在选字时按 Enter 是确认拼音，不能发送（isComposing，Safari 旧版只给 keyCode 229）
+function onComposerEnter(event) {
+  if (event.shiftKey || event.isComposing || event.keyCode === 229) return
+  event.preventDefault()
+  sendMessage()
 }
 
 async function sendMessage() {
