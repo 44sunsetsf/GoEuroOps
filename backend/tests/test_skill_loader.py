@@ -228,3 +228,15 @@ def test_composite_detection_ignores_service_names_in_refund_questions():
     decision = orchestrator._route_decision(req)
     assert decision.primary_agent is AgentType.BILLING
     assert decision.supporting_agents == []
+
+
+def test_skills_do_not_hard_code_prices():
+    # 价格在后台随时会改；Skill 会注入系统提示词，金额护栏也把它当依据，写死的金额过期后会被直接说给用户
+    import re
+    from pathlib import Path
+
+    price = re.compile(r"[¥￥]\s*\d|\d[\d,]*\s*(?:元|块)")
+    root = Path(__file__).resolve().parent.parent / "skills"
+    offenders = [f"{p.relative_to(root)}:{i}" for p in root.rglob("*.md")
+                 for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if price.search(line)]
+    assert offenders == [], f"Skill 里不要写具体金额，改成让模型调用报价/查询工具：{offenders}"
