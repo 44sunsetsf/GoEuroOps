@@ -365,5 +365,5 @@ class WikiKnowledge:
 
 
 def knowledge_backend() -> str:
-    """GOEUROOPS_KNOWLEDGE_BACKEND=wiki|rag，默认 rag。"""
-    return os.getenv("GOEUROOPS_KNOWLEDGE_BACKEND", "rag").strip().lower()
+    """GOEUROOPS_KNOWLEDGE_BACKEND=wiki|rag，默认 wiki（评测结果见 docs/ARCHITECTURE.md 第 12 节）。"""
+    return os.getenv("GOEUROOPS_KNOWLEDGE_BACKEND", "wiki").strip().lower()

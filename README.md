@@ -22,8 +22,8 @@ Students learn about the five countries and the services on the public site and 
 |---|---|
 | Intent recognition | Three signals fused — LLM few-shot, local embeddings and keywords — across 15 studio-specific intents |
 | Multi-agent orchestration | Front desk / study consulting / billing & after-sales / human handover; compound questions are handled in parallel and merged |
-| Intent-gated RAG | Knowledge intents trigger a speculative prefetch **in parallel** with intent recognition, saving a tool-call round trip; greetings, complaints and privacy questions skip retrieval |
-| Knowledge base | ChromaDB + bge-small-zh Chinese embeddings (ONNX) with hybrid lexical-coverage scoring; seed documents are generated from the business catalog and versioned |
+| Intent-gated knowledge prefetch | Knowledge intents trigger a speculative prefetch **in parallel** with intent recognition, saving a tool-call round trip; greetings, complaints and privacy questions skip it |
+| Knowledge base (LLM Wiki) | Topic pages built from the business catalog at request time (prices are always current) plus an LLM-compiled index and glossary that pass a lint; an LLM reads the index and picks up to three whole pages. Against the previous vector RAG (bge-large + reranker) on 106 labelled questions: correct document injected 85% → 99%, fully correct answers about 88% → 95%, fabrication about 4% → 1%. The RAG path stays behind `GOEUROOPS_KNOWLEDGE_BACKEND=rag` |
 | Skills v2 | Multi-signal routing (intent / keywords / semantic examples / conversation stickiness), progressive disclosure, versions and hit statistics; every Skill ships its own regression cases |
 | Business catalog | `business/catalog.yaml` defines services, prices, discounts and refund rules in one place; quotes and refunds are computed deterministically in code |
 | Evaluation | Intent accuracy, Skill-routing accuracy, a scenario-calibrated five-dimension LLM-as-Judge (including boundary compliance), tool-call checks, gating A/B |

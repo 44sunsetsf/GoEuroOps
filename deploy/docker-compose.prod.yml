@@ -57,6 +57,8 @@ services:
       # 公开演示每天的模型费用上限（元），超出后当天的对话返回 429
       GOEUROOPS_DAILY_COST_LIMIT: ${GOEUROOPS_DAILY_COST_LIMIT:-3}
       GOEUROOPS_EMBEDDING_PROVIDER: api
+      # Agent 的知识来源：wiki = LLM Wiki（读目录选整页），rag = 向量检索 + 重排；回退改成 rag 后重建 backend
+      GOEUROOPS_KNOWLEDGE_BACKEND: ${GOEUROOPS_KNOWLEDGE_BACKEND:-wiki}
       GOEUROOPS_EMBEDDING_API_KEY: ${SILICONFLOW_API_KEY:?在 .env 里设置 SILICONFLOW_API_KEY（向量 API）}
       CHROMA_HOST: ""
       # 新线索 / 转顾问交接单推送到飞书群机器人；不设置就不推送

@@ -113,3 +113,35 @@ def test_tool_path_returns_retrieval_result_shape():
     result = asyncio.run(wiki.search_with_rewrite("knowledge_search", "退款", top_k=5, history=[]))
     assert result.success is True and result.reranked is False
     assert [i["page_id"] for i in result.data] == ["refund-invoice"]
+
+
+def test_agent_search_tool_reads_wiki_pages():
+    from agents.agent_orchestrator import GeneralAgent, Request, build_shared_rag_tools
+
+    wiki = WikiKnowledge(SelectClient({"德国要办 APS 吗": ["germany-aps"]}), "m")
+
+    class ToolThenText:
+        def __init__(self):
+            self.calls = []
+            owner = self
+
+            class Messages:
+                async def create(inner, **kwargs):
+                    owner.calls.append(kwargs)
+                    if len(owner.calls) == 1:
+                        block = type("B", (), {"type": "tool_use", "id": "t1", "name": "search_knowledge_base",
+                                               "input": {"query": "德国要办 APS 吗"}})()
+                    else:
+                        block = type("T", (), {"type": "text", "text": "要办。"})()
+                    return type("R", (), {"content": [block]})()
+
+            self.messages = Messages()
+
+    client = ToolThenText()
+    agent = GeneralAgent(client, "m")
+    agent.set_shared_tools(build_shared_rag_tools(wiki, domain="general"))
+    response = asyncio.run(agent.handle(Request(message="德国要办 APS 吗", user_id="u", conv_id="c")))
+
+    assert response.tools_used == ["search_knowledge_base"]
+    tool_result = json.loads(client.calls[1]["messages"][-1]["content"][0]["content"])
+    assert [r["page_id"] for r in tool_result["results"]] == ["germany-aps"]
