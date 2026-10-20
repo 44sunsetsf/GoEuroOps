@@ -70,6 +70,8 @@ async def update_prices(body: PriceUpdateInput):
             knowledge_synced = False
     if services.tool_manager is not None:
         services.tool_manager.invalidate_cache("knowledge_search")
+    if services.wiki is not None:   # wiki 的价格页从目录现场生成，这里只是立即重组，不等下一次请求
+        await asyncio.to_thread(services.wiki.invalidate_cache)
     return {**_catalog_payload(), "knowledge_synced": knowledge_synced}
 
 

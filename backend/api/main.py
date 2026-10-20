@@ -72,6 +72,8 @@ async def lifespan(app: FastAPI):
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
     from retrieval.rerank import load_reranker
+    from retrieval.wiki import WikiKnowledge, knowledge_backend
+    from core.llm_utils import make_client
     from memory.manager import build_memory_manager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
@@ -183,8 +185,17 @@ async def lifespan(app: FastAPI):
         supports_rerank=True,
         fallback=knowledge_fallback,
     ))
+    # Agent 用的知识来源：rag = 向量检索（上面的 RetrievalManager），wiki = LLM Wiki 读目录选整页。
+    # wiki 模式下 ChromaDB 知识库仍然保留：后台上传的文档会作为额外页面并入 wiki。
+    services.knowledge = services.tool_manager
+    if knowledge_backend() == "wiki":
+        services.wiki = WikiKnowledge(make_client(cfg["api_key"], cfg.get("base_url"), "wiki"), cfg["model"],
+                                      extra_docs=kb.uploaded_documents)
+        services.knowledge = services.wiki
+        asyncio.create_task(services.wiki.warmup())
+    logger.info("Agent 知识来源: %s", knowledge_backend())
     if services.orchestrator is not None:
-        services.orchestrator.set_shared_tools(services.tool_manager)
+        services.orchestrator.set_shared_tools(services.knowledge)
 
     # 性能监控（可选启动 Prometheus）
     prom_port = int(os.getenv("PROMETHEUS_PORT", "0")) or None
@@ -207,7 +218,7 @@ async def lifespan(app: FastAPI):
         skill_manager=services.skill_manager,
         lead_store=LeadStore(),
     )
-    eval_orchestrator.set_shared_tools(services.tool_manager)
+    eval_orchestrator.set_shared_tools(services.knowledge)
     services.evaluator = EndToEndEvaluator(
         orchestrator=eval_orchestrator,
         recognizer=recognizer,
