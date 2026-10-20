@@ -13,6 +13,8 @@ class Services:
         self.memory: Optional[Any] = None
         self.tool_manager: Optional[Any] = None
         self.knowledge_base: Optional[Any] = None
+        self.wiki: Optional[Any] = None               # LLM Wiki（GOEUROOPS_KNOWLEDGE_BACKEND=wiki 时）
+        self.knowledge: Optional[Any] = None          # Agent 实际使用的知识来源：tool_manager 或 wiki
         self.monitor: Optional[Any] = None
         self.evaluator: Optional[Any] = None
         self.skill_manager: Optional[Any] = None

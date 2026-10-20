@@ -1,0 +1,427 @@
+{
+  "run_at": "2026-10-21T01:24:49",
+  "n": 106,
+  "n_answerable": 93,
+  "model": "deepseek-v4-flash",
+  "rag_config": "BAAI/bge-large-zh-v1.5 + BAAI/bge-reranker-v2-m3，45 个片段，Top-3，线上容器导出",
+  "wiki_config": "18 页，读目录选最多 3 页，选页模型 `deepseek-v4-flash`",
+  "retrieval": {
+    "rag": {
+      "injected_hit": 0.8495,
+      "by_tag": {
+        "colloquial": {
+          "n": 20,
+          "injected_hit": 0.75
+        },
+        "cross_domain": {
+          "n": 4,
+          "injected_hit": 0.5
+        },
+        "followup": {
+          "n": 6,
+          "injected_hit": 1.0
+        },
+        "normal": {
+          "n": 46,
+          "injected_hit": 0.9348
+        },
+        "out_of_scope": {
+          "n": 3,
+          "injected_hit": 0.0
+        },
+        "term": {
+          "n": 14,
+          "injected_hit": 0.9286
+        }
+      },
+      "by_domain": {
+        "billing": {
+          "n": 16,
+          "injected_hit": 0.6875
+        },
+        "consulting": {
+          "n": 70,
+          "injected_hit": 0.8857
+        },
+        "general": {
+          "n": 7,
+          "injected_hit": 0.8571
+        }
+      },
+      "false_inject": 0.1538,
+      "injected_chars_avg": 475,
+      "ms_p50": 563.5,
+      "ms_p90": 659.6
+    },
+    "wiki": {
+      "injected_hit": 0.9247,
+      "by_tag": {
+        "colloquial": {
+          "n": 20,
+          "injected_hit": 0.95
+        },
+        "cross_domain": {
+          "n": 4,
+          "injected_hit": 1.0
+        },
+        "followup": {
+          "n": 6,
+          "injected_hit": 1.0
+        },
+        "normal": {
+          "n": 46,
+          "injected_hit": 0.9348
+        },
+        "out_of_scope": {
+          "n": 3,
+          "injected_hit": 1.0
+        },
+        "term": {
+          "n": 14,
+          "injected_hit": 0.7857
+        }
+      },
+      "by_domain": {
+        "billing": {
+          "n": 16,
+          "injected_hit": 1.0
+        },
+        "consulting": {
+          "n": 70,
+          "injected_hit": 0.9143
+        },
+        "general": {
+          "n": 7,
+          "injected_hit": 0.8571
+        }
+      },
+      "false_inject": 0.0,
+      "injected_chars_avg": 1025,
+      "ms_p50": 954.9,
+      "ms_p90": 1515.3
+    }
+  },
+  "wiki_selection": {
+    "r001": [],
+    "r002": [],
+    "r003": [],
+    "r004": [],
+    "r005": [],
+    "r006": [],
+    "r007": [
+      "country-sweden"
+    ],
+    "r008": [
+      "country-sweden"
+    ],
+    "r009": [
+      "country-germany"
+    ],
+    "r010": [
+      "germany-aps",
+      "country-germany"
+    ],
+    "r011": [
+      "germany-aps"
+    ],
+    "r012": [
+      "germany-aps"
+    ],
+    "r013": [
+      "germany-aps"
+    ],
+    "r014": [
+      "country-germany"
+    ],
+    "r015": [
+      "country-germany",
+      "countries-compare"
+    ],
+    "r016": [
+      "country-germany"
+    ],
+    "r017": [
+      "country-netherlands"
+    ],
+    "r018": [
+      "glossary"
+    ],
+    "r019": [
+      "country-netherlands"
+    ],
+    "r020": [
+      "country-netherlands"
+    ],
+    "r021": [
+      "country-netherlands"
+    ],
+    "r022": [
+      "country-finland"
+    ],
+    "r023": [
+      "country-finland"
+    ],
+    "r024": [
+      "country-finland"
+    ],
+    "r025": [
+      "country-finland"
+    ],
+    "r026": [
+      "country-denmark"
+    ],
+    "r027": [
+      "country-denmark"
+    ],
+    "r028": [
+      "country-denmark"
+    ],
+    "r029": [
+      "country-denmark",
+      "countries-compare"
+    ],
+    "r030": [
+      "materials",
+      "countries-compare",
+      "germany-aps"
+    ],
+    "r031": [
+      "materials"
+    ],
+    "r032": [
+      "materials",
+      "glossary",
+      "germany-aps"
+    ],
+    "r033": [
+      "materials",
+      "timeline",
+      "country-sweden"
+    ],
+    "r034": [
+      "school-selection"
+    ],
+    "r035": [
+      "countries-compare",
+      "school-selection",
+      "country-germany"
+    ],
+    "r036": [
+      "school-selection",
+      "countries-compare",
+      "country-denmark"
+    ],
+    "r037": [
+      "timeline",
+      "materials",
+      "germany-aps"
+    ],
+    "r038": [
+      "timeline",
+      "materials",
+      "services-writing"
+    ],
+    "r039": [
+      "packages"
+    ],
+    "r040": [
+      "services-selection",
+      "packages"
+    ],
+    "r041": [
+      "services-selection"
+    ],
+    "r042": [
+      "services-selection"
+    ],
+    "r043": [
+      "services-selection"
+    ],
+    "r044": [
+      "services-selection"
+    ],
+    "r045": [
+      "services-writing"
+    ],
+    "r046": [
+      "services-writing"
+    ],
+    "r047": [
+      "services-writing"
+    ],
+    "r048": [
+      "services-writing"
+    ],
+    "r049": [
+      "services-writing",
+      "packages"
+    ],
+    "r050": [
+      "services-writing"
+    ],
+    "r051": [
+      "services-writing"
+    ],
+    "r052": [
+      "services-fullservice"
+    ],
+    "r053": [
+      "services-fullservice",
+      "packages"
+    ],
+    "r054": [
+      "services-fullservice"
+    ],
+    "r055": [
+      "services-fullservice"
+    ],
+    "r056": [
+      "services-fullservice",
+      "country-sweden",
+      "glossary"
+    ],
+    "r057": [
+      "packages",
+      "services-selection",
+      "services-fullservice"
+    ],
+    "r058": [
+      "studio"
+    ],
+    "r059": [
+      "studio",
+      "refund-invoice"
+    ],
+    "r060": [
+      "discounts-payment"
+    ],
+    "r061": [
+      "discounts-payment"
+    ],
+    "r062": [
+      "discounts-payment"
+    ],
+    "r063": [
+      "discounts-payment"
+    ],
+    "r064": [
+      "discounts-payment"
+    ],
+    "r065": [
+      "discounts-payment"
+    ],
+    "r066": [
+      "discounts-payment"
+    ],
+    "r067": [
+      "discounts-payment"
+    ],
+    "r068": [
+      "refund-invoice"
+    ],
+    "r069": [
+      "refund-invoice"
+    ],
+    "r070": [
+      "refund-invoice"
+    ],
+    "r071": [
+      "refund-invoice"
+    ],
+    "r072": [
+      "refund-invoice"
+    ],
+    "r073": [
+      "refund-invoice"
+    ],
+    "r074": [
+      "refund-invoice"
+    ],
+    "r075": [
+      "studio"
+    ],
+    "r076": [
+      "studio"
+    ],
+    "r077": [
+      "studio",
+      "services-writing"
+    ],
+    "r078": [
+      "studio"
+    ],
+    "r079": [
+      "studio"
+    ],
+    "r080": [],
+    "r081": [
+      "studio"
+    ],
+    "r082": [
+      "discounts-payment",
+      "country-germany"
+    ],
+    "r083": [
+      "refund-invoice"
+    ],
+    "r084": [
+      "refund-invoice",
+      "services-fullservice"
+    ],
+    "r085": [
+      "refund-invoice"
+    ],
+    "r086": [
+      "country-sweden",
+      "country-germany"
+    ],
+    "r087": [
+      "countries-compare",
+      "country-denmark",
+      "country-netherlands"
+    ],
+    "r088": [
+      "country-finland"
+    ],
+    "r089": [
+      "services-fullservice",
+      "packages"
+    ],
+    "r090": [
+      "packages",
+      "services-fullservice"
+    ],
+    "r091": [
+      "refund-invoice"
+    ],
+    "r092": [
+      "studio"
+    ],
+    "r093": [],
+    "r094": [],
+    "r095": [],
+    "r096": [],
+    "r097": [],
+    "r098": [],
+    "r099": [],
+    "r100": [],
+    "r101": [],
+    "r102": [],
+    "r103": [
+      "studio"
+    ],
+    "r104": [],
+    "r105": [],
+    "r106": []
+  },
+  "wiki_stats": {
+    "backend": "wiki",
+    "pages": 18,
+    "index_version": "93f1eade09",
+    "selects": 106,
+    "cache_hits": 0,
+    "errors": 6,
+    "empty": 20,
+    "avg_select_ms": 1169.9
+  }
+}

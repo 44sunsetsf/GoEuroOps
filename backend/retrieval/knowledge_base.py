@@ -187,6 +187,21 @@ class KnowledgeBase:
         return sorted(({**d, "versions": sorted(d["versions"])} for d in docs.values()),
                       key=lambda d: (d["source"], d["title"]))
 
+    def uploaded_documents(self) -> List[Dict[str, str]]:
+        """后台上传的文档（非种子）按片段顺序拼回整篇，供 LLM Wiki 当作额外页面。"""
+        data = self._collection.get(where={"source": {"$ne": "seed"}}, include=["documents", "metadatas"])
+        parts: Dict[str, List[tuple]] = {}
+        meta_of: Dict[str, Dict[str, Any]] = {}
+        for text, meta in zip(data.get("documents") or [], data.get("metadatas") or []):
+            meta = meta or {}
+            doc_id = meta.get("doc_id", "")
+            prefix = f"【{meta.get('title', '')}】"
+            body = text[len(prefix):] if meta.get("title") and text.startswith(prefix) else text
+            parts.setdefault(doc_id, []).append((int(meta.get("chunk_index", 0)), body))
+            meta_of[doc_id] = meta
+        return [{"doc_id": d, "title": meta_of[d].get("title", ""), "domain": meta_of[d].get("domain", "shared"),
+                 "content": "".join(b for _, b in sorted(chunks))} for d, chunks in sorted(parts.items())]
+
     async def list_documents_async(self) -> List[Dict[str, Any]]:
         return await asyncio.to_thread(self.list_documents)
 

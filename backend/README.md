@@ -140,6 +140,10 @@ claude mcp add goeuroops-studio -- python /绝对路径/backend/mcp_server.py
 | `GOEUROOPS_RAG_PREFETCH_TOP_K` | 3 | 预取片段数 |
 | `GOEUROOPS_RAG_PREFETCH_MIN_SCORE` | 0.4 | 预取片段的混合分数下限 |
 | `GOEUROOPS_EMBEDDING_MODEL` | BAAI/bge-small-zh-v1.5 | 知识库向量模型；`default` 使用 ChromaDB 默认英文模型 |
+| `GOEUROOPS_KNOWLEDGE_BACKEND` | wiki | Agent 的知识来源：`wiki` 读目录选整页，`rag` 向量检索 + 重排（旧方案，保留用于回退和对比） |
+| `GOEUROOPS_WIKI_MAX_PAGES` | 3 | wiki 每次最多注入几页 |
+| `GOEUROOPS_WIKI_SELECT_TIMEOUT` | 4 | wiki 选页的超时（秒），超时改用本地问法匹配 |
+| `GOEUROOPS_WIKI_LOCAL_MIN_SCORE` | 0.25 | 本地问法匹配的相似度下限 |
 | `GOEUROOPS_EVAL_DIM_THRESHOLD` | 0.75 | 评测建议的单维度阈值 |
 | `GOEUROOPS_AMOUNT_GUARD` | enforce | 金额护栏：`enforce` 替换没有依据的金额 / `warn` 只记录 / `off` |
 | `GOEUROOPS_PRICE_OVERRIDES` | /app/data/price_overrides.json | 后台改过的价格存这里，盖在 `catalog.yaml` 默认价上 |

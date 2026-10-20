@@ -1,4 +1,5 @@
 """知识库检索、写入、上传和统计接口。"""
+import asyncio
 import logging
 from typing import Optional
 
@@ -16,6 +17,13 @@ from api.state import services
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _knowledge_changed() -> None:
+    """知识库内容变了：旧的检索缓存可能不含新文档，立即失效而不是等 TTL；wiki 模式下重组页面。"""
+    services.tool_manager.invalidate_cache("knowledge_search")
+    if services.wiki is not None:
+        await asyncio.to_thread(services.wiki.invalidate_cache)
 
 
 def _knowledge_base():
@@ -60,8 +68,7 @@ async def add_knowledge(body: BatchDocInput):
     count = await kb.add_documents_async([
         {"title": d.title, "content": d.content, "domain": d.domain, "doc_id": d.doc_id} for d in body.documents
     ])
-    # 知识库变了，旧的检索缓存可能不含新文档，立即失效而不是等 TTL
-    services.tool_manager.invalidate_cache("knowledge_search")
+    await _knowledge_changed()
     total = await kb.doc_count_async()
     return {"message": f"成功导入 {count} 个文档片段", "added_chunks": count, "total_chunks": total}
 
@@ -108,7 +115,7 @@ async def upload_knowledge(file: UploadFile = File(...), domain: Optional[str] =
                 doc.setdefault("domain", domain)
 
     count = await kb.add_documents_async(docs)
-    services.tool_manager.invalidate_cache("knowledge_search")
+    await _knowledge_changed()
     total = await kb.doc_count_async()
     return {
         "message": f"文件 {filename} 导入成功",
@@ -119,9 +126,12 @@ async def upload_knowledge(file: UploadFile = File(...), domain: Optional[str] =
 
 @router.get("/knowledge/stats", tags=["知识库"])
 async def knowledge_stats():
-    """查看知识库统计信息（文档片段总数）。"""
+    """查看知识库统计信息（文档片段总数）；wiki 模式下附带 wiki 的页数和选页统计。"""
     kb = _knowledge_base()
-    return await kb.stats_async()
+    stats = await kb.stats_async()
+    if services.wiki is not None:
+        stats["wiki"] = services.wiki.get_stats()
+    return stats
 
 
 @router.get("/knowledge/documents", tags=["知识库"])
@@ -139,5 +149,5 @@ async def delete_document(doc_id: str):
         raise HTTPException(400, str(ex))
     if not removed:
         raise HTTPException(404, "没有这篇文档")
-    services.tool_manager.invalidate_cache("knowledge_search")
+    await _knowledge_changed()
     return {"doc_id": doc_id, "removed_chunks": removed}

@@ -1,0 +1,4586 @@
+{
+  "run_at": "2026-10-21T01:34:20",
+  "n": 106,
+  "n_answerable": 93,
+  "model": "deepseek-v4-flash",
+  "rag_config": "BAAI/bge-large-zh-v1.5 + BAAI/bge-reranker-v2-m3，45 个片段，Top-3，线上容器导出",
+  "wiki_config": "18 页，读目录选最多 3 页，选页模型 `deepseek-v4-flash`",
+  "retrieval": {
+    "rag": {
+      "injected_hit": 0.8495,
+      "by_tag": {
+        "colloquial": {
+          "n": 20,
+          "injected_hit": 0.75
+        },
+        "cross_domain": {
+          "n": 4,
+          "injected_hit": 0.5
+        },
+        "followup": {
+          "n": 6,
+          "injected_hit": 1.0
+        },
+        "normal": {
+          "n": 46,
+          "injected_hit": 0.9348
+        },
+        "out_of_scope": {
+          "n": 3,
+          "injected_hit": 0.0
+        },
+        "term": {
+          "n": 14,
+          "injected_hit": 0.9286
+        }
+      },
+      "by_domain": {
+        "billing": {
+          "n": 16,
+          "injected_hit": 0.6875
+        },
+        "consulting": {
+          "n": 70,
+          "injected_hit": 0.8857
+        },
+        "general": {
+          "n": 7,
+          "injected_hit": 0.8571
+        }
+      },
+      "false_inject": 0.1538,
+      "injected_chars_avg": 475,
+      "ms_p50": 563.5,
+      "ms_p90": 659.6
+    },
+    "wiki": {
+      "injected_hit": 0.9892,
+      "by_tag": {
+        "colloquial": {
+          "n": 20,
+          "injected_hit": 1.0
+        },
+        "cross_domain": {
+          "n": 4,
+          "injected_hit": 1.0
+        },
+        "followup": {
+          "n": 6,
+          "injected_hit": 1.0
+        },
+        "normal": {
+          "n": 46,
+          "injected_hit": 0.9783
+        },
+        "out_of_scope": {
+          "n": 3,
+          "injected_hit": 1.0
+        },
+        "term": {
+          "n": 14,
+          "injected_hit": 1.0
+        }
+      },
+      "by_domain": {
+        "billing": {
+          "n": 16,
+          "injected_hit": 1.0
+        },
+        "consulting": {
+          "n": 70,
+          "injected_hit": 1.0
+        },
+        "general": {
+          "n": 7,
+          "injected_hit": 0.8571
+        }
+      },
+      "false_inject": 0.0,
+      "injected_chars_avg": 1131,
+      "ms_p50": 885.0,
+      "ms_p90": 1157.8
+    }
+  },
+  "wiki_selection": {
+    "r001": [
+      "country-sweden",
+      "timeline"
+    ],
+    "r002": [
+      "country-sweden"
+    ],
+    "r003": [
+      "country-sweden"
+    ],
+    "r004": [
+      "country-sweden"
+    ],
+    "r005": [
+      "country-sweden"
+    ],
+    "r006": [
+      "country-sweden"
+    ],
+    "r007": [
+      "country-sweden"
+    ],
+    "r008": [
+      "country-sweden"
+    ],
+    "r009": [
+      "country-germany"
+    ],
+    "r010": [
+      "germany-aps",
+      "country-germany"
+    ],
+    "r011": [
+      "germany-aps"
+    ],
+    "r012": [
+      "germany-aps"
+    ],
+    "r013": [
+      "germany-aps"
+    ],
+    "r014": [
+      "country-germany",
+      "countries-compare"
+    ],
+    "r015": [
+      "country-germany",
+      "countries-compare"
+    ],
+    "r016": [
+      "country-germany"
+    ],
+    "r017": [
+      "country-netherlands"
+    ],
+    "r018": [
+      "glossary"
+    ],
+    "r019": [
+      "country-netherlands",
+      "countries-compare"
+    ],
+    "r020": [
+      "country-netherlands"
+    ],
+    "r021": [
+      "country-netherlands"
+    ],
+    "r022": [
+      "country-finland"
+    ],
+    "r023": [
+      "country-finland"
+    ],
+    "r024": [
+      "country-finland"
+    ],
+    "r025": [
+      "country-finland"
+    ],
+    "r026": [
+      "country-denmark"
+    ],
+    "r027": [
+      "country-denmark"
+    ],
+    "r028": [
+      "country-denmark"
+    ],
+    "r029": [
+      "country-denmark",
+      "countries-compare"
+    ],
+    "r030": [
+      "materials",
+      "countries-compare",
+      "germany-aps"
+    ],
+    "r031": [
+      "materials"
+    ],
+    "r032": [
+      "materials",
+      "glossary",
+      "germany-aps"
+    ],
+    "r033": [
+      "materials",
+      "timeline",
+      "country-sweden"
+    ],
+    "r034": [
+      "school-selection"
+    ],
+    "r035": [
+      "countries-compare",
+      "school-selection",
+      "country-germany"
+    ],
+    "r036": [
+      "school-selection",
+      "countries-compare",
+      "country-denmark"
+    ],
+    "r037": [
+      "timeline",
+      "materials",
+      "germany-aps"
+    ],
+    "r038": [
+      "timeline",
+      "materials",
+      "services-writing"
+    ],
+    "r039": [
+      "packages"
+    ],
+    "r040": [
+      "services-selection",
+      "packages"
+    ],
+    "r041": [
+      "services-selection"
+    ],
+    "r042": [
+      "services-selection"
+    ],
+    "r043": [
+      "services-selection"
+    ],
+    "r044": [
+      "services-selection"
+    ],
+    "r045": [
+      "services-writing"
+    ],
+    "r046": [
+      "services-writing"
+    ],
+    "r047": [
+      "services-writing"
+    ],
+    "r048": [
+      "services-writing"
+    ],
+    "r049": [
+      "services-writing",
+      "packages"
+    ],
+    "r050": [
+      "services-writing"
+    ],
+    "r051": [
+      "services-writing"
+    ],
+    "r052": [
+      "services-fullservice"
+    ],
+    "r053": [
+      "services-fullservice",
+      "packages"
+    ],
+    "r054": [
+      "services-fullservice"
+    ],
+    "r055": [
+      "services-fullservice"
+    ],
+    "r056": [
+      "services-fullservice",
+      "country-sweden",
+      "glossary"
+    ],
+    "r057": [
+      "packages",
+      "services-selection",
+      "services-fullservice"
+    ],
+    "r058": [
+      "studio"
+    ],
+    "r059": [
+      "studio",
+      "refund-invoice"
+    ],
+    "r060": [
+      "discounts-payment"
+    ],
+    "r061": [
+      "discounts-payment"
+    ],
+    "r062": [
+      "discounts-payment"
+    ],
+    "r063": [
+      "discounts-payment"
+    ],
+    "r064": [
+      "discounts-payment"
+    ],
+    "r065": [
+      "discounts-payment"
+    ],
+    "r066": [
+      "discounts-payment"
+    ],
+    "r067": [
+      "discounts-payment"
+    ],
+    "r068": [
+      "refund-invoice"
+    ],
+    "r069": [
+      "refund-invoice"
+    ],
+    "r070": [
+      "refund-invoice"
+    ],
+    "r071": [
+      "refund-invoice"
+    ],
+    "r072": [
+      "refund-invoice"
+    ],
+    "r073": [
+      "refund-invoice"
+    ],
+    "r074": [
+      "refund-invoice"
+    ],
+    "r075": [
+      "studio"
+    ],
+    "r076": [
+      "studio"
+    ],
+    "r077": [
+      "studio",
+      "services-writing"
+    ],
+    "r078": [
+      "studio"
+    ],
+    "r079": [
+      "studio"
+    ],
+    "r080": [],
+    "r081": [
+      "studio"
+    ],
+    "r082": [
+      "discounts-payment",
+      "country-germany"
+    ],
+    "r083": [
+      "refund-invoice"
+    ],
+    "r084": [
+      "refund-invoice",
+      "services-fullservice"
+    ],
+    "r085": [
+      "refund-invoice"
+    ],
+    "r086": [
+      "country-sweden",
+      "country-germany"
+    ],
+    "r087": [
+      "country-denmark",
+      "country-netherlands",
+      "countries-compare"
+    ],
+    "r088": [
+      "country-finland"
+    ],
+    "r089": [
+      "services-fullservice",
+      "packages"
+    ],
+    "r090": [
+      "packages",
+      "services-fullservice"
+    ],
+    "r091": [
+      "refund-invoice"
+    ],
+    "r092": [
+      "studio"
+    ],
+    "r093": [],
+    "r094": [],
+    "r095": [],
+    "r096": [],
+    "r097": [],
+    "r098": [],
+    "r099": [],
+    "r100": [],
+    "r101": [],
+    "r102": [],
+    "r103": [
+      "studio"
+    ],
+    "r104": [],
+    "r105": [],
+    "r106": []
+  },
+  "wiki_stats": {
+    "backend": "wiki",
+    "pages": 18,
+    "index_version": "93f1eade09",
+    "selects": 106,
+    "cache_hits": 0,
+    "errors": 0,
+    "empty": 14,
+    "avg_select_ms": 929.5
+  },
+  "judge_model": "deepseek-v4-pro",
+  "e2e": {
+    "judged": 106,
+    "failed_judgements": 0,
+    "overall": {
+      "n": 106,
+      "wiki_win": 24,
+      "rag_win": 18,
+      "tie": 64,
+      "rag": {
+        "correct_avg": 1.868,
+        "fully_correct": 0.8774,
+        "complete_avg": 3.915,
+        "fabricated": 0.0472,
+        "latency_ms_p50": 2143.7
+      },
+      "wiki": {
+        "correct_avg": 1.953,
+        "fully_correct": 0.9528,
+        "complete_avg": 4.0,
+        "fabricated": 0.0094,
+        "latency_ms_p50": 2108.3
+      }
+    },
+    "answerable": {
+      "n": 93,
+      "wiki_win": 22,
+      "rag_win": 15,
+      "tie": 56,
+      "rag": {
+        "correct_avg": 1.849,
+        "fully_correct": 0.8602,
+        "complete_avg": 3.946,
+        "fabricated": 0.0538,
+        "latency_ms_p50": 2144.5
+      },
+      "wiki": {
+        "correct_avg": 1.957,
+        "fully_correct": 0.957,
+        "complete_avg": 4.043,
+        "fabricated": 0.0,
+        "latency_ms_p50": 2127.6
+      }
+    },
+    "no_answer": {
+      "n": 13,
+      "wiki_win": 2,
+      "rag_win": 3,
+      "tie": 8,
+      "rag": {
+        "correct_avg": 2.0,
+        "fully_correct": 1.0,
+        "complete_avg": 3.692,
+        "fabricated": 0.0,
+        "latency_ms_p50": 2137.3
+      },
+      "wiki": {
+        "correct_avg": 1.923,
+        "fully_correct": 0.9231,
+        "complete_avg": 3.692,
+        "fabricated": 0.0769,
+        "latency_ms_p50": 1903.1
+      }
+    },
+    "by_tag": {
+      "colloquial": {
+        "n": 20,
+        "wiki_win": 8,
+        "rag_win": 3,
+        "tie": 9,
+        "rag": {
+          "correct_avg": 1.7,
+          "fully_correct": 0.75,
+          "complete_avg": 3.55,
+          "fabricated": 0.1,
+          "latency_ms_p50": 2424.1
+        },
+        "wiki": {
+          "correct_avg": 1.9,
+          "fully_correct": 0.9,
+          "complete_avg": 3.95,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2152.8
+        }
+      },
+      "cross_domain": {
+        "n": 4,
+        "wiki_win": 1,
+        "rag_win": 0,
+        "tie": 3,
+        "rag": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.0,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2120.8
+        },
+        "wiki": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.25,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2130.7
+        }
+      },
+      "followup": {
+        "n": 6,
+        "wiki_win": 2,
+        "rag_win": 2,
+        "tie": 2,
+        "rag": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.167,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2378.7
+        },
+        "wiki": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.167,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2296.7
+        }
+      },
+      "no_answer": {
+        "n": 13,
+        "wiki_win": 2,
+        "rag_win": 3,
+        "tie": 8,
+        "rag": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 3.692,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2137.3
+        },
+        "wiki": {
+          "correct_avg": 1.923,
+          "fully_correct": 0.9231,
+          "complete_avg": 3.692,
+          "fabricated": 0.0769,
+          "latency_ms_p50": 1903.1
+        }
+      },
+      "normal": {
+        "n": 46,
+        "wiki_win": 8,
+        "rag_win": 7,
+        "tie": 31,
+        "rag": {
+          "correct_avg": 1.87,
+          "fully_correct": 0.8696,
+          "complete_avg": 4.022,
+          "fabricated": 0.0435,
+          "latency_ms_p50": 1936.8
+        },
+        "wiki": {
+          "correct_avg": 1.978,
+          "fully_correct": 0.9783,
+          "complete_avg": 4.022,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2028.7
+        }
+      },
+      "out_of_scope": {
+        "n": 3,
+        "wiki_win": 1,
+        "rag_win": 0,
+        "tie": 2,
+        "rag": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.333,
+          "fabricated": 0.0,
+          "latency_ms_p50": 1395.9
+        },
+        "wiki": {
+          "correct_avg": 2.0,
+          "fully_correct": 1.0,
+          "complete_avg": 4.667,
+          "fabricated": 0.0,
+          "latency_ms_p50": 1435.5
+        }
+      },
+      "term": {
+        "n": 14,
+        "wiki_win": 2,
+        "rag_win": 3,
+        "tie": 9,
+        "rag": {
+          "correct_avg": 1.857,
+          "fully_correct": 0.8571,
+          "complete_avg": 4.071,
+          "fabricated": 0.0714,
+          "latency_ms_p50": 2478.9
+        },
+        "wiki": {
+          "correct_avg": 1.929,
+          "fully_correct": 0.9286,
+          "complete_avg": 4.0,
+          "fabricated": 0.0,
+          "latency_ms_p50": 2276.2
+        }
+      }
+    }
+  },
+  "e2e_rows": [
+    {
+      "id": "r001",
+      "query": "瑞典 CS 硕士什么时候开放申请、什么时候截止？",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**瑞典英语授课 CS 硕士的申请时间（参考）**\n\n- **申请平台**：University Admissions in Sweden（universityadmissions.se）统一申请，一轮最多可填 4 个排序志愿。\n- **开放**：国际轮通常在 **10 月中旬**开放。\n- **截止**：申请约在**次年 1 月中旬**截止；材料上传和申请费缴费约在**2 月初**截止。\n- **结果**：约在**3 月底或 4 月初**公布。\n- **申请费**：非欧盟申请者 SEK 900（每轮一次）。\n\n以上来自《瑞典（Sweden）CS 硕士申请概览》和《2027 年秋季入学申请时间线（五国通用参考）》，整理于 2026 年初，**具体日期每年会微调，请以 universityadmissions.se 官网为准**。\n\n按 2027 年秋季入学的节奏，大致是：2026 年 10 月中旬开放，2027 年 1 月中旬截止，2 月初材料与缴费截止。\n\n需要的话，我可以再帮你对比一下荷兰、丹麦、芬兰的截止时间差异，或者看看我们的选校、文书服务内容。",
+          "ms": 2328.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典英语授课 CS 硕士的申请时间（以 2027 年秋季入学为参考）：\n\n- **开放**：University Admissions in Sweden（universityadmissions.se）国际轮通常在 **10 月中旬**开放。\n- **截止**：申请约 **次年 1 月中旬**截止；材料上传和缴费约 **2 月初**截止。\n- **结果**：录取结果约 **3 月底 / 4 月初**公布。\n- **费用与志愿**：非欧盟申请者申请费 SEK 900，每轮一次，最多可填 **4 个排序志愿**。\n- **学制**：多数项目 2 年（120 ECTS）。\n\n以上来自知识库《瑞典（Sweden）CS 硕士申请概览》和《2027 年秋季入学申请时间线（五国通用参考）》，整理于 2026 年初，具体日期每年会有微调，**以 universityadmissions.se 官网当年公告为准**。\n\n需要的话，我可以再帮你对比芬兰、丹麦、荷兰的截止时间，或者介绍一下选校定位相关的服务。",
+          "ms": 1910.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地给出了瑞典CS硕士的开放、截止、结果公布时间及申请费、志愿数等资料内信息，且均未虚构事实，差距极小。"
+    },
+    {
+      "id": "r002",
+      "query": "瑞典的申请费是多少",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "瑞典的申请费是 **SEK 900**，非欧盟申请者每轮交一次，这一轮最多可以填 4 个排序志愿。\n\n几点补充：\n- 这笔费用是交给 University Admissions in Sweden（universityadmissions.se）的申请费，不是学费；学费另算，约 SEK 130,000–190,000/年，欧盟/欧洲经济区学生免学费。\n- 时间上，国际轮通常 10 月中旬开放、次年 1 月中旬截止，材料和缴费截止约在 2 月初。\n- 来源：《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初的参考资料，金额和截止日期请以 universityadmissions.se 官网当季说明为准。\n\n需要的话，我可以再帮你对比一下德国、荷兰、芬兰、丹麦的申请费和申请平台差异。",
+          "ms": 1614.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典的申请费是 **SEK 900**，通过 University Admissions in Sweden（universityadmissions.se）统一缴纳。\n\n几点补充：\n- 这笔费用是**每轮申请交一次**，不是每个项目交一次；同一轮里最多可以填 4 个排序志愿。\n- 只对非欧盟/欧洲经济区申请者收取。\n- 缴费和材料上传的截止时间通常在 1 月中旬申请截止之后，约 2 月初，具体日期每年略有浮动。\n\n来源：《瑞典（Sweden）CS 硕士申请概览》（工作室参考资料，整理于 2026 年初，草案待顾问核实），最终以 universityadmissions.se 官网当年说明为准。\n\n需要的话，我可以再帮你对比一下德国、荷兰、芬兰、丹麦的申请费情况，或者介绍我们的选校服务。",
+          "ms": 1923.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都准确回答了瑞典申请费为 SEK 900 且非欧盟每轮一次、最多 4 个志愿，但 B 额外补充了学费区间和申请时间线，信息更完整。"
+    },
+    {
+      "id": "r003",
+      "query": "去瑞典读计算机一年学费大概多少钱",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**瑞典 CS 硕士学费（参考）**\n\n- 非欧盟学生学费约 **SEK 130,000–190,000 / 年**，理工类热门院校偏高；欧盟/欧洲经济区学生免学费。\n- 学制多数为 2 年（120 ECTS），所以整体预算大致按两年学费加生活费来估。\n- 另外还有申请费：非欧盟申请者 **SEK 900**（每轮一次，最多可填 4 个排序志愿）。\n- 以上来自工作室整理的《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初，面向 2027 年秋季入学，**具体金额请以学校官网为准**（各校、各项目差异不小）。\n\n想更细的话，可以告诉我你关注哪几所（比如 KTH、Chalmers、Lund、Uppsala），我帮你查对应国家的公开资料；也可以先约一次免费 15 分钟沟通，让顾问帮你把预算和选校范围一起过一遍。",
+          "ms": 2657.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "**瑞典 CS 硕士学费（参考）**\n\n- 非欧盟学生学费约 **SEK 130,000–190,000 / 年**，理工类热门院校通常偏高；欧盟/欧洲经济区学生免学费。\n- 学制多为 2 年（120 ECTS），所以整体预算大致按两年学费加生活费来准备。\n- 另外还有申请费：非欧盟申请者 **SEK 900**，每轮交一次，最多可填 4 个排序志愿。\n- 生活费方面，申请居留许可时需证明每月约 1 万瑞典克朗以上（以移民局当年标准为准）。\n\n以上数字来自知识库《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初，属于参考性质，具体金额请以各校官网和 universityadmissions.se 为准。\n\n需要的话，我可以再帮你对比一下其他几个国家的学费区间，或者说明一下奖学金方向。",
+          "ms": 2116.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确给出了瑞典CS硕士非欧盟学生学费区间、学制和申请费，且都注明以官网为准，信息完整度基本一致。"
+    },
+    {
+      "id": "r004",
+      "query": "瑞典要求的 English 6 相当于雅思多少分",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**English 6 的常见等价成绩**（来源：《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- 雅思 IELTS：总分 **6.5**，单项不低于 **5.5**\n- 托福 TOEFL iBT：**90**，写作不低于 **20**\n\n几点补充：\n\n- 这是瑞典高校对 English 6 的**常见**换算标准，不同学校、不同项目可能略有差异，个别项目会要求更高（比如写作单项），务必以目标项目官网的 admission requirements 为准。\n- 瑞典是统一平台申请（universityadmissions.se），但语言要求由各校自行规定，所以同一份成绩在 A 校够、B 校不一定够。\n- 成绩通常需要在申请截止前已出分并送分，建议按截止日期倒推考试时间。\n\n需要的话，我可以帮你查某个具体国家的整体申请时间线，或者介绍我们的选校/文书服务。如果你有具体背景想判断匹配度，那属于顾问 1 对 1 的范围，可以先约一次免费 15 分钟沟通。",
+          "ms": 2409.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典的 English 6 是瑞典高中英语课程的等级标准，大学在招收国际学生时会给出对应的国际考试成绩要求。根据工作室整理的《瑞典（Sweden）CS 硕士申请概览》：\n\n- **常见等价成绩**：IELTS 6.5（单项不低于 5.5），或 TOEFL iBT 90（写作不低于 20）。\n- **注意**：这是“常见等价”，不同学校、不同项目可能设更高的门槛（比如写作小分要求），也有项目接受 PTE、Cambridge 等成绩。\n- **时效**：这份资料整理于 2026 年初，面向 2027 年秋季入学，属于参考性质，**最终以目标项目官网的 admission requirements 为准**。\n\n下一步：如果你已经有目标院校，可以告诉我，我帮你看看公开要求里有没有额外的小分规定；也可以继续问其他国家的语言要求做对比。\n\n需要提醒的是，具体到“我的分数够不够申某个项目”这种判断，需要看完整背景，属于顾问 1 对 1 的范围，可以约一次免费 15 分钟沟通。",
+          "ms": 2589.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了资料中 English 6 的常见等价成绩，并提醒以官网为准，信息完整度相当，差距很小。"
+    },
+    {
+      "id": "r005",
+      "query": "universityadmissions.se 上最多能填几个志愿",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "瑞典统一申请平台 universityadmissions.se 上，每轮最多可以填 **4 个志愿**，并且需要按优先级排序。\n\n几点补充（依据《瑞典（Sweden）CS 硕士申请概览》，资料整理于 2026 年初，以官网为准）：\n\n- **申请费**：非欧盟申请者 SEK 900，每轮交一次，覆盖这 4 个志愿。\n- **时间线**：国际轮通常 10 月中旬开放、次年 1 月中旬截止；材料和缴费截止约 2 月初；录取结果约 3 月底 / 4 月初公布。\n- **排序很重要**：志愿是有序的，录取时按你的排序走，所以把最想去的放前面。\n\n需要的话我可以再帮你对比一下瑞典和其他四国在申请平台、志愿数量上的差异，或者看看选校相关的服务。",
+          "ms": 1662.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "在 University Admissions in Sweden 上，一轮申请最多可以填 **4 个志愿**，并且需要给这 4 个志愿排优先级（按顺序录取）。\n\n几点补充（来自《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- **申请费**：非欧盟申请者 SEK 900，每轮交一次，覆盖这 4 个志愿。\n- **时间线**：国际轮通常 10 月中旬开放、次年 1 月中旬截止；材料和缴费截止约 2 月初；结果约 3 月底 / 4 月初。\n- **排序很重要**：瑞典是按志愿顺序录取的，排在前面的优先，所以顺序基本等于你的偏好顺序。\n\n官网核实：https://www.universityadmissions.se\n\n如果你在纠结这 4 个位置怎么排，那属于需要看完整背景的个性化判断，可以约顾问聊；也可以先继续问平台规则类的问题。",
+          "ms": 1998.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确回答了最多4个志愿，并补充了申请费、时间线和排序重要性，信息与原始资料一致，差距极小。"
+    },
+    {
+      "id": "r006",
+      "query": "KTH 和 Chalmers 有哪些 CS 项目",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "KTH 和 Chalmers 的 CS 相关英语授课硕士项目，参考资料里列出的有：\n\n**KTH 皇家理工学院**\n- Computer Science\n- Machine Learning\n\n**Chalmers 查尔姆斯理工**\n- Computer Science: Algorithms, Languages and Logic\n- Data Science and AI\n\n以上来自知识库《瑞典（Sweden）CS 硕士申请概览》，是整理于 2026 年初的参考信息，具体项目名称、方向设置和招生要求请以 KTH 和 Chalmers 官网当年页面为准。\n\n补充两点常见的注意点：\n- 这两所的项目在瑞典统一平台 universityadmissions.se 申请，通常 10 月中旬开放、1 月中旬截止（以当年官网为准）。\n- 项目名称相近但课程结构差别不小，比如偏理论/算法和偏机器学习/AI 的方向，选课前建议逐门看课程列表。\n\n需要的话我可以再帮你查瑞典整体的申请时间、申请费和学费区间，或者对比一下荷兰、德国的同类项目。如果你想结合自己的背景判断哪个更匹配，那属于顾问 1 对 1 的范围，可以约一次免费 15 分钟沟通。",
+          "ms": 2166.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典这两所学校的英语授课 CS 相关硕士项目，参考资料里列出的有：\n\n**KTH 皇家理工学院**\n- Computer Science\n- Machine Learning\n\n**Chalmers 查尔姆斯理工**\n- Computer Science: Algorithms, Languages and Logic\n- Data Science and AI\n\n几点补充：\n- 以上来自《瑞典（Sweden）CS 硕士申请概览》，整理于 2026 年初，属于参考整理，具体项目名称、方向设置和先修课要求请以 KTH 和 Chalmers 官网的项目页为准。\n- 两校都在 University Admissions in Sweden（universityadmissions.se）统一申请，国际轮通常 10 月中旬开放、次年 1 月中旬截止，一轮最多填 4 个排序志愿，申请费 SEK 900。\n- 学制多数 2 年（120 ECTS），语言门槛一般对应 English 6，约 IELTS 6.5（单项不低于 5.5）或 TOEFL iBT 90（写作不低于 20）。\n\n如果你想知道这两个学校的具体项目哪个更匹配你的本科课程结构，那需要看你的成绩单和课程学分构成，属于顾问 1 对 1 的范围。可以帮你约一次免费 15 分钟沟通，或者继续问我其他公开信息。",
+          "ms": 2244.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者项目列举都准确，但 B 补充了统一申请平台、截止时间、申请费、学制和语言要求等资料中的关键信息，更完整。"
+    },
+    {
+      "id": "r007",
+      "query": "瑞典读完硕士能留下来找工作吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "能，瑞典对毕业生有找工作居留的安排。\n\n- 读完硕士后可以申请「找工作居留」（毕业后找工作/创业的居留许可），在瑞典境内找工作是常见路径。具体时长和条件以 Migrationsverket 官网为准：https://www.migrationsverket.se\n- 申请本身走统一平台 universityadmissions.se，一次最多申 4 个项目，学制规范、流程清晰，这也是不少人选瑞典的原因之一。\n- 长期留下的关键还是找到工作并转为工作居留，专业方向、实习和本地网络影响比较大。\n\n以上来自《瑞典（Sweden）CS 硕士申请概览》的整理，参考资料整理于 2026 年初，具体政策请以 Migrationsverket 和 studyinsweden.se 官网为准。\n\n想继续的话，我可以帮你对比丹麦、德国、瑞典的毕业后居留安排，或者看看瑞典 CS 项目的申请时间线。",
+          "ms": 2123.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典硕士毕业后是可以留下来找工作的，主要靠“找工作居留许可”这条路。\n\n**毕业后找工作居留**\n- 完成至少 2 个学期（一学年）的学习后，可以申请居留许可延长，用于在瑞典找工作或创业，通常最长 6 个月；具体时长和条件以 Migrationsverket 官网为准。\n- 申请要在学生居留许可到期前提交，并且需要护照、毕业证明或成绩单、资金证明、医疗保险等材料。\n- 找到工作后，转为工作居留许可；工作满一定年限后可申请永久居留，具体年限规则以移民局当年规定为准。\n\n**几点现实提醒**\n- 瑞典 CS 岗位集中在斯德哥尔摩、哥德堡、隆德/马尔默一带，英语岗位不少，但会瑞典语在本地中小公司更有优势。\n- 找工作居留期间的时间一般不计入永久居留所需的居住年限，这点建议以官网核实。\n- 学校 career center 和 thesis 合作企业是常见的落地渠道。\n\n参考来源：《瑞典（Sweden）CS 硕士申请概览》（工作室整理，2026 年初，待顾问核实），具体条款请以 https://www.migrationsverket.se 为准。\n\n如果你想把“毕业后留下”作为选校和项目时长的一个考虑因素，这属于需要结合你背景来判断的部分，可以约顾问聊；也可以继续问我其他国家的毕业后政策做对比。",
+          "ms": 3000.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 更完整地解释了毕业后找工作居留的申请条件、材料和现实提醒，B 将申请平台 universityadmissions.se 误用于居留申请，且信息较简略。"
+    },
+    {
+      "id": "r008",
+      "query": "瑞典有什么奖学金可以申请",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "瑞典的奖学金主要有两类，参考资料整理于 2026 年初，具体金额和截止日期以官网为准：\n\n**1. 政府层面**\n- 瑞典政府 SI 全球职业人才奖学金（Swedish Institute Scholarships for Global Professionals）：名额少，适用国家名单每年变化，需要先确认你所在国家当年是否在名单内。\n\n**2. 院校层面（学费减免为主）**\n- KTH、Chalmers、Lund 等学校都有面向非欧盟学生的全球奖学金（学费减免类）。\n- 这类奖学金通常与硕士申请同期截止，也就是在 University Admissions 提交申请时一并考虑，不需要单独等结果再申请。\n\n**几个提醒**\n- 院校奖学金多为“减免部分或全部学费”，一般不含生活费；生活费部分要靠 SI 或外部资助。\n- 各校奖学金是否自动考虑、是否需要单独填表，差异较大，务必看目标院校的 scholarships 页面。\n- 瑞典国际轮约 1 月中旬截止（材料与缴费约 2 月初），奖学金材料通常要在这之前准备好。\n\n来源：《瑞典（Sweden）CS 硕士申请概览》（工作室内部参考资料）。\n\n想继续的话，可以告诉我你关注哪几所学校，我帮你梳理它们的奖学金类型；如果你想知道以自己的背景哪些奖学金现实可行，这需要顾问看过完整背景判断，可以约一次免费 15 分钟沟通。",
+          "ms": 2821.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "瑞典的奖学金主要有两类，以下内容整理自《瑞典（Sweden）CS 硕士申请概览》（整理于 2026 年初，以官网为准）：\n\n**1. 政府层面**\n- SI 全球职业人才奖学金（Swedish Institute Scholarships for Global Professionals）：名额很少，适用国家名单每年都会变化，需要确认中国是否在当年名单内。\n\n**2. 院校层面（学费减免类）**\n- KTH、Chalmers、Lund 等学校都有面向非欧盟学生的全球奖学金，通常以减免部分或全部学费的形式发放。\n- 关键点：这类奖学金大多与硕士申请同期截止，也就是说，你在 1 月中旬递交项目申请时，就要一并留意奖学金申请入口，不要等录取结果出来再找。\n\n**几个提醒**\n- 瑞典的奖学金基本都不覆盖生活费，生活费仍需按移民局标准自行准备（约每月 1 万瑞典克朗以上）。\n- 具体金额、名额、是否需要单独申请表，各校每年都会调整，参考资料里没有逐校的金额数据，建议直接查目标院校的 scholarships 页面。\n- 官方入口：https://studyinsweden.se（有奖学金汇总页）、https://www.universityadmissions.se\n\n需要的话，我可以再帮你对比一下瑞典和荷兰、芬兰在奖学金机制上的差别，或者你也可以继续问其他国家的奖学金情况。",
+          "ms": 2816.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确复述了资料中瑞典奖学金的两类来源及关键提醒；B 将院校奖学金说成'在 University Admissions 提交申请时一并考虑'，资料未提及这一具体操作方式，且'生活费要靠 SI 或外部资助'与资料中 SI 为学费减免类奖学金的表述存在偏差。"
+    },
+    {
+      "id": "r009",
+      "query": "德国冬季学期的申请截止时间是什么时候",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "德国冬季学期（10 月入学）的截止时间，按参考资料大致是这样：\n\n- **多数学校**：5 月 31 日至 7 月 15 日之间截止，具体日期因校而异。\n- **热门项目更早**：比如 TUM 多数项目年初开放、5 月 31 日前截止。\n- **申请平台**：uni-assist 或学校自有系统（如 TUMonline），走哪个平台取决于学校。\n- **夏季学期**（补充参考）：截止多在 11 月至次年 1 月。\n\n来源：《德国（Germany）CS 硕士申请概览》，整理于 2026 年初、面向 2027 年秋季入学的草案，**具体日期请以目标项目官网为准**。\n\n另外提醒一句：德国 APS 和语言成绩是最容易拖后腿的两项，建议在申请季开始前 3 个月准备好（来源：《2027 年秋季入学申请时间线（五国通用参考）》）。\n\n需要的话，我可以帮你查某个具体学校的截止时间，或者对比一下德国和其他四国的时间窗口。",
+          "ms": 1973.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "德国冬季学期（10 月入学）的截止时间大致是这样：\n\n- **多数学校**：5 月 31 日到 7 月 15 日之间截止，具体日期因校而异。\n- **热门项目更早**：比如 TUM 多数项目年初开放、5 月 31 日前截止。\n- **申请渠道**：uni-assist 或学校自有系统（如 TUM 用 TUMonline），不同渠道的截止日期可能不同。\n- **夏季学期**（4 月入学）截止多在 11 月至次年 1 月，如果你也考虑的话可以一起看。\n\n另外提醒两个容易卡时间的点：\n- **APS 审核**：中国大陆学生申请德国高校要先过 APS，排期可能较长，建议申请前 3–6 个月就开始办。\n- **uni-assist 申请费**：首个志愿约 €75，同一学期后续每个志愿约 €30；学校自有系统多数免费。\n\n以上来自我们整理的《德国 CS 硕士申请概览》（整理于 2026 年初，面向 2027 年秋季入学），具体日期请以目标院校官网为准。\n\n需要的话，我可以帮你查某个具体学校或项目的截止时间，或者把德国和其他几个国家的时间线做个对比。",
+          "ms": 2161.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确回答了德国冬季学期截止时间，并补充了 APS 等关键提醒，信息与资料一致，差距很小。"
+    },
+    {
+      "id": "r010",
+      "query": "TUM 用什么系统申请",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "TUM 用的是自己的申请系统 **TUMonline**，不走 uni-assist。\n\n几点补充（参考资料整理于 2026 年初，以官网为准）：\n\n- **申请平台**：TUMonline（学校自有系统），所以不适用 uni-assist 的 €75 首志愿 / €30 后续志愿那套费用。\n- **截止时间**：TUM 多数项目在年初开放，冬季学期（10 月入学）多在 **5 月 31 日**前截止，比德国一般学校的 7 月 15 日早，热门项目要提前准备。\n- **学费**：TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期，另加每学期注册费。\n- **APS 仍然要办**：中国大陆学生申请德国高校（含英语授课硕士）都需要先拿到 APS 证书，旺季可能要数月，建议申请季前 3–6 个月启动（aps.org.cn 为准）。\n- **课程匹配**：德国学校会逐项核对本科课程与项目要求的匹配度，数学、理论计算机、编程类学分尤其关键。\n\n来源：《德国（Germany）CS 硕士申请概览》《德国 APS 审核与 uni-assist 申请说明》。\n\n要不要我帮你查一下德国其他常见学校是走 uni-assist 还是自有系统？或者你想了解 TUM 具体项目的课程匹配要求，这块需要顾问看你的成绩单才能判断，可以约一次免费 15 分钟沟通。",
+          "ms": 2544.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "TUM 不经过 uni-assist，用的是自己的系统 TUMonline。\n\n几点补充（参考资料整理于 2026 年初，以官网为准）：\n\n- **申请平台**：TUM 使用 TUMonline 自有申请系统；德国其他不少学校走 uni-assist 统一预审。\n- **截止时间**：TUM 多数项目年初开放，冬季学期（10 月入学）多在 5 月 31 日前截止，比一般德国学校的 7 月 15 日更早，需要提前准备。\n- **费用**：学校自有系统申请通常免费；但 TUM 自 2024 冬季学期起对非欧盟学生收学费，CS 类约 €4,000–6,000 / 学期。\n- **前置条件**：中国大陆学生仍需先拿到 APS 证书，排期可能数月，建议申请前 3–6 个月办理。\n\n来源：《德国（Germany）CS 硕士申请概览》《德国 APS 审核与 uni-assist 申请说明》。具体项目页面和当年截止日期建议到 tum.de 核对。\n\n需要的话，我可以再帮你查其他德国学校的申请平台差异，或者介绍工作室在 APS / uni-assist 流程上的服务内容。",
+          "ms": 2159.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都准确回答了 TUM 使用 TUMonline 自有系统，但 B 额外补充了课程匹配这一德国申请关键要点，并自然引导到工作室服务，信息更完整。"
+    },
+    {
+      "id": "r011",
+      "query": "uni-assist 申请一个志愿要交多少钱",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "根据知识库《德国 APS 审核与 uni-assist 申请说明》和《德国 CS 硕士申请概览》：\n\n- **同一学期第一个志愿：约 €75**\n- **同一学期后续每个志愿：约 €30**\n\n几点补充：\n\n- 这是 uni-assist 的**材料预审费**，不是学费；学校自有系统（如 TUM 的 TUMonline）多数不收申请费。\n- 预审需要几周时间，建议在学校截止日期前留出余量。\n- 参考资料整理于 2026 年初，费用以 uni-assist 官网最新说明为准。\n\n需要的话，我可以再帮你梳理德国 CS 硕士的申请时间线，或者看看我们这边有没有适合你当前阶段的服",
+          "ms": 1784.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "根据知识库《德国 APS 审核与 uni-assist 申请说明》：\n\n- 通过 uni-assist 申请时，同一学期**首个志愿约 €75**，**后续每个志愿约 €30**。\n- 这是参考资料整理的费用，**以 uni-assist 官网最新说明为准**（uni-assist.de）。\n- 另外两点常被忽略：\n  - 材料预审需要几周时间，务必在学校截止日期前留出余量。\n  - 部分学校（如 TUM）用自己的申请系统，不走 uni-assist，这类学校不产生这笔费用。\n\n如果你打算申多所德国学校，可以告诉我大概几所，我帮你把 uni-assist 这笔费用和 APS、保证金一起理一下。需要的话也可以约一次免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1692.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确给出了 uni-assist 首个志愿约 €75、后续每个志愿约 €30 的核心信息，并补充了以官网为准、预审需留余量、TUM 等自有系统不产生该费用等资料内要点，整体质量相当。"
+    },
+    {
+      "id": "r012",
+      "query": "APS 审核要提前多久办",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "APS 建议在申请季开始前 **3–6 个月**办理。\n\n- **原因**：审核周期受申请人数影响较大，旺季可能要等数月；APS 证书是申请德国高校和后续签证的前提，没有它后面的流程都走不了。\n- **流程大致是**：网上注册 → 提交材料 → 缴费 → 等待审核，部分情况需要面谈。\n- **材料、费用和最新流程**：以 APS 官网（aps.org.cn）为准，我这边只有整理过的参考说明，不代表实时官方政策。\n\n另外提醒一句：语言成绩和 APS 是最容易拖后腿的两项，建议最晚在申请季开始前 3 个月就把它们准备好。\n\n来源：《德国 APS 审核与 uni-assist 申请说明》《2027 年秋季入学申请时间线（五国通用参考）》，参考资料整理于 2026 年初，以官网为准。\n\n需要的话，我可以再帮你梳理德国从 APS 到 uni-assist 再到签证的完整时间顺序，或者你也可以约一次免费 15 分钟沟通，让顾问帮你看看时间安排。",
+          "ms": 1983.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "德国 APS 审核建议在申请季开始前 **3–6 个月**启动，因为审核周期受申请人数影响较大，旺季可能要等几个月。\n\n几个要点：\n\n- **流程**：网上注册 → 提交材料 → 缴费 → 等待审核，部分情况需要面谈。\n- **为什么早办**：没有 APS 证书，既不能申请德国高校，也办不了签证，属于硬性前置条件。\n- **材料与费用**：具体清单、费用和最新流程以 APS 官网（aps.org.cn）为准，我这边给的是整理后的参考信息。\n- **和 uni-assist 的时间叠加**：uni-assist 材料预审还要几周，所以整体时间要往前留余量；部分学校（如 TUM）走自己的系统，不走 uni-assist。\n\n以上内容来自工作室整理的《德国 APS 审核与 uni-assist 申请说明》，参考资料整理于 2026 年初，最终以官网为准。\n\n如果你想知道自己这种情况是否需要面谈、或者 APS 和申请时间怎么排，这需要看你的具体背景，属于顾问 1 对 1 的范围。需要的话我可以帮你约一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。",
+          "ms": 2345.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确给出了 APS 建议提前 3–6 个月办理这一核心事实，并补充了流程、原因和官网依据，信息与原始资料一致且无编造，整体质量相当。"
+    },
+    {
+      "id": "r013",
+      "query": "申请德国是不是一定要先过 APS",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "是的，对中国大陆学历的申请人来说，这基本是硬性前置条件。\n\n**德国 APS 审核要点**（来源：《德国 APS 审核与 uni-assist 申请说明》《德国 CS 硕士申请概览》）\n\n- **必须做**：中国大陆学生申请德国高校（含英语授课硕士）需先通过德国驻华使馆文化处留德人员审核部（APS）的学历审核，拿到 APS 证书后才能申请学校和签证。\n- **流程**：网上注册 → 提交材料 → 缴费 → 等待审核，部分情况需要面谈。\n- **时间**：审核周期受申请人数影响较大，旺季可能要数月，建议在申请季开始前 3–6 个月办理。如果目标是 2027 年秋季入学，2026 年 6–9 月就该把 APS 材料递上去。\n- **材料与费用**：具体清单和费用以 APS 官网（aps.org.cn）最新说明为准，我这边不报具体数字。\n\n**两个容易忽略的连带项**\n\n- **uni-assist**：很多德国大学通过 uni-assist 统一预审国际材料，首个志愿约 €75、后续每个约 €30（以官网为准），预审要几周，别卡在截止日。部分学校（如 TUM）走自己的系统。\n- **保证金账户**：办签证通常需要 Sperrkonto，2025 年起标准为每年 €11,904（每月 €992），以德国外交部当年公告为准。\n\n以上为参考资料整理（整理于 2026 年初），具体以官网为准。\n\n要不要我帮你把德国这条线的时间节点和材料清单再展开讲一下？或者你也可以约一次免费 15 分钟沟通，让顾问帮你确认 APS 排期和你目标项目的匹配要求。",
+          "ms": 2459.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "是的，对中国大陆学历的申请人来说，基本是必须的。\n\n**要点**\n- 中国大陆学生申请德国高校（包括英语授课硕士），需要先通过德国驻华使馆文化处留德人员审核部（APS）的学历审核，拿到 APS 证书后才能申请学校和签证。\n- 流程大致是：网上注册 → 提交材料 → 缴费 → 等待审核，部分情况需要面谈。\n- 审核周期受申请人数影响较大，旺季可能要等数月，建议在申请季开始前 3–6 个月办理。\n- 具体材料、费用和流程以 APS 官网（aps.org.cn）最新说明为准。\n\n**两个容易混淆的点**\n- APS 和 uni-assist 是两件事：APS 是学历审核，uni-assist 是很多德国大学用来统一预审国际学生材料的平台（首个志愿约 €75、后续每个志愿约 €30，以官网为准）。部分学校如 TUM 用自己的系统，不走 uni-assist。\n- 个别情况（比如学历背景不在常规审核范围内）可能有不同路径，这种需要按 APS 官网说明或由顾问核实。\n\n以上内容整理自工作室参考资料《德国 APS 审核与 uni-assist 申请说明》，整理于 2026 年初，具体以官网为准。\n\n如果你还想了解德国英语授课 CS 硕士的申请时间线或材料清单，我可以继续展开；需要针对你的情况判断 APS 办理节奏，可以约顾问 1 对 1 沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。",
+          "ms": 2380.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者事实都准确，但 B 额外补充了保证金账户和 2027 秋季入学 APS 时间线，信息更完整，且未编造资料外事实。"
+    },
+    {
+      "id": "r014",
+      "query": "德国公立大学是不是不要学费",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "大体上是，但有几个例外，得看清楚。\n\n**德国公立大学学费情况**（来源：《德国（Germany）CS 硕士申请概览》，整理于 2026 年初，草案待顾问核实，以官网为准）：\n\n- **多数联邦州公立大学免学费**，只收每学期约 €150–400 的注册费（Semesterbeitrag），这笔钱通常包含学期交通票。\n- **巴登-符腾堡州**：对非欧盟学生收 €1,500 / 学期，也就是一年 €3,000。\n- **TUM（慕尼黑工业大学）**：自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期，是这几个例外里最贵的。\n- 另外，申请阶段还有费用：走 uni-assist 首个志愿约 €75，同一学期后续每个志愿约 €30；学校自有系统多数免费。\n\n所以「免学费」这个说法对大部分公立大学成立，但如果你目标里有 TUM 或巴符州的学校（如 KIT、斯图加特大学、海德堡大学），预算要按收费算。\n\n需要的话我可以帮你查某个具体国家的整体申请概览，或者介绍选校咨询类服务。具体哪些项目适合你，需要顾问看完整背景，这部分是顾问 1 对 1 的范围。\n\n*以上为参考资料整理，具体金额和收费政策请以学校官网最新公告为准。*",
+          "ms": 2712.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "**大体上是，但有几个例外要留意。**\n\n- **多数联邦州公立大学免学费**，只收每学期约 €150–400 的注册费（通常含学期交通票）。来源：《德国 CS 硕士申请概览》。\n- **巴登-符腾堡州**对非欧盟学生收 €1,500 / 学期（如海德堡、弗莱堡、斯图加特、KIT 等在该州）。\n- **TUM 慕尼黑工业大学**自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期，是五国里少见的\"公立但收费\"情况。\n- 另外还有**申请环节的费用**：经 uni-assist 申请时首个志愿约 €75、同学期后续每个约 €30；学校自有系统多数免费。\n- 以上数字为参考资料整理于 2026 年初，具体以学校官网当年公告为准（uni-assist：https://www.uni-assist.de ，DAAD：https://www.daad.de ）。\n\n所以\"德国便宜\"这个印象基本成立，但选校时要把州和学校这两层筛一遍，别默认全免。\n\n需要的话我可以帮你查某个具体州或学校的收费情况，或者看看我们的选校服务怎么覆盖这类费用核对。",
+          "ms": 2188.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了德国公立大学学费的例外情况（巴符州和TUM收费）及uni-assist申请费，事实与原始资料一致，完整度相当，均无虚构内容。"
+    },
+    {
+      "id": "r015",
+      "query": "巴符州对国际学生收学费吗",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**收。** 巴登-符腾堡州（Baden-Württemberg）对非欧盟/非欧洲经济区学生收取学费，标准是每学期 €1,500，另外还要交每学期约 €150–400 的注册费（通常含交通票）。\n\n几点补充：\n\n- 这个政策只针对**非欧盟/EEA 国际学生**；欧盟学生和已在德国取得相关资格的申请人通常不适用。\n- 德国其他多数联邦州的公立大学仍然免学费，只收注册费。但 **TUM（慕尼黑工业大学，在巴伐利亚州）** 从 2024 冬季学期起也对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期，这是另一套政策，别和巴符州混在一起。\n- 巴符州的代表学校包括斯图加特大学、KIT、海德堡大学、弗莱堡大学、图宾根大学等。\n\n以上来自工作室整理的《德国（Germany）CS 硕士申请概览》，资料整理于 2026 年初，属于参考性质，具体金额和适用范围请以学校官网的学费页面为准。\n\n需要的话，我可以帮你查一下某个具体学校或项目的收费情况，或者介绍德国方向的选校服务。",
+          "ms": 2537.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "收。巴符州（Baden-Württemberg）是德国少数对非欧盟学生收学费的联邦州。\n\n- **学费**：非欧盟/非欧洲经济区学生约 **€1,500 / 学期**（即约 €3,000 / 年）。欧盟学生和德国本地学生不收这笔学费。\n- **注册费**：无论国籍，通常还要交每学期约 €150–400 的注册费（Semesterbeitrag），一般含学期交通票。\n- **对比**：德国多数联邦州的公立大学免学费，只收注册费；另一个例外是 TUM（巴伐利亚州），自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000 / 学期。\n- **涉及院校**：巴符州的代表院校包括 KIT（卡尔斯鲁厄理工）、海德堡大学、弗莱堡大学、斯图加特大学、图宾根大学等。\n\n以上来自工作室整理的《德国（Germany）CS 硕士申请概览》和《五国横向对比》，资料整理于 2026 年初，具体金额和适用范围请以学校官网的收费页面为准（KIT 等校通常有专门的 tuition fees 页面）。\n\n需要的话，我可以再帮你查某个具体学校的申请时间线或材料要求。",
+          "ms": 2720.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了资料中关于巴符州对非欧盟学生收取每学期€1,500学费及注册费的信息，并补充了TUM收费的对比，内容基本一致，无实质差异。"
+    },
+    {
+      "id": "r016",
+      "query": "德国的语言成绩要求高吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "德国英语授课 CS 硕士的语言要求整体不算高，属于五国里比较宽松的一档。\n\n**常见要求（参考《德国 CS 硕士申请概览》，整理于 2026 年初，以官网为准）**\n- 英语授课项目常见门槛：IELTS 6.5 或 TOEFL iBT 88–95\n- 少数项目会要求基础德语（不是入学语言门槛，但会影响日常生活和部分实习）\n- 部分学校接受同等英语证明（如英语授课本科背景），具体以项目页面为准\n\n**几点提醒**\n- 语言要求是“最低门槛”，不是录取标准；德国不少项目还会看课程匹配度（先修课），这块比语言更容易卡人。\n- 各校差异存在，TUM 等热门项目建议逐个核对官网。\n- 如果你的分数刚好在边缘（比如 IELTS 6.0），有些学校允许条件录取或补语言，但政策因校而异，需要核实。\n\n想继续的话，可以告诉我你关注哪几所德国学校，我帮你查对应国家的通用信息；如果是“我这个分数够不够、要不要重考”这类判断，需要顾问看完整背景，我可以帮你约一次免费 15 分钟沟通。",
+          "ms": 2485.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "德国英语授课 CS 硕士的语言要求整体算中等，不算高门槛：\n\n- **常见标准**：IELTS 6.5 或 TOEFL iBT 88–95，多数项目达到这个区间就够了。\n- **少数项目**：会要求基础德语（通常是生活或实习需要，不是授课语言）。\n- **其他门槛更值得注意**：德国真正的难点不在语言分，而在课程匹配审核（逐项核对数学、理论计算机、编程学分）和 APS 审核排期；部分项目还会要求或建议 GRE、线上测试或面试。\n\n以上来自《德国（Germany）CS 硕士申请概览》（整理于 2026 年初，草案待顾问核实），具体分数线和是否接受拼分、豁免，请以目标项目官网为准：https://www.study-in-germany.de\n\n想对比其他国家（瑞典、荷兰、芬兰、丹麦）的语言要求，或者想确认某个具体项目，可以继续问我。",
+          "ms": 2091.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": true
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确复述了资料中的德国语言要求，并正确指出课程匹配和 APS 是更关键的门槛；B 虽大体正确，但虚构了“部分学校接受同等英语证明”和“条件录取或补语言”等资料未提及的具体政策。"
+    },
+    {
+      "id": "r017",
+      "query": "荷兰硕士申请用什么平台",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "荷兰英语授课 CS 硕士的申请，通常要同时走两个系统：\n\n- **Studielink**：荷兰全国统一的注册系统，先在这里完成注册。\n- **学校自有申请系统**：材料、动机信等基本都在学校自己的系统里提交。\n\n其他几个常见要点（参考《荷兰（Netherlands）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- **截止时间**：非欧盟申请者多在 1 月 15 日至 4 月 1 日之间，TU Delft、部分 UvA 项目等热门项目更早；奖学金截止通常还要更早。\n- **申请费**：因校而异，常见约 €75–100（如 TU Delft 收取）。\n- **学费**：约 €16,000–26,000 / 年；欧盟学生约 €2,500 / 年。\n- **语言**：常见 IELTS 6.5（单项不低于 6.0）或 TOEFL iBT 90。\n\n以上是参考资料整理，具体到某所学校、某个项目的截止日和费用，建议以该项目官网为准。\n\n需要的话，我可以帮你查其他几国（瑞典、德国、芬兰、丹麦）的申请平台做个对比，或者介绍我们的选校咨询服务。",
+          "ms": 2451.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "荷兰英语授课 CS 硕士的申请流程通常分两步：\n\n- **Studielink 注册**：这是荷兰全国统一的注册系统，先在这里登记申请意向。\n- **学校自有申请系统**：多数学校还要求你在自己的系统里提交完整材料，比如成绩单、语言成绩和动机信。\n\n几点补充：\n- 非欧盟申请者的截止时间多在 **1 月 15 日至 4 月 1 日**之间，TU Delft、部分 UvA 项目等热门学校截止更早；奖学金截止通常更早。\n- 申请费因校而异，常见约 **€75–100**（例如 TU Delft 会收取）。\n- 以上信息来自《荷兰（Netherlands）CS 硕士申请概览》，整理于 2026 年初，面向 2027 年秋季入学，**具体以各校官网为准**。官方参考：https://www.studielink.nl、https://www.studyinnl.org\n\n需要的话，我可以再帮你对比一下荷兰和其他四国的申请平台差异；也可以安排一次免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1985.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都准确回答了荷兰申请平台，但B额外补充了学费和语言要求，信息更完整。"
+    },
+    {
+      "id": "r018",
+      "query": "Studielink 是干什么的",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "Studielink 是荷兰的全国统一申请系统，申请荷兰大学的硕士基本都要先在这里注册。\n\n**它主要做什么**\n- 统一注册入口：在 Studielink 上创建账号，填写个人信息和学历背景，然后选择要申请的学校和项目。\n- 提交申请意向：选好项目后，Studielink 会把你的申请转给对应学校，学校再通过自己的系统（或邮件）让你补材料、上传文书。\n- 一人一号：每个申请人只有一个 Studielink 账号，所有荷兰院校的申请都在这一个账号里管理。\n\n**几个常见注意点**\n- Studielink 本身不收申请费，但部分学校会在自己的后续系统里收申请费。\n- 它只是“入口”，不等于完成申请：文书、成绩单、语言成绩等通常要在学校自己的 portal 里提交。\n- 部分项目（尤其是有固定名额或需要先修课匹配的 CS 项目）会有额外的校内流程或选拔，具体以项目页面为准。\n\n以上是参考资料整理的一般情况（整理于 2026 年初），具体操作细节和截止日期请以 Studielink 官网和你目标项目页面为准：studielink.nl。\n\n需要的话，我可以帮你查荷兰 CS 硕士的申请时间窗口和材料清单，或者介绍我们在这块的服务。",
+          "ms": 2799.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "Studielink 是荷兰高校统一的注册平台。申请荷兰硕士时，一般要分两步走：\n\n- **先在 Studielink 注册**：在平台上登记你要申请的学校和项目，相当于先建立申请记录。\n- **再进入学校自有系统**：Studielink 完成注册后，还要到目标学校自己的申请系统里提交材料、完成正式申请。\n\n几点补充：\n- 它只是入口，不负责审核你的材料，录取决定由学校做。\n- 荷兰多数项目是滚动或分轮录取，建议尽早完成 Studielink 注册，不要卡截止日期。\n- 以上来自我们整理的《荷兰（Netherlands）CS 硕士申请概览》，参考资料整理于 2026 年初，具体流程和截止时间以 Studielink 和目标学校官网为准。\n\n需要的话，我可以再帮你对比一下荷兰和另外四国在申请平台、时间窗口上的差异。",
+          "ms": 2133.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 1,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "A 更完整地解释了 Studielink 的作用和注意事项，B 虽无错误但信息较少且未提及申请费、一人一号等细节。"
+    },
+    {
+      "id": "r019",
+      "query": "TU Delft 什么时候截止",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "TU Delft 的 CS 硕士截止时间，我手头的资料只覆盖到荷兰整体情况，没有该校的单独条目，所以先说能确认的部分：\n\n**荷兰整体参考（来源：《荷兰 CS 硕士申请概览》，整理于 2026 年初，待顾问核实，以官网为准）**\n- 非欧盟申请者截止多在 **1 月 15 日 – 4 月 1 日**之间\n- 热门学校（如 TU Delft、部分 UvA 项目）截止**较早**\n- 奖学金申请截止通常比项目截止更早\n\n**关于 TU Delft 具体日期**\n资料里没有给出确切日期，我不做推测。TU Delft 的 CS 相关项目通常走 Studielink 注册 + 学校自有系统，具体截止日每年可能微调，建议直接查项目页的 \"Admission & application\" 部分确认。\n\n要不要我帮你做这两件事之一：\n1. 你告诉我具体项目名（如 MSc Computer Science 还是 Data Science & AI Technology），我按荷兰概览再帮你梳理一遍申请流程和时间线；\n2. 或者留个联系方式，让顾问核实后回复你确切日期——顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。\n\n另外提醒一句：如果你是想据此安排自己的申请节奏，那属于个性化时间规划，需要顾问看你的完整背景来定，我可以帮你约一次免费 15 分钟沟通。",
+          "ms": 3156.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "**TU Delft 的 CS 硕士截止时间（参考）**\n\n- 荷兰非欧盟申请者的截止时间大多在 **1 月 15 日 – 4 月 1 日**之间，热门学校（如 TU Delft）通常**偏早**，具体到项目要查官网。\n- 奖学金（如 TU Delft Excellence Scholarship）的截止时间通常**比项目申请更早**，如果打算申请奖学金，需要按更早的时间倒推准备。\n- 申请流程是先在 **Studielink** 注册，再走学校自有申请系统；TU Delft 会收取申请费（常见约 €75–100）。\n\n来源：《荷兰（Netherlands）CS 硕士申请概览》《五国横向对比》，资料整理于 2026 年初，**具体日期请以 TU Delft 官网项目页为准**，我这边没有逐项目的实时截止日。\n\n需要的话，我可以帮你查一下荷兰整体的申请时间线，或者看看选校、文书类服务的公开价格。",
+          "ms": 2172.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确说明资料中没有 TU Delft 具体截止日期，只提供荷兰整体范围和官网核实建议，未编造事实，回答质量相当。"
+    },
+    {
+      "id": "r020",
+      "query": "荷兰读 CS 一年学费多少",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "荷兰英语授课 CS 硕士的学费，参考《荷兰（Netherlands）CS 硕士申请概览》（整理于 2026 年初，待顾问核实，以官网为准）：\n\n- **非欧盟学生**：约 €16,000–26,000 / 年，具体看学校和项目\n- **欧盟学生**：约 €2,500 / 年（法定学费）\n- **学制**：CS 类研究型硕士多为 2 年，少数项目 1 年，所以总花费要按学制乘一下\n- **另外还有**：申请费因校而异，常见约 €75–100（如 TU Delft 收取）；生活费不在上面这个数字里\n\n提醒一句：这是参考资料整理的数字，不是实时官方报价，具体项目请以学校官网的 tuition fee 页面为准。\n\n需要的话我可以帮你查某个具体学校或项目的公开信息，或者介绍我们这边的选校/申请服务。",
+          "ms": 2281.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "荷兰英语授课 CS 硕士的学费，参考我们整理的资料（整理于 2026 年初，以官网为准）：\n\n- **非欧盟学生**：约 **€16,000–26,000 / 年**，具体看学校和项目，TU Delft、UvA 这类热门校通常偏上限。\n- **欧盟学生**：约 **€2,500 / 年**（法定学费）。\n- **学制**：CS 类研究型硕士多为 2 年，少数项目 1 年，所以总花费要按学制乘一下。\n- **另外还有申请费**：因校而异，常见约 €75–100（比如 TU Delft 会收）。\n\n来源：《荷兰（Netherlands）CS 硕士申请概览》（工作室整理，2026 年初草案，待顾问核实）。实际金额请以目标项目官网的 tuition fee 页面为准，每年会调整。\n\n需要的话我可以再帮你对比一下荷兰和瑞典、德国的学费差异；如果你想知道自己这种情况大概要准备多少预算，那涉及具体项目组合，建议约一次免费 15 分钟沟通，让顾问按你的目标院校算。",
+          "ms": 2572.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了资料中荷兰 CS 硕士的学费区间、欧盟学生学费、学制和申请费信息，且都提醒以官网为准，没有编造事实，差距很小。"
+    },
+    {
+      "id": "r021",
+      "query": "荷兰的项目要面试吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "荷兰的 CS 硕士不是普遍要面试，但部分项目会加面试或选拔环节。\n\n- **面试不是标配**：荷兰多数 CS 硕士以材料审核为主（成绩单、课程匹配、动机信、语言成绩），面试属于个别项目或个别情况。\n- **哪些情况可能遇到面试**：知识库里的荷兰概览提到，部分项目有名额限制（numerus fixus），可能增加动机信、面试或选拔环节；具体到某个项目要不要面试，得看该项目当年的官网说明。\n- **面试形式**：一般是线上英文面试，问课程背景、动机、项目经历这类内容。\n- **准备建议**：如果目标项目有面试，提前用英文把「为什么这个项目 / 你的 CS 基础 / 职业规划」讲清楚，比临时背稿有效。\n\n参考来源：《荷兰（Netherlands）CS 硕士申请概览》（整理于 2026 年初，草案待核实），具体项目是否面试请以学校官网当年要求为准。\n\n如果你已经有具体想申的项目，可以告诉我项目名，我帮你查这类公开信息；想练面试的话，我们有一项模拟面试服务（¥149 / 次，45 分钟英文模拟 + 书面反馈，预约后 5 个工作日内安排），需要的话我可以把详情发你。",
+          "ms": 2995.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "荷兰 CS 硕士是否需要面试，取决于具体项目，没有统一规定。根据知识库《荷兰（Netherlands）CS 硕士申请概览》：\n\n- **不是普遍要求**：荷兰大多数 CS 硕士以材料审核为主，面试不是标配环节。\n- **部分项目会加面试或选拔**：概览里明确提到“部分项目有名额限制，并可能增加动机信、面试或选拔环节”，这类通常是有名额限制（numerus fixus）或竞争激烈的项目。\n- **动机信更常见**：相比面试，动机信（motivation letter）在荷兰申请里出现频率更高，建议优先准备。\n- **以官网为准**：具体某个项目今年是否面试、面试形式（线上/录制视频），需要看该项目当年的 admission 页面。参考资料整理于 2026 年初，实际要求请以学校官网为准。\n\n官方参考：https://www.studyinnl.org\n\n如果你有具体想申的项目，我可以帮你查这个国家的通用要求；但“这个项目我该不该重点准备面试、我的背景适不适合”这类判断需要顾问看完整背景，属于 1 对 1 咨询范围。要不要我帮你约一次免费 15 分钟沟通？",
+          "ms": 2738.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 4,
+          "fabricated": true
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确引用资料，未添加资料外具体事实；B 自行补充了面试形式和准备建议等资料未提及的具体内容，属于虚构。"
+    },
+    {
+      "id": "r022",
+      "query": "芬兰申请季一般几月开放",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "芬兰秋季入学的申请季一般是**前一年 12 月初开放、1 月初截止**。比如 2027 年秋季入学，大约是 2026 年 12 月到 2027 年 1 月初，结果多在 3–4 月公布。\n\n几个配套要点：\n\n- **平台**：Studyinfo.fi 联合申请（部分学校或项目单独申请）\n- **志愿数**：联合申请一次最多填 6 个，按志愿排序\n- **申请费**：自 2025 年起非欧盟申请者 €100 / 申请季（一次）\n- **语言成绩**：常见 IELTS 6.5（单项 5.5–6.0）或 TOEFL iBT 90–92，建议在申请季开始前 3 个月考出来\n- **奖学金**：学费减免较普遍（常见 50%–100%），通常和项目申请同步提交\n\n以上整理自《芬兰（Finland）CS 硕士申请概览》和《2027 年秋季入学申请时间线（五国通用参考）》，资料整理于 2026 年初，具体日期和费用请以 Studyinfo.fi 及各校官网为准。\n\n需要的话，我可以再帮你对比芬兰和瑞典、丹麦的申请时间差异，或者介绍我们的选校服务。",
+          "ms": 2551.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "芬兰秋季入学的主申请季一般在**前一年 12 月初开放，1 月初截止**。比如 2027 年秋季入学，大约是 2026 年 12 月到 2027 年 1 月初，结果多在 3–4 月公布。\n\n几个配套要点：\n\n- **平台**：Studyinfo.fi 联合申请，部分学校或项目需要单独申请\n- **志愿数**：联合申请一次最多填 6 个，且要排序\n- **申请费**：非欧盟申请者 €100（每个申请季一次，自 2025 年起）\n- **奖学金**：学费减免通常和项目申请同步提交，不要错过同一截止日\n\n以上来自《芬兰（Finland）CS 硕士申请概览》，资料整理于 2026 年初，具体日期每年会微调，请以 studyinfo.fi 和目标院校官网为准。\n\n需要的话，我可以再帮你对比一下芬兰和其他四国的申请时间线。",
+          "ms": 2042.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者核心事实都准确，但 B 额外补充了语言成绩建议，信息更完整，且未编造资料外事实。"
+    },
+    {
+      "id": "r023",
+      "query": "芬兰申请费多少",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "芬兰的申请费情况如下（来源：工作室《芬兰 CS 硕士申请概览》整理资料）：\n\n- **金额**：自 2025 年起，非欧盟申请者需缴纳 **€100 申请费**，每个申请季缴一次，并非按项目逐个收取。\n- **申请平台**：Studyinfo.fi 联合申请，部分学校或项目需单独申请；联合申请一次最多可填 6 个排序志愿。\n- **时间窗口**：秋季入学主申请季通常在前一年 12 月初开放、1 月初截止（例如 2027 年秋季入学，约在 2026 年 12 月至 2027 年 1 月初），结果多在 3–4 月公布。\n- **学费参考**：非欧盟学生约 €10,000–18,000/年，欧盟学生免学费；学费减免奖学金较普遍（常见 50%–100%）。\n\n以上是工作室整理的参考信息（整理于 2026 年初，待顾问核实），申请费标准和截止日期每年可能调整，建议以 studyinfo.fi 和 studyinfinland.fi 官网当年公布为准。\n\n需要的话，我可以再帮你对比一下芬兰和另外几个国家的申请费与时间线，或者介绍我们的选校定位服务。",
+          "ms": 3681.2,
+          "ok": true,
+          "tools": [
+            "lookup_country_admissions_overview"
+          ]
+        },
+        "wiki": {
+          "text": "芬兰的申请费是 **€100**，每个申请季交一次，从 2025 年起对非欧盟申请者收取。\n\n几点补充：\n- **申请平台**：Studyinfo.fi 联合申请（部分学校或项目单独申请）\n- **时间窗口**：秋季入学的主申请季通常在前一年 12 月初开放、1 月初截止（比如 2027 秋入学，约 2026 年 12 月—2027 年 1 月初），结果多在 3–4 月公布\n- **学费**：约 €10,000–18,000/年，欧盟学生免学费；学费减免奖学金比较普遍（常见 50%–100%）\n- **联合申请**：一次最多填 6 个排序志愿\n\n以上来自《芬兰（Finland）CS 硕士申请概览》，参考资料整理于 2026 年初，具体金额和截止日期请以 Studyinfo.fi 和学校官网当年公布为准。\n\n需要的话，我可以再帮你对比一下芬兰和瑞典、荷兰在申请费与时间线上的差异。",
+          "ms": 1604.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确、完整地给出了芬兰申请费金额、收取规则及相关补充信息，且均未虚构资料外的事实，差距极小。"
+    },
+    {
+      "id": "r024",
+      "query": "Studyinfo.fi 最多能报几个项目",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "芬兰联合申请（Studyinfo.fi）一次最多可以填 **6 个志愿**，并且需要排序。\n\n几点补充（来源：《芬兰（Finland）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- **平台**：秋季入学主要通过 Studyinfo.fi 联合申请，但部分学校或项目是单独申请，不走联合申请。\n- **时间**：主申请季通常在前一年 12 月初开放、1 月初截止（如 2027 年秋入学约为 2026 年 12 月–2027 年 1 月初），结果多在 3–4 月公布。\n- **申请费**：自 2025 年起非欧盟申请者需缴 €100（每个申请季一次）。\n- **志愿策略**：6 个志愿是排序录取，顺序会影响结果，所以怎么排需要结合你的背景和项目匹配度来判断——这部分属于顾问 1 对 1 的范围。\n\n如果你想知道这 6 个位置怎么排更合理，可以约一次免费 15 分钟沟通，或看我们的选校定位服务。需要我帮你查一下服务内容和价格吗？",
+          "ms": 2498.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "芬兰联合申请（Studyinfo.fi）一次最多可以填 **6 个志愿，并且需要排序**。\n\n几点补充，供你参考：\n\n- **排序有意义**：志愿按你填写的顺序处理，所以要把最想去的项目放在前面。\n- **申请费**：自 2025 年起，非欧盟申请者需缴 €100 申请费，每个申请季一次，不按项目数量叠加。\n- **主申请季时间**：秋季入学通常在前一年 12 月初开放、1 月初截止（例如 2027 年秋入学约为 2026 年 12 月—2027 年 1 月初），结果多在 3–4 月公布。\n- **注意**：部分学校或部分项目是单独申请，不走联合申请，需要单独确认。\n\n以上来自《芬兰（Finland）CS 硕士申请概览》（整理于 2026 年初，待顾问核实），具体以 [studyinfo.fi](https://studyinfo.fi) 当年公告为准。\n\n需要的话，我可以再帮你对比一下芬兰几所学校的 CS 项目设置，或者看看选校定位类服务的交付内容。",
+          "ms": 2312.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确回答了芬兰联合申请最多可填6个志愿并需排序，且补充了申请费、时间和单独申请等资料内要点，信息完整度相当，无明显差异。"
+    },
+    {
+      "id": "r025",
+      "query": "芬兰的奖学金能减免多少学费",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "芬兰的奖学金主要看各校自己的政策，没有全国统一的比例。根据知识库《芬兰（Finland）CS 硕士申请概览》：\n\n- **学费减免奖学金**：由各校自行设置，覆盖面在芬兰是比较广的，是申请芬兰时的一个重要优势。具体减免比例（常见说法是 50%–100%，但各校各项目不同）资料里没有逐校数据，需要以目标院校官网为准。\n- **Finland Scholarship**：部分学校提供，内容通常包含首年学费减免 + 一次性安置补助（金额各校不同）。\n- 减免通常与学业进度挂钩，后续学年可能需要满足学分要求才能延续，这一点也要看具体学校条款。\n\n以上是参考资料整理的信息（整理于 2026 年初），具体比例和金额请以学校官网当年的奖学金页面为准。\n\n如果你有具体的目标院校，我可以帮你查该国的申请概览；想确认某校某项目的实际减免比例，建议由顾问核实后回复，或者你也可以直接看官网。\n\n下一步：需要我按国家对比一下芬兰和瑞典/丹麦的奖学金友好度吗？或者帮你约一次免费 15 分钟沟通？",
+          "ms": 2188.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "芬兰的学费减免奖学金，按参考资料里的说法，常见幅度是 **50%–100% 学费减免**，而且覆盖面比较广，是芬兰申请里比较有优势的一点。\n\n几点补充：\n\n- **申请方式**：多数学校的学费减免奖学金和项目申请同步进行，不用单独再交一份奖学金申请（个别项目例外，要看项目页面）。\n- **Finland Scholarship**：部分学校提供，通常是首年学费减免 + 一次性安置补助，后续年份要看学校规定。\n- **其他**：欧盟/EEA 学生本身免学费，不涉及减免问题。\n- **学费基数**：非欧盟学生学费约 €10,000–18,000/年，所以减免金额要按具体项目学费算。\n\n以上来自《芬兰（Finland）CS 硕士申请概览》，参考资料整理于 2026 年初，具体比例、名额和是否自动考虑，**以各校项目官网当年说明为准**。\n\n想继续的话，可以告诉我你在看哪几所学校，我帮你查对应国家的申请时间线和材料要求；如果想知道自己背景大概能拿到什么档位的减免，那属于个性化判断，需要顾问看完整背景，可以约一次免费 15 分钟沟通。",
+          "ms": 2544.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了资料中关于芬兰学费减免奖学金和Finland Scholarship的信息，均未编造具体事实，且都提醒以官网为准，整体质量相当。"
+    },
+    {
+      "id": "r026",
+      "query": "丹麦申请需要交申请费吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "丹麦的情况是：**多数学校不收申请费**，但各校独立申请，不排除个别项目有例外。\n\n- 申请平台：各校独立系统（DTU、哥本哈根大学、奥胡斯大学等不统一），没有全国统一平台。\n- 申请费：多数学校不收；建议以目标院校官网的申请页面为准。\n- 顺带提醒时间：非欧盟申请者秋季入学截止多在 1 月 15 日至 3 月 1 日之间（因校而异），部分项目另有 2 月春季入学轮次。\n- 学费参考：约 DKK 75,000–130,000 / 年（约 €10,000–17,500），欧盟/欧洲经济区学生免学费。\n\n来源：《丹麦（Denmark）CS 硕士申请概览》，资料整理于 2026 年初、面向 2027 年秋季入学，属参考性质，具体以学校官网为准。\n\n如果你已经有几所目标学校，我可以帮你按学校再核对一遍申请费和截止时间；需要的话也可以约顾问做一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。",
+          "ms": 2147.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "丹麦多数学校不收申请费，但各校独立申请，个别项目可能例外，建议以目标院校官网为准。\n\n- **申请平台**：丹麦没有统一申请系统，DTU、哥本哈根大学、奥胡斯大学等各校独立申请。\n- **申请费**：多数学校不收申请费。\n- **申请时间**：非欧盟申请者秋季入学截止多在 1 月 15 日至 3 月 1 日之间（因校而异），部分项目另有 2 月春季入学轮次。\n- **学费**：约 DKK 75,000–130,000 / 年（约 €10,000–17,500），欧盟/欧洲经济区学生免学费。\n- **语言**：常见要求为丹麦 \"English B\" 等级，大致相当于 IELTS 6.5 或 TOEFL iBT 83–88。\n\n以上整理自《丹麦（Denmark）CS 硕士申请概览》（参考资料整理于 2026 年初，待顾问核实），具体到某一所学校请以官网为准，可查 https://studyindenmark.dk。\n\n需要的话，我可以再帮你对比一下丹麦和另外四国的申请流程差异，或者看看我们有没有适合你的服务。",
+          "ms": 2127.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确回答了丹麦多数学校不收申请费，并补充了相关申请信息，均未虚构资料外事实，差距很小。"
+    },
+    {
+      "id": "r027",
+      "query": "DTU 和哥本哈根大学是统一申请吗",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不是统一申请，两所学校各自独立招生。\n\n**丹麦 CS 硕士的申请方式（参考《丹麦（Denmark）CS 硕士申请概览》）**\n\n- 丹麦没有全国统一的硕士申请平台，DTU、哥本哈根大学、奥胡斯大学、奥尔堡大学、ITU 都是**各自官网独立网申**，各自定截止日期和材料要求。\n- 所以你要分别建账号、分别提交、分别交申请费（各校金额不同，以官网为准）。\n- 好处是可以同时申多所，互不影响；代价是材料要按各校要求分别准备，尤其是课程描述、学分匹配说明这类文件，各校模板不一样。\n\n**需要提醒的一点**：DTU 和 KU 对本科课程匹配度的审核都比较细，具体到你的成绩单能不能对上，属于需要看完整背景才能判断的事，我这边不做结论。\n\n参考资料整理于 2026 年初，具体平台入口和截止日期请以两校官网当年公告为准。\n\n下一步你想了解哪块？我可以帮你查：\n- 丹麦整体的时间窗口和语言要求\n- 或者你想看我们这边能提供的服务内容和价格\n\n另外提一句，如果你想让人帮你看课程匹配和选校，那是顾问 1 对 1 的范围，可以先约一次免费 15 分钟沟通。",
+          "ms": 2894.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不是，丹麦没有全国统一的申请平台，DTU 和哥本哈根大学都是各自独立的申请系统，需要分别注册、分别提交材料。\n\n几点补充（来源：《丹麦（Denmark）CS 硕士申请概览》，整理于 2026 年初，草案待顾问核实，以官网为准）：\n\n- **平台**：丹麦各校（DTU、哥本哈根大学、奥胡斯大学等）不统一，走各校自己的申请系统。\n- **时间**：非欧盟申请者秋季入学截止多在 1 月 15 日至 3 月 1 日之间，因校而异；部分项目另有 2 月春季入学轮次。两校截止日可能不同，建议分别查官网。\n- **申请费**：多数丹麦学校不收申请费。\n- **材料**：丹麦比较看重 ECTS 学分构成，常按数学、编程、算法等模块分别核算学分，两校的课程匹配要求要分别对照。\n- **语言**：常见要求为丹麦 \"English B\" 等级，大致相当于 IELTS 6.5 或 TOEFL iBT 83–88。\n\n官网核实入口：https://studyindenmark.dk ，以及 DTU、KU 各自的项目页面。\n\n需要的话，我可以再帮你对比这两校 CS 项目的学制和课程结构，或者介绍我们的选校咨询/全案服务。",
+          "ms": 2307.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": true
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确引用丹麦申请概览，未虚构事实；B 称“分别交申请费（各校金额不同）”与资料中“多数学校不收申请费”相矛盾，属于不准确且有误导。"
+    },
+    {
+      "id": "r028",
+      "query": "丹麦硕士截止日期一般在什么时候",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "丹麦各校使用独立申请系统，没有全国统一截止日，所以时间点要按学校逐个确认。\n\n**秋季入学（非欧盟申请者）**\n- 多数学校截止在 **1 月 15 日至 3 月 1 日** 之间，因校而异。\n- 部分项目另有 **2 月（春季）入学**轮次，截止时间通常更早。\n\n**其他要点**\n- 申请平台：DTU、哥本哈根大学、奥胡斯大学等各自独立系统，不通过统一平台。\n- 申请费：多数学校不收申请费。\n- 学费：约 DKK 75,000–130,000 / 年（约 €10,000–17,500），欧盟/欧洲经济区学生免学费。\n- 语言：常见要求丹麦 \"English B\" 等级，大致相当于 IELTS 6.5 或 TOEFL iBT 83–88。\n\n以上整理自《丹麦（Denmark）CS 硕士申请概览》，参考资料整理于 2026 年初、面向 2027 年秋季入学，属于参考性质，具体日期请以各校官网为准。\n\n如果你已经有目标学校，我可以帮你对照一下通用时间线（2027 秋入学：丹麦部分项目和奖学金多在 1 月 15 日前后截止，建议优先提交）。需要的话，也可以约一次免费 15 分钟沟通，让顾问帮你把丹麦几所学校的截止日核一遍。",
+          "ms": 2064.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "丹麦各校的申请截止日期不统一，因为丹麦没有全国统一的申请平台，DTU、哥本哈根大学、奥胡斯大学等都使用各自的申请系统。\n\n**时间窗口（参考）**\n- 非欧盟申请者秋季入学：截止日期多在 **1 月 15 日至 3 月 1 日** 之间，具体日期因学校而异\n- 部分项目另有 **2 月（春季）入学**轮次，截止日期更早\n- 申请费：多数丹麦学校不收申请费\n\n**需要注意**\n- 丹麦学校很看重 ECTS 学分构成，常按数学、编程、算法等模块分别计算学分，因此截止日期之外，还要预留时间核对课程匹配\n- 以上信息整理于 2026 年初，面向 2027 年秋季入学，属于参考资料，**请以各校官网为准**（官方入口：https://studyindenmark.dk）\n\n如果你已经有目标院校，我可以帮你查对应国家的整体申请概览；具体到某校某项目的截止日期和课程匹配判断，需要顾问核实，也可以约一次免费 15 分钟沟通。",
+          "ms": 2157.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "A 更完整地覆盖了丹麦截止日期、申请平台、学费和语言要求等资料要点，B 虽正确但遗漏了学费和语言要求等关键信息。"
+    },
+    {
+      "id": "r029",
+      "query": "丹麦一年学费换成欧元大概多少",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "根据知识库里的《丹麦（Denmark）CS 硕士申请概览》：\n\n- 学费区间约 **DKK 75,000–130,000 / 年**，资料里同时给出的欧元参考是 **约 €10,000–17,500 / 年**。\n- 欧盟/欧洲经济区学生免学费；非欧盟学生按上面区间。\n- 学制多为 2 年（120 ECTS），所以总学费大致是这个区间的两倍，具体看项目。\n\n两点提醒：\n- 这份资料整理于 2026 年初、标注为待顾问核实的草案，汇率和学费每年都可能调整，**以学校官网公布的金额为准**。\n- 不同学校（DTU、哥本哈根大学、奥胡斯大学等）差异不小，同一学校不同项目也可能不同。\n\n想继续的话，可以告诉我你关注哪所学校或哪类项目，我帮你查对应国家的申请概览；也可以约一次免费 15 分钟沟通，让顾问帮你把费用和预算一起过一遍。",
+          "ms": 1829.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "根据知识库里的《丹麦（Denmark）CS 硕士申请概览》和《五国横向对比》两份资料：\n\n- 丹麦英语授课 CS 硕士的非欧盟学费约为 **DKK 75,000–130,000 / 年**，资料里给出的换算区间是 **约 €10,000–17,500 / 年**。\n- 欧盟/欧洲经济区学生免学费。\n- 学制多数为 2 年（120 ECTS），所以两年总学费大致是这个区间的两倍，具体看学校和项目。\n\n需要说明的是：这两份资料是整理于 2026 年初的参考草案，汇率和学费都可能变动，实际金额请以学校官网当年的 tuition fee 页面为准（可参考 studyindenmark.dk）。\n\n如果你想看具体某所学校的学费，或者想了解丹麦和其他四国的费用对比，可以继续问我；也可以约一次免费 15 分钟沟通，让顾问帮你核对目标项目的最新数字。",
+          "ms": 1853.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了丹麦学费的丹麦克朗和欧元区间，并提醒以官网为准，信息完整且无编造，差距极小。"
+    },
+    {
+      "id": "r030",
+      "query": "申请欧洲 CS 硕士要准备哪些材料",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "申请瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士，材料清单大体相通，但每个国家的提交方式和特殊环节差别不小。以下内容根据工作室知识库《CS 硕士申请材料清单与准备建议》和《德国 CS 硕士申请概览》整理，属于参考性质，具体以各校官网为准。\n\n**通用材料（五国基本都要）**\n- 本科成绩单 + 学位证/在读证明（英文版，部分学校要求学校盖章或认证）\n- 语言成绩：雅思/托福，少数项目接受其他考试\n- 简历（CV）\n- 动机信 / PS（部分项目是固定问题式文书）\n- 推荐信（1–2 封，北欧部分项目不强制）\n- 课程描述 / 课程大纲（北欧和德国尤其看重，用于核对先修课与学分匹配）\n- 护照信息页\n\n**各国差异点**\n- **瑞典**：通过 University Admissions 统一平台上传，材料按平台要求命名和格式统一\n- **德国**：中国大陆学生需先过 **APS 审核**（排期可能较长，建议提前 3–6 个月办）；部分学校走 **uni-assist**；课程匹配审核严格，会逐项核对数学、理论计算机、编程类学分；个别项目要求或建议 GRE、线上测试或面试\n- **荷兰 / 丹麦**：多为各校独立申请系统，截止时间偏早（不少在 1 月 15 日前后），要留出材料准备时间\n- **芬兰**：Studyinfo 联合申请，约 12 月初开放、1 月初截止\n\n**两个容易踩的坑**\n- 材料命名和格式不统一，审核时容易被要求补交\n- 德国 APS 和 uni-assist 的办理周期常被低估，是时间线上最紧的一环\n\n如果你已经有目标国家或项目，我可以再帮你查该国的申请平台、时间窗口和费用。也可以先做一次免费 15 分钟沟通，让顾问帮你确认材料清单里哪些需要提前启动（比如 APS）。需要的话告诉我方便的联系方式就行。",
+          "ms": 3562.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "申请瑞典、德国、荷兰、芬兰、丹麦这五国的英语授课 CS 硕士，常见材料清单如下（整理自《CS 硕士申请材料清单与准备建议》，具体以各项目官网为准）：\n\n**核心材料**\n1. **成绩单**：中英文版；部分国家要求官方认证或学校直寄。在读生先交当前成绩单，毕业后补交。\n2. **学位证 / 毕业证**（或在读证明）。\n3. **语言成绩**：多数项目要求雅思 6.5 左右，或托福 iBT 88–95；部分学校接受英语授课本科证明替代，需逐校确认。\n4. **个人陈述 / 动机信**：1–2 页，说明为什么选这个项目、相关经历和未来规划。\n5. **学术简历（CV）**：突出课程、项目、科研、实习和技能。\n6. **推荐信**：通常 1–3 封，学术推荐人优先；部分学校由推荐人在线提交。\n\n**按国家需要额外注意的**\n- **德国**：需要 APS 证书；很多学校走 uni-assist；还要准备**课程描述**（学校会逐项核对学分匹配）。APS 旺季可能要数月，建议申请季前 3–6 个月启动。\n- **丹麦**：同样会按课程逐项核对学分，课程大纲要提前准备。\n- **瑞典**：通过 universityadmissions.se 统一上传，一次最多填 4 个排序志愿。\n- **荷兰**：Studielink 注册 + 学校自有系统，热门校截止较早。\n- **芬兰**：Studyinfo.fi 联合申请，部分项目单独申请。\n- **其他可能要求**：护照信息页；部分项目要 GRE、作品集或项目报告；少数有面试。\n\n**准备节奏建议**\n- 文书和推荐信一般需要 1–2 个月打磨，越早开始越好。\n- 所有材料命名清晰、格式统一，提交前逐项核对。\n\n以上是参考资料整理（整理于 2026 年初），日期和分数请以各校官网为准。\n\n下一步：如果你想知道某个国家或某类项目的材料细节，我可以继续查；也可以帮你看看工作室的「网申材料审核」服务，提交前逐项核对。需要的话告诉我。",
+          "ms": 3037.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 的材料清单更完整准确，覆盖了成绩单、学位证、语言、PS、CV、推荐信及各国特殊要求，且未虚构具体事实；B 将推荐信表述为'1–2 封，北欧部分项目不强制'，与资料中'通常 1–3 封'不符，且遗漏了部分关键材料细节。"
+    },
+    {
+      "id": "r031",
+      "query": "推荐信一般要几封",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "推荐信一般 **1–3 封**，学术推荐人优先；部分学校由推荐人在线提交。\n\n几点补充（来源：《CS 硕士申请材料清单与准备建议》，参考资料整理于 2026 年初，具体以各项目官网为准）：\n\n- **数量**：多数项目 2 封左右，个别项目只要 1 封或允许 3 封，逐校确认。\n- **推荐人**：优先学术推荐人（授课老师、导师），有实习/科研的可以加一封工作推荐人。\n- **提交方式**：不少学校是推荐人自己收到链接在线提交，需要提前和老师打招呼、留出时间。\n- **准备节奏**：文书和推荐信通常要 1–2 个月打磨，越早联系推荐人越好。\n\n如果你想知道某个具体项目要几封，或者想梳理推荐人怎么选、素材怎么给老师，可以告诉我目标国家和项目；也可以约一次免费 15 分钟沟通，让顾问帮你过一遍。",
+          "ms": 1828.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "推荐信一般 1–3 封，学术推荐人优先；部分学校由推荐人在线提交。\n\n补充几点（依据知识库《CS 硕士申请材料清单与准备建议》，参考资料整理于 2026 年初，具体以各项目官网为准）：\n\n- **数量**：多数项目要求 1–3 封，个别项目只要 1 封，也有项目不强制要求。逐校确认最稳妥。\n- **推荐人选择**：优先学术推荐人（授课老师、毕设导师），有含金量的实习或科研主管可作为补充。\n- **提交方式**：部分学校由推荐人通过系统链接在线提交，需要提前和老师沟通好时间，别卡截止日期。\n- **准备节奏**：文书和推荐信通常需要 1–2 个月打磨，建议尽早联系推荐人。\n\n如果你已经有目标项目清单，想知道每个项目具体要几封、怎么分配推荐人，这属于需要看完整背景的判断，可以约顾问 1 对 1 沟通。需要的话我可以帮你登记，让顾问联系你（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。\n\n想继续了解某个国家的材料要求，也可以直接问我。",
+          "ms": 2322.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了资料中推荐信 1–3 封、学术推荐人优先、部分在线提交及 1–2 个月准备时间等要点，且未编造具体事实，整体质量相当。"
+    },
+    {
+      "id": "r032",
+      "query": "课程描述是什么，哪些国家要",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**课程描述（Course Description / Syllabus）是什么**\n\n简单说，就是把你本科阶段修过的每门课的内容，用 1–2 段文字说明清楚：课程名称、学分、学时、讲了哪些知识点、用了什么教材、考核方式。它不是成绩单，成绩单只显示“课名 + 分数”，课程描述补的是“这门课到底学了什么”。\n\n**为什么重要**：欧洲 CS 硕士普遍要做课程匹配（curriculum matching），招生官会拿你的课程描述去对照项目要求的先修课（比如数学、编程、算法、数据结构、操作系统）。匹配不上，即使均分高也可能被拒或要求补课。\n\n**哪些国家需要（一般情况）**\n\n| 国家 | 课程描述的常见用途 |\n|---|---|\n| 德国 | 最典型。uni-assist 或学校申请时常要求提交 Modulhandbuch 式的课程描述，用于审核先修课是否满足；部分学校会给出自己的表格模板 |\n| 荷兰 | 部分学校（尤其理工类）要求提交 course descriptions，用于判断是否满足先修要求；有的学校会给固定表格 |\n| 瑞典 | 多数项目不强制单独提交，但课程匹配是审核重点，学校可能要求补充说明；申请系统里通常只需成绩单 |\n| 芬兰 | 部分学校要求，尤其对跨专业或先修课不明确的申请人；通常按学校模板填写 |\n| 丹麦 | 视学校而定，部分项目要求，通常与先修课评估一起看 |\n\n**几点实操提醒**\n- 优先用**学校官方模板**，没有模板再自己写；德国、荷兰很多学校有固定表格，格式不对会被退回。\n- 内容要写**知识点**，不要只写“本课程介绍了……”，招生官看的是关键词能否对上先修要求。\n- 中文章程需要翻译，通常英文即可，个别学校要求公证或学校盖章。\n- 以上是参考资料整理的一般情况（资料整理于 2026 年初），具体到某所学校是否强制、用什么模板，**以该项目官网的 admission requirements 为准**。\n\n如果你告诉我具体是哪几所学校，我可以帮你查对应国家的申请材料概览；但“我的课程能不能匹配上某项目”这种判断需要看完整成绩单和课程内容，属于顾问 1 对 1 的范围，可以约一次免费 15 分钟沟通先聊。\n\n需要我按国家拉一份申请材料清单吗？",
+          "ms": 4092.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "课程描述（Course Description）就是把你本科主要专业课的**课程大纲**整理成文件：课程名称、学分、课时、教材或参考书、每周讲什么、考核方式。目的是让招生方看到你具体学过什么内容、覆盖了多少学分。\n\n**哪些国家需要**\n- **德国**：最看重。学校会逐项核对本科课程与项目要求的匹配度，尤其是数学、理论计算机和编程类学分，课程描述是核对依据。\n- **丹麦**：常按数学、编程、算法等模块分别计算 ECTS 学分，同样需要课程描述支撑。\n- **瑞典、荷兰、芬兰**：不是普遍硬性要求，但部分项目会要求提交课程大纲或学分说明，需要逐校确认。\n\n**准备建议**\n- 优先做与目标项目要求最相关的 8–15 门课，不用全做。\n- 中英文对照，格式统一，标注学分和学时。\n- 如果学校官网有固定模板，按模板填。\n\n以上整理自《CS 硕士申请材料清单与准备建议》和《德国 APS 审核与 uni-assist 申请说明》，参考资料整理于 2026 年初，具体以各项目官网为准。\n\n需要的话，我可以帮你查某个国家的申请概览，或者介绍工作室的「网申材料审核」服务（提交前逐项核对材料）。",
+          "ms": 2550.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "B 更完整地解释了课程描述的定义、重要性、五国差异和实操建议，但将荷兰、芬兰描述为部分学校要求，与原始资料中仅明确提及德国、丹麦需要课程描述存在轻微偏差；A 虽更贴合资料但信息覆盖略少。"
+    },
+    {
+      "id": "r033",
+      "query": "还没毕业能申请吗，毕业证怎么办",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "这个问题很常见，先说结论：**可以，在读生申请这五国的英语授课 CS 硕士是常规操作，毕业证一般用「在读证明 + 后续补交」的方式处理。** 具体做法各国略有差别。\n\n**一般逻辑**\n- 申请时提交在读证明（英文版，学校教务处开）和已有成绩单，说明预计毕业时间。\n- 录取通常是**有条件录取（conditional offer）**，条件就是在规定日期前拿到学位证和完整成绩单。\n- 毕业后补交学位证、毕业证、最终成绩单的英文版（部分学校要求 sealed 或认证件），条件满足才转正式录取。\n\n**各国差异（参考资料整理于 2026 年初，以官网为准）**\n- **瑞典**：通过 universityadmissions.se 统一申请，在读生需提交在读证明，多数项目允许毕业后补交学位证；部分学校对最后一学期课程有要求。\n- **德国**：uni-assist 或学校直申，在读生通常需要提供成绩单 + 在读证明，很多项目要求入学前拿到学位；部分学校要求 APS 审核，APS 对在读生有专门流程。\n- **荷兰**：Studielink + 学校系统，荷兰学校对在读生比较友好，常见做法是先发 conditional offer，毕业补交即可。\n- **芬兰**：Studyinfo 统一申请，在读生可申，录取后补交学位证明。\n- **丹麦**：学校自有系统，同样接受在读申请，需在截止前满足学位条件。\n\n**两个容易踩的点**\n1. 补交材料的**截止日期**各校不同，有的在开学前，有的在 7 月左右，别默认都一样。\n2. 有些项目会看**最后一年的课程是否修完**，如果大四还有核心课没上，个别学校会要求说明。\n\n如果你告诉我目标国家和入学季，我可以帮你查对应国家的申请时间窗口和材料清单。另外，**「我这个背景在读生身份能不能申上某项目」这类判断需要看完整成绩单和课程结构**，属于顾问 1 对 1 服务的范围，可以约一次免费 15 分钟沟通先聊方向。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 3691.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以申请，在读生申请是很常见的情况。要点如下：\n\n**1. 在读生可以申请**\n- 提交**当前成绩单 + 在读证明**，不需要先拿到毕业证。\n- 录取后一般需要在入学注册前补交学位证和毕业证（或按学校要求提供官方认证件），具体时间点各校不同。\n\n**2. 材料怎么准备**\n- 成绩单：中英文版，部分国家要求学校直寄或官方认证。\n- 在读证明：由学校开具，说明预计毕业时间。\n- 毕业后补交学位证、毕业证和完整成绩单。\n\n**3. 各国要注意的地方**\n- 瑞典：通过 University Admissions 统一上传，中国学生学历材料按官网「国家特定要求」提交，以官网说明为准。\n- 德国：APS 审核通常需要完整学历材料，在读生办理路径和已毕业不同，建议尽早确认自己的情况适用哪种程序。\n- 荷兰、丹麦：多为各校独立系统，注意早截止。\n\n以上整理自《CS 硕士申请材料清单与准备建议》和《瑞典（Sweden）CS 硕士申请概览》（参考资料整理于 2026 年初，以各校官网为准）。\n\n如果你告诉我目标国家和预计毕业时间，我可以帮你查对应国家的具体材料要求；涉及「我这个情况能不能按时补交、会不会影响录取」这类判断，需要顾问看完整背景，可以约一次免费 15 分钟沟通。",
+          "ms": 2545.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 4,
+          "fabricated": true
+        }
+      },
+      "winner": "rag",
+      "reason": "B 更完整地解释了在读生申请的处理逻辑和各国差异，但存在资料未提及的‘有条件录取’具体表述，略有瑕疵；A 准确但覆盖不够全面。"
+    },
+    {
+      "id": "r034",
+      "query": "选校的冲刺匹配保底各占多少比例合适",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "冲刺、匹配、保底三档的常见比例是：\n\n- **冲刺**：20%–30%，方向高度契合、值得一试的项目\n- **匹配**：40%–50%，背景与要求基本吻合，是申请主力\n- **保底**：20%–30%，录取把握较大、你也愿意去的项目\n\n判断一个项目放在哪一档，通常看：本科院校背景和均分、先修课与学分构成、语言成绩、科研/项目/实习与项目方向的相关度，以及学费奖学金和毕业后的就业留欧政策。\n\n来源：《选校基本思路：冲刺、匹配、保底》（工作室内部整理，通用思路，非官方政策）。\n\n需要说明的是，这只是通用框架。**具体到你的背景该放哪些项目、每档怎么配比，需要看完整背景才能判断**，这属于顾问 1 对 1 服务的范围。对应的是「选校定位全案」（¥699/套，含背景评估报告、8–12 个项目分档清单、要求汇总表、时间规划表和 2 次 1 对 1 沟通），也可以先约一次免费 15 分钟初步沟通。\n\n要不要我帮你查一下这项服务的完整交付内容和当前报价？或者你先说说目标国家和入学季，我看看能先解答哪些公开信息。",
+          "ms": 2236.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "冲刺、匹配、保底这三档，常见的比例是：\n\n- **冲刺**：20%–30%，指录取难度高于你当前背景、但方向高度契合、值得一试的项目\n- **匹配**：40%–50%，指背景与项目要求基本吻合，是申请的主力\n- **保底**：20%–30%，指录取把握较大、你也愿意去的项目\n\n判断一个项目属于哪一档，通常看这几方面：本科院校背景和均分、先修课与学分构成、语言成绩、科研/项目/实习与方向的相关度，以及学费、奖学金、生活成本和毕业后的留欧政策。\n\n来源：《选校基本思路：冲刺、匹配、保底》（工作室内部参考资料，通用思路，非官方政策）。\n\n需要说明的是，这只是通用框架。**具体到你的背景该申哪些项目、三档怎么搭配，需要看完整背景才能判断**，这属于顾问 1 对 1 服务的范围，我不做个性化定校结论。\n\n下一步可以选：\n- 继续问五国申请流程、费用、语言要求这类公开问题\n- 我帮你查一下「单次选校咨询」和「选校定位全案」的服务内容和价格\n- 预约一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）\n\n想走哪条？",
+          "ms": 2099.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都准确给出了冲刺/匹配/保底的比例和判断维度，但B额外提供了对应的具体服务（选校定位全案）及其价格和内容，信息更完整实用。"
+    },
+    {
+      "id": "r035",
+      "query": "预算不多的话五个国家里选哪个好",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "预算有限的话，从公开信息看，大致可以这样排：\n\n- **德国**：公立大学学费普遍很低，是五国里最省学费的方向。但要注意巴符州和 TUM 对非欧盟学生收学费，另外申请流程链条长（APS → uni-assist → 签证），要最早开始规划。\n- **芬兰**：学费不算最低，但奖学金机会相对多，值得优先看。\n- **瑞典、丹麦、荷兰**：整体学费和生活成本偏高，丹麦在五国里生活成本属于偏高一档。\n\n另外两个和钱有关的点：\n- 瑞典一轮最多可申 4 个项目、芬兰联合申请最多 6 个，一次多申能摊薄单校成本。\n- 德国还有 DAAD 奖学金（竞争激烈，多面向有工作或科研经历的人）和入学后可申请的 Deutschlandstipendium（每月 €300）。\n\n以上是通用思路，参考资料整理于 2026 年初，具体学费和奖学金金额请以各校官网为准（德国可查 https://www.study-in-germany.de 、https://www.daad.de ）。\n\n不过“预算不多”具体到你的情况该选哪国、哪些项目性价比最高，需要看你的均分、先修课和预算区间才能判断，这部分属于顾问 1 对 1 的范围。要不要我帮你约一次免费 15 分钟沟通？或者你先告诉我预算大概区间，我可以帮你查对应国家的公开费用信息。",
+          "ms": 2511.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "预算有限的话，先看学费这一项，五国的差别很大。以下是参考资料整理（整理于 2026 年初，以官网为准）：\n\n**学费从低到高大致排序**\n- **德国**：多数联邦州公立大学免学费，只收每学期约 €150–400 注册费（常含交通票）。但要注意两个例外：巴符州对非欧盟学生收 €1,500/学期；TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000/学期。\n- **芬兰**：约 €10,000–18,000/年，但奖学金相对友好，是五国里奖学金机会比较多的。\n- **丹麦**：约 DKK 75,000–130,000/年（约 €10,000–17,500），生活成本在五国中偏高。\n- **瑞典**：约 SEK 130,000–190,000/年，理工类热门院校偏高。\n- **荷兰**：约 €16,000–26,000/年，是五国里学费上限最高的。\n\n**除了学费还要算进去的**\n- 德国申请流程最长：APS 审核 + uni-assist + 签证，建议提前 3–6 个月启动 APS；另外签证要保证金账户（2025 年起标准 €11,904/年，以德国外交部当年公告为准）。\n- 芬兰、丹麦、瑞典的生活成本（尤其住宿）也要一起算，荷兰住房紧张且贵。\n- 申请费本身不多：瑞典 SEK 900、芬兰 €100、德国 uni-assist 首志愿约 €75，丹麦多数学校不收。\n\n**一句话结论**：纯看学费，德国公立大学（避开巴符州和 TUM 的收费项目）最省，芬兰靠奖学金可以压到接近；荷兰和瑞典在预算上压力最大。\n\n来源：《五国横向对比：申请时间、申请费、学费、语言要求、学制》《德国（Germany）CS 硕士申请概览》。这些是整理过的参考数据，具体项目和当年收费标准请以学校官网为准。\n\n不过\"预算不多\"具体到多少、能接受几年、是否愿意为了低学费接受更长的申请流程，这些会影响最终怎么搭配。要不要我帮你约一次免费 15 分钟沟通，或者看看选校定位类服务？顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 3306.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 更完整地列出了五国学费的具体区间和排序，并补充了申请费、保证金、生活成本等预算相关要点，信息更全面；B 虽正确但缺少具体金额，完整度略低。"
+    },
+    {
+      "id": "r036",
+      "query": "毕业后想留在欧洲工作，选哪个国家",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "这个问题挺关键的，先说结论：五国都有毕业后找工作的居留安排，但「留下来」的难易程度差别很大，取决于语言、行业和签证细节。\n\n**通用情况（参考资料整理，以官网为准）**\n\n- **德国**：18 个月找工作居留，工签门槛相对友好，IT 岗位多，但很多岗位要求德语；公立大学学费低，试错成本小。\n- **瑞典**：毕业后可申请找工作居留，英语工作环境好，但近年 IT 初级岗位竞争激烈，且部分岗位仍偏好瑞典语。\n- **丹麦**：毕业后有找工作居留安排，科技产业发达、英语环境好，但生活成本在五国中偏高（来源：《丹麦 CS 硕士申请概览》）。\n- **荷兰**：一年「orientation year」找工作居留，英语普及率极高，产业联系强，是五国里英语就业最顺的之一。\n- **芬兰**：毕业后找工作居留时间较长，科技公司（尤其游戏、通信）英语岗位不少，但整体岗位体量小于德荷。\n\n**几个常被忽略的点**\n\n- 「有居留许可」不等于「能找到工作」，真正卡人的是语言和岗位供需，不是签证时长。\n- 想长期留欧，德语/荷兰语学到能工作的水平，收益远大于多申两个项目。\n- 丹麦、德国、瑞典的毕业后找工作安排相对成熟（来源：《选校基本思路：冲刺、匹配、保底》）。\n\n**下一步**\n\n上面是国家层面的通用差异。具体到你「哪个国家更适合我」，还要看你的专业方向、语言基础、预算和是否接受学小语种——这属于顾问 1 对 1 的判断范围，我不做结论。\n\n要不要我帮你约一次免费 15 分钟沟通？或者你先告诉我目标入学季和大致背景，我可以介绍对应的「单次选校咨询 / 选校定位全案」内容和价格。",
+          "ms": 3338.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题问得很实在，不过先说清楚：**“哪个国家最好留”没有统一答案**，取决于你的专业方向、语言意愿、是否接受先做博士后或找工作签证过渡。下面给的是五国的公开政策差异，不是针对你个人的结论。\n\n**毕业后找工作居留（公开政策方向）**\n- 瑞典：毕业后可申请找工作居留，通常 12 个月，找到工作后可转工作许可。\n- 德国：毕业后可申请 18 个月的找工作居留，期间可合法打工；工科、IT 岗位需求大，但签证链条长（APS → uni-assist → 签证），要最早规划。\n- 丹麦：毕业后可申请 Establishment Card（求职居留），科技产业发达、英语环境好，但生活成本五国中偏高。\n- 荷兰：毕业后有一年“orientation year”（zoekjaar）求职居留，英语普及率高、与产业结合紧密。\n- 芬兰：毕业后可申请找工作居留，英语环境好、奖学金友好，但冬季长、岗位市场相对小。\n\n**几个常被忽略的点**\n- 语言：荷兰、瑞典、丹麦、芬兰的 IT 岗位英语环境较好，但长期留下来，本地语言往往影响晋升和社交；德国 IT 岗位多，但部分雇主要求基础德语。\n- 学费与成本：德国公立大学学费低（注意巴符州和 TUM 对非欧盟收费），芬兰奖学金友好；丹麦、荷兰生活成本偏高。\n- 政策会变：以上是参考资料整理于 2026 年初的方向性信息，具体年限和条件请以各国移民局官网为准（丹麦：nyidanmark.dk；瑞典：migrationsverket.se；德国：make-it-in-germany.com；荷兰：ind.nl；芬兰：migri.fi）。\n\n**下一步**\n如果你愿意，可以告诉我你的目标方向（比如偏 AI/系统/数据）、是否愿意学本地语言、预算区间，我可以帮你把公开信息整理成对比表。但“你该选哪个国家、哪些项目适合你”这类判断需要看完整背景，属于顾问 1 对 1 的范围——我们有免费 15 分钟初步沟通，也可以走「单次选校咨询」或「选校定位全案」。要不要我帮你登记，让顾问联系你？（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。）",
+          "ms": 3882.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都基于资料给出了五国毕业后居留的通用对比，并说明具体选择需顾问评估，但均未提供资料中未有的具体年限或政策细节，整体水平接近。"
+    },
+    {
+      "id": "r037",
+      "query": "2027 年秋季入学，现在这个时间点应该做什么",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**先回答核心问题：现在（2026 年这个时间点）最该做的是把“卡时间”的两件事先解决掉，同时把目标国家和项目清单定下来。**\n\n按参考资料《2027 年秋季入学申请时间线（五国通用参考）》和各国概览，2027 秋入学的节奏大致是这样：\n\n- **现在到申请季开始前 3 个月：语言成绩 + 德国 APS 优先准备。** 时间线里明确说这两项最容易拖后腿。APS 审核周期长，德国方向的同学尤其要早启动。\n- **2026 年 9–11 月：定校定项目、准备材料。** 成绩单、课程描述（北欧很看重 ECTS 学分构成）、推荐人沟通，这些都要提前。\n- **2026 年 12 月–2027 年 1 月初：芬兰主申请季。** Studyinfo.fi 联合申请通常 12 月初开放、1 月初截止，一次最多填 6 个排序志愿；芬兰非欧盟申请者需缴 €100 申请费（每季一次）。\n- **2027 年 1 月 15 日–3 月 1 日：丹麦。** 各校独立系统，非欧盟截止多在 1 月中到 3 月初，因校而异。\n- **2027 年 2–5 月：荷兰、丹麦剩余项目截止（多在 3 月 1 日–4 月 1 日）；德国冬季学期陆续开放，TUM 等热门项目多在 5 月 31 日前截止。** 瑞典、芬兰结果约 3–4 月公布。\n- **2027 年 5–7 月：德国其余项目截止（多在 7 月 15 日前）；办签证、居留许可、找房。**\n- **2027 年 8–9 月：入境、注册、开学。**\n\n另外提醒一句：**奖学金截止通常早于项目截止**，如果打算申奖，时间要再往前压。\n\n以上是参考资料整理于 2026 年初的通用节奏，具体日期请以各校官网为准。\n\n**下一步**：如果你已经有大致的目标国家，我可以帮你把那个国家的平台、截止和材料要求讲细一点；如果你想知道“以我的背景，这一年该怎么排”，那属于个性化时间规划，需要顾问看完整背景才能给，可以约一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。要留个联系方式吗？",
+          "ms": 4042.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "现在（2026 年 6–9 月）正好是时间线里的第一阶段，重点是把方向和语言成绩定下来。\n\n**这个阶段该做的几件事**\n- **定国家和项目方向**：先想清楚主申哪 1–2 个国家，再按方向筛项目，别一开始就铺开五国。\n- **准备或刷新语言成绩**：雅思/托福是五国通用材料，多数项目要求雅思 6.5 左右；建议最晚在申请季开始前 3 个月考出来。\n- **德国方向尽早启动 APS**：中国大陆学生申请德国高校需要先拿 APS 证书，旺季审核可能要数月，建议提前 3–6 个月办理（以 aps.org.cn 最新说明为准）。\n- **做背景梳理**：把本科课程、项目、科研、实习整理成一份清单，后面写 CV 和课程描述都用得上。\n\n**接下来会撞上的节点（提前知道好安排）**\n- 2026 年 9–10 月：定选校清单、开始主文书和简历、联系推荐人\n- 2026 年 10 月中旬：瑞典 University Admissions 国际轮开放\n- 2026 年 11–12 月：荷兰、丹麦部分项目和奖学金开始截止；芬兰 Studyinfo 约 12 月初开放\n- 2027 年 1 月：瑞典国际轮约 1 月中旬截止，芬兰约 1 月初截止，荷兰/丹麦多校在 1 月 15 日前后\n\n以上整理自《2027 年秋季入学申请时间线（五国通用参考）》和《CS 硕士申请材料清单与准备建议》，为参考资料整理（2026 年初），具体截止日期以各校官网为准。\n\n**下一步**\n如果你已经有大致方向，可以继续问我某个国家的申请平台、材料或费用细节；如果想知道\"我这个背景该主申哪国、选哪几个项目\"，这需要看完整背景才能判断，属于顾问 1 对 1 的范围——可以约一次免费 15 分钟沟通，顾问在瑞典（比北京晚 6–7 小时），工作日 24 小时内回复。需要的话我帮你登记。",
+          "ms": 3369.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了时间线和关键节点，均未虚构事实，且都覆盖了语言成绩、APS、定校和后续节点等核心要点，差距很小。"
+    },
+    {
+      "id": "r038",
+      "query": "什么时候开始写文书比较合适",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "文书启动时间这个问题，我给你一个通用的时间线参考（不涉及你的具体背景判断）：\n\n**一般节奏（北欧/荷兰/德国英语授课 CS 硕士）**\n\n- **申请前 4–6 个月**：开始梳理素材（课程项目、实习、科研），确定 2–3 个可写的核心故事线。这一步最花时间，也最容易被低估。\n- **申请前 3 个月**：出 PS/Motivation Letter 初稿。北欧（瑞典、芬兰、丹麦）多数项目要的是 motivation letter + 课程匹配说明，荷兰部分项目还要额外 essay，德国则更看重课程匹配和成绩单，文书篇幅相对短。\n- **申请前 1–2 个月**：改稿、找推荐人确认推荐信、按各校字数/题目要求做版本适配。\n- **截止前 2 周**：定稿，留出系统上传和缴费的时间。\n\n**几个容易踩的点**\n\n- 瑞典通过 universityadmissions.se 统一申请，1 月中旬截止（多数项目），文书要在圣诞假期前基本定稿，因为瑞典那边 12 月下旬到 1 月初效率很低。\n- 荷兰部分学校（如 Twente、TU/e）有 2 月 1 日甚至更早的奖学金截止，想申奖学金要往前推一个月。\n- 德国 uni-assist 处理需要时间，别把文书压到最后一刻。\n\n以上是参考资料整理的一般规律，具体日期请以各项目官网当年公告为准。\n\n**关于\"我这份文书该怎么写/什么时候开始改\"**：这需要看你的目标项目清单和现有素材，属于顾问 1 对 1 服务的范围。工作室有文书相关服务（单篇/多篇包），价格我可以帮你查；也可以先约一次免费 15 分钟沟通，让顾问看你的时间线是否来得及。需要的话告诉我，我帮你查服务内容或登记预约。",
+          "ms": 3221.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "文书建议在**申请季开始前 2–3 个月**动手，也就是 2026 年 9–10 月这个窗口开始写主文书（PS / 动机信）和简历，同时联系推荐人。\n\n几个关键时间点（参考资料整理于 2026 年初，具体以各校官网为准）：\n\n- **2026 年 9–10 月**：定选校清单，开始写主文书和 CV，联系推荐人。\n- **2026 年 11–12 月**：按项目改写文书；荷兰、丹麦部分项目和奖学金开始截止，要优先提交。\n- **2027 年 1 月**：瑞典国际轮约 1 月中旬截止，芬兰联合申请约 1 月初截止，荷兰、丹麦多个项目在 1 月 15 日前后截止。\n- **2027 年 2–5 月**：丹麦、荷兰剩余项目（多在 3 月 1 日至 4 月 1 日）；德国 TUM 等热门项目多在 5 月 31 日前截止。\n\n两个容易拖后腿的：**语言成绩**和**德国 APS**，建议最晚在申请季开始前 3 个月准备好；奖学金截止通常早于项目截止。\n\n来源：《2027 年秋季入学申请时间线（五国通用参考）》《CS 硕士申请材料清单与准备建议》。文书和推荐信一般需要 1–2 个月打磨，所以 9 月起步比较稳。\n\n下一步，你可以：\n- 想了解文书类服务的内容和价格，我可以帮你查；\n- 或者约一次免费 15 分钟沟通，让顾问结合你的目标国家和项目数量给个具体节奏（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。\n\n需要我帮你查文书服务，还是先约沟通？",
+          "ms": 2593.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": true
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 的回答严格依据原始资料中的时间线和材料准备建议，事实准确且未编造具体信息；B 虽然整体方向合理，但编造了资料中没有的具体时间点（如申请前4-6个月、截止前2周）和院校细节（如Twente、TU/e奖学金截止），且未引用资料中明确的9-10月开始写文书这一关键建议。"
+    },
+    {
+      "id": "r039",
+      "query": "你们都提供哪些服务",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "我们主要做瑞典、德国、荷兰、芬兰、丹麦五国的英语授课 CS 硕士申请，服务按阶段分几类：\n\n**咨询**\n- 免费初步沟通：先了解你的背景和目标，判断我们能不能帮上忙、适合哪项服务\n- 单次选校咨询：¥199 / 次（60 分钟），适合已有初步想法、想快速把方向定下来的同学\n\n**选校**\n- 选校定位全案：¥699 / 套，从背景评估到最终选校清单和时间规划\n\n**文书单项**\n- PS/动机信单篇辅导：¥599 / 篇\n- 学术简历（CV）优化：¥299 / 份\n- 推荐信指导：¥199 / 封\n\n**套餐**\n- 文书套餐 · 3 个项目：¥999 / 套\n- 文书套餐 · 5 个项目：¥1,299 / 套\n- 全程陪跑：¥1,399 / 套（选校到拿录取，一位创始人顾问全程跟进）\n- 全程陪跑 Plus：¥1,499 / 套（再加面试、签证材料和落地准备）\n\n**增值服务**\n- 网申材料审核：¥149 / 所学校\n- 模拟面试：¥149 / 次（45 分钟）\n- 文书额外修改轮：¥129 / 轮\n- 签证/居留材料指导：¥199 / 次\n\n公开优惠有三种：9 月 30 日前签约，选校定位全案、文书套餐和全程陪跑类服务享 9 折；2 人及以上一起报名任意套餐，每人 95 折（早鸟和团报二选一，取更优惠的）；老学员推荐立减 ¥100，可与前两项叠加。选校定位全案和套餐类服务签约时付 30% 定金，其余服务需全款预付。\n\n以上价格来自工作室价目表，具体报价我可以按你的情况算一份明细。\n\n想让我帮你缩小范围的话，告诉我两件事就行：目标国家和大概想申几个项目。或者直接约免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 4268.7,
+          "ok": true,
+          "tools": [
+            "lookup_service_offering"
+          ]
+        },
+        "wiki": {
+          "text": "我们主要做瑞典、德国、荷兰、芬兰、丹麦这五国英语授课 CS 硕士的申请支持，服务分为以下几类（价格来自工作室价目表）：\n\n**咨询**\n- 免费初步沟通：免费，先了解你的背景和目标，判断适合哪项服务\n- 单次选校咨询：¥199 / 次（60 分钟），适合已有初步想法、想快速定方向\n\n**选校**\n- 选校定位全案：¥699 / 套，从背景评估到最终选校清单和时间规划\n\n**文书单项**\n- PS/动机信单篇辅导：¥599 / 篇\n- 学术简历（CV）优化：¥299 / 份\n- 推荐信指导：¥199 / 封\n\n**套餐**\n- 文书套餐 · 3 个项目：¥999 / 套（1 篇主文书打磨透 + 3 个项目定制改写）\n- 文书套餐 · 5 个项目：¥1,299 / 套\n- 全程陪跑：¥1,399 / 套，从选校到拿录取，一位创始人顾问全程跟进\n- 全程陪跑 Plus：¥1,499 / 套，在全程陪跑基础上加面试、签证材料和落地准备\n\n**增值服务**\n- 文书额外修改轮：¥129 / 轮\n- 网申材料审核：¥149 / 所学校\n- 模拟面试：¥149 / 次（45 分钟）\n- 签证/居留材料指导：¥199 / 次\n\n付款方式：选校定位全案和套餐类签约时付 30% 定金，服务启动前付清尾款；单次咨询、单项文书和增值服务需全款预付。\n\n如果你不确定选哪个，可以告诉我：目标国家、大概申几个项目、现在进行到哪一步，我帮你缩小范围；也可以先约免费的 15 分钟初步沟通。",
+          "ms": 3037.9,
+          "ok": true,
+          "tools": [
+            "lookup_service_offering"
+          ]
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确列出了所有服务类别、价格和关键付款规则，且未编造事实；A 额外补充了优惠规则，B 补充了套餐内容，但均未遗漏核心服务，整体质量相当。"
+    },
+    {
+      "id": "r040",
+      "query": "选校全案多少钱，包括什么",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "选校定位全案是 **¥699 / 套**，来源是知识库《服务介绍：选校定位全案（¥699 / 套）》。\n\n**包含内容**\n- 书面背景评估报告：优势、短板和补强建议\n- 8–12 个项目的选校清单，分冲刺、匹配、保底三档，每个项目附匹配理由\n- 各项目语言、先修课、截止日期和材料要求汇总表\n- 个人申请时间规划表，精确到月\n- 2 次 60 分钟 1 对 1 沟通\n- 交付后 14 天内文字答疑\n\n**不包含**\n- 文书写作辅导\n- 代为提交网申\n\n**交付**：付款后 10 个工作日内交付初版；参与早鸟和团报优惠。\n\n需要我按你的情况（是否早鸟、有没有同伴一起报名、是否老学员推荐）算一份准确报价吗？另外提醒一句：具体选校清单属于顾问 1 对 1 服务范围，我可以帮你约一次免费初步沟通。",
+          "ms": 1555.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "选校定位全案是 **¥699 / 套**。\n\n**包含什么**\n- 书面背景评估报告（优势、短板和补强建议）\n- 8–12 个项目的选校清单，分冲刺、匹配、保底三档，每个项目附匹配理由\n- 各项目语言、先修课、截止日期和材料要求汇总表\n- 个人申请时间规划表（精确到月）\n- 2 次 60 分钟 1 对 1 沟通\n- 交付后 14 天内文字答疑\n\n**不包含**\n- 文书写作辅导\n- 代为提交网申\n\n**交付与时效**：付款后 10 个工作日内交付初版。参与早鸟、团报优惠。\n\n来源：《选校类服务：免费初步沟通、单次选校咨询、选校定位全案》《套餐对比、怎么选与全部价目一览》（工作室价目整理，最终以电子服务协议为准）。\n\n如果你已经有初步方向、只想快速定方向，也可以先看单次选校咨询（¥199 / 60 分钟，30 天内升级全案可抵扣 ¥199）。\n\n需要我按你的情况（是否早鸟签约、有没有同伴一起报名、是否老学员推荐）算一份准确报价吗？或者先约免费的 15 分钟初步沟通？",
+          "ms": 2429.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地给出了选校定位全案的价格、包含内容、不包含内容和交付时效，且未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r041",
+      "query": "选校报告多久能交付",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "选校定位全案（¥699 / 套）的交付时效是：**付款后 10 个工作日内交付初版**。\n\n来源：《服务介绍：选校定位全案（¥699 / 套）》\n\n补充几点，方便你判断节奏：\n- 交付物包括：背景评估报告、8–12 个项目的选校清单（冲刺/匹配/保底三档）、项目要求汇总表、申请时间规划表。\n- 过程中含 2 次 60 分钟 1 对 1 沟通，交付后 14 天内还有文字答疑。\n- 不含文书写作辅导，也不代提交网申。\n\n如果你更想先快速定方向，单次选校咨询（¥199 / 60 分钟）是预约后 5 个工作日内安排，会后 48 小时内发一页初步方向笔记；30 天内升级全案可抵扣这 ¥199。\n\n需要的话我可以帮你查一下早鸟/团报的具体优惠金额，或者帮你约一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。",
+          "ms": 1585.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "选校定位全案（¥699/套）的交付时效是：**付款后 10 个工作日内交付初版**。\n\n来源：《选校类服务：免费初步沟通、单次选校咨询、选校定位全案》\n\n补充几点，方便你判断：\n- 交付物包括背景评估报告、8–12 个项目的选校清单（冲刺、匹配、保底三档）、项目要求汇总表、申请时间规划表，另外含 2 次 60 分钟 1 对 1 沟通和交付后 14 天文字答疑。\n- 如果你只是想先快速定方向，单次选校咨询（¥199/60 分钟）是预约后 5 个工作日内安排，会后 48 小时内发一页初步方向笔记；30 天内升级全案可抵扣这 ¥199。\n- 顾问在瑞典（比北京晚 6–7 小时），排期沟通时留意时差。\n\n需要的话我可以帮你查一下早鸟/团报的报价明细，或者安排一次免费 15 分钟初步沟通。",
+          "ms": 1738.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确给出了选校定位全案付款后10个工作日内交付初版，并补充了相关交付物、沟通轮次和单次咨询时效，信息与原始资料一致，差距极小。"
+    },
+    {
+      "id": "r042",
+      "query": "只想花一个小时聊聊方向，有这种服务吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "有的，就是「单次选校咨询」。\n\n- **价格**：¥199 / 次，60 分钟线上 1 对 1（来源：《服务介绍：单次选校咨询》）\n- **适合**：已经有初步想法、想找过来人快速把方向定下来的同学\n- **包含**：背景快速评估（院校背景、均分、科研/实习、语言）；目标国家与项目方向建议；会后 48 小时内发一页初步方向笔记\n- **不包含**：完整选校清单和申请时间规划、文书服务\n- **安排**：预约后 5 个工作日内排上；需要的话可加时 ¥99 / 30 分钟\n- **后续**：30 天内升级选校定位全案，这 ¥199 可抵扣\n- **折扣**：不参与早鸟/团报，老带新立减仍可用\n\n提醒一句：具体方向判断要看你的完整背景，属于顾问 1 对 1 的范围，我这边不做结论。\n\n要不要我帮你登记一下，让顾问联系你约时间？只需要留一个称呼和一种联系方式（微信/邮箱/手机），仅用于顾问联系你安排沟通。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2369.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "有的，就是「单次选校咨询」：60 分钟线上 1 对 1，¥199 / 次。\n\n**包含**\n- 背景快速评估（院校背景、均分、科研/实习、语言）\n- 目标国家与项目方向建议\n- 会后 48 小时内发一页初步方向笔记\n\n**不包含**\n- 完整选校清单和申请时间规划\n- 文书服务\n\n**几点说明**\n- 预约后 5 个工作日内安排；加时 ¥99 / 30 分钟\n- 30 天内升级「选校定位全案」（¥699 / 套），可抵扣这 ¥199\n- 这项不参与早鸟/团报折扣，老带新立减仍可用\n\n另外，如果你还没确定要不要付费，可以先约**免费 15 分钟初步沟通**（了解背景和目标、说明流程，不给具体选校结论），3 个工作日内安排。\n\n需要我帮你登记预约吗？留个称呼和一种联系方式（微信/邮箱/手机）就行，仅用于顾问联系你安排沟通。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。\n\n以上价格来自工作室公开价目（参考资料整理，最终以电子服务协议为准）。",
+          "ms": 3701.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都准确介绍了单次选校咨询，但 B 额外提到了免费 15 分钟初步沟通这一适合犹豫用户的选项，信息更完整。"
+    },
+    {
+      "id": "r043",
+      "query": "单次咨询之后升级全案能抵扣吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "能，可以抵扣。\n\n- **规则**：单次选校咨询（¥199 / 60 分钟）在 **30 天内**升级为「选校定位全案」，这 ¥199 可以抵扣全案费用。\n- **来源**：《服务介绍：单次选校咨询》，属于工作室公开价目信息，最终以电子服务协议为准。\n- **注意**：单次咨询本身不参与早鸟、团报折扣，但老带新立减仍可用。\n\n如果你告诉我打算申几个项目、目标国家，我可以帮你把「单次咨询 + 全案」的组合按公开优惠规则算一份准确报价（金额以报价工具结果为准）。\n\n需要的话也可以先约一次免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1726.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以抵扣。\n\n**单次选校咨询（¥199 / 次，60 分钟）**\n- 30 天内升级「选校定位全案」，可抵扣 ¥199\n- 也就是说，相当于把这次咨询的费用算进全案里\n\n**选校定位全案（¥699 / 套）**\n- 包含：书面背景评估报告、8–12 个项目选校清单（冲刺/匹配/保底三档，附匹配理由）、项目要求汇总表、个人申请时间规划表、2 次 60 分钟 1 对 1 沟通、交付后 14 天文字答疑\n- 不含：文书写作辅导、代提交网申\n- 交付时效：付款后 10 个工作日内出初版\n- 参与早鸟/团报优惠\n\n来源：《选校类服务：免费初步沟通、单次选校咨询、选校定位全案》（工作室服务资料，非官方政策）。\n\n如果你打算走这条路，我可以按「先单次咨询、再升级全案」帮你算一份报价明细，需要的话告诉我：是否计划早鸟签约、有没有同伴一起报名、是否老学员推荐。也可以先约 15 分钟免费沟通，让顾问帮你判断该从哪一项开始。",
+          "ms": 1915.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都准确回答了可抵扣及30天限制，但B补充了全案包含内容、交付时效和优惠信息，信息更完整，且未虚构资料外事实。"
+    },
+    {
+      "id": "r044",
+      "query": "免费的初步沟通有多长时间",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "15 分钟，线上语音或视频。\n\n- 内容：了解你的本科背景、目标国家和入学时间，说明服务流程和适合的项目\n- 不包含：不给具体选校结论，也不看文书\n- 安排：预约后 3 个工作日内安排；顾问在瑞典，比北京时间晚 6–7 小时\n- 费用：免费，不参与早鸟或团报折扣（老带新立减仍可用）\n\n来源：《服务介绍：免费初步沟通》《预约咨询流程》。想约的话，留个称呼和一种联系方式（微信、邮箱或手机）就行，我帮你登记给顾问。",
+          "ms": 1461.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "免费初步沟通是 **15 分钟**，线上语音或视频。\n\n- **内容**：了解你的本科背景、目标国家和入学时间；说明服务流程和适合你的服务项目。\n- **不包含**：不给具体选校结论，也不看文书。\n- **安排时效**：预约后 3 个工作日内安排。\n- **折扣**：不参与早鸟或团报优惠（老带新立减仍可用）。\n\n来源：《选校类服务：免费初步沟通、单次选校咨询、选校定位全案》。顾问在瑞典，比北京晚 6–7 小时，约时间时可以把时差考虑进去。\n\n需要我帮你登记预约吗？留个称呼和联系方式（微信或邮箱都行）就可以，我登记后由顾问跟你确认具体时间。",
+          "ms": 1892.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确、完整地回答了免费初步沟通的时长及相关要点，且均未虚构资料外的事实，差距极小。"
+    },
+    {
+      "id": "r045",
+      "query": "动机信单独辅导一篇怎么收费",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "动机信单篇辅导是 **¥599 / 篇**。\n\n**包含**\n- 1 次 60 分钟素材挖掘与头脑风暴\n- 结构大纲设计\n- 3 轮逐段修改意见与语言润色建议\n\n**不包含**\n- 不代写：正文由你本人撰写，顾问只给结构、内容和表达上的修改意见\n- 不含其他项目的改写适配\n\n**时效**：每轮 5–7 个工作日返回。\n**优惠**：这项不参与早鸟/团报折扣，老带新立减仍可用。\n\n来源：《服务介绍：PS/动机信单篇辅导（¥599 / 篇）》。价格以电子服务协议为准。\n\n如果你打算申 3 个或 5 个项目，文书套餐（¥999 / 3 个项目、¥1,299 / 5 个项目）通常更划算，需要的话我可以把两者差在哪讲清楚。",
+          "ms": 1848.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "动机信（PS）单篇辅导是 **¥599 / 篇**。\n\n**包含**\n- 1 次 60 分钟素材挖掘与头脑风暴\n- 结构大纲设计\n- 3 轮逐段修改意见与语言润色建议\n\n**不包含**\n- 不代写：正文由你本人撰写，顾问只提供结构、内容和表达上的修改意见\n- 不含其他项目的改写适配（要按多个项目定制，看文书套餐更划算）\n\n**时效**：每轮 5–7 个工作日返回。\n**优惠**：这项不参与早鸟/团报折扣，老带新立减仍可用。\n\n来源：《文书类服务：PS/动机信、简历、推荐信、文书套餐》（工作室价目整理，最终以电子服务协议为准）。\n\n如果你打算申 3 个或 5 个项目，文书套餐（¥999 / ¥1,299）里已经含 1 篇主 PS 加项目适配改写，通常比单篇叠加更省。需要我按你的项目数量算一份报价吗？也可以先约 15 分钟免费沟通。",
+          "ms": 3999.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地给出了动机信单篇辅导的价格、包含内容、不包含内容、时效和优惠规则，且未虚构资料外事实，差距极小。"
+    },
+    {
+      "id": "r046",
+      "query": "PS 改几轮",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "PS 的修改轮次取决于你选哪种服务，参考资料里的三种情况如下：\n\n- **PS/动机信单篇辅导（¥599/篇）**：3 轮逐段修改意见与语言润色建议，每轮 5–7 个工作日返回。正文由你本人写，顾问只给结构和表达上的意见，不代写。\n- **文书套餐 · 3 个项目（¥999/套）**：主 PS/动机信 3 轮修改，另有 2 篇项目适配改写各 2 轮，合计 9 轮。\n- **文书套餐 · 5 个项目（¥1,299/套）**：主 PS/动机信 3 轮修改，另有 4 篇项目适配改写各 2 轮，合计 13 轮。\n\n来源：知识库中的《服务介绍：PS/动机信单篇辅导》《服务介绍：文书套餐 · 3 个项目》《服务介绍：文书套餐 · 5 个项目》。价格和轮次以工作室最新价目为准，签约前建议再确认一次。\n\n需要我按你的项目数量算一下套餐报价，或者帮你约一次免费 15 分钟沟通吗？",
+          "ms": 2122.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "PS/动机信单篇辅导包含 **3 轮**逐段修改意见与语言润色建议，另外还有 1 次 60 分钟素材挖掘与头脑风暴、结构大纲设计。每轮 5–7 个工作日返回。\n\n几点补充：\n- 正文由你本人撰写，顾问给结构和表达上的修改意见，不代写。\n- 如果 3 轮用完还想继续改，可以加购「文书额外修改轮」¥129 / 轮（5 个工作日内返回）。\n- 如果申请多个项目，文书套餐 · 3 个项目（¥999）含 1 篇主 PS 3 轮 + 2 篇项目适配改写各 2 轮，比单篇更划算。\n\n以上价格来自工作室公开价目（参考资料整理，最终以顾问确认为准）。需要我按你的项目数量算一下具体报价吗？",
+          "ms": 3214.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明了单篇 PS 为 3 轮修改，并补充了套餐和额外修改轮信息，事实一致且均无编造，差距很小。"
+    },
+    {
+      "id": "r047",
+      "query": "CV 优化包含几轮修改",
+      "tags": [
+        "term"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "CV 优化包含 **2 轮修改**。\n\n- 内容：格式模板与结构建议，按欧洲高校偏好的学术简历格式，突出课程、项目和科研经历\n- 价格：¥299 / 份\n- 交付时效：每轮 3–5 个工作日返回\n- 不代写；不参与早鸟/团报折扣（老带新立减仍可用）\n\n来源：《服务介绍：学术简历（CV）优化（¥299 / 份）》。价格以工作室最新价目为准，需要我帮你查一下当前报价明细吗？",
+          "ms": 2822.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "学术简历（CV）优化包含 **2 轮修改意见**。\n\n其他要点（来源：《文书类服务：PS/动机信、简历、推荐信、文书套餐》）：\n- 价格：¥299 / 份\n- 交付时效：每轮 3–5 个工作日返回\n- 内容：按欧洲高校偏好的学术简历格式，突出课程、项目和科研经历，含格式模板与结构建议\n- 不代写，正文由你本人撰写\n- 不参与早鸟/团报折扣（老带新立减仍可用）\n\n需要的话我可以把 CV 优化和文书套餐的搭配一起报个价，或者帮你约顾问免费聊 15 分钟。",
+          "ms": 1955.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确、完整地回答了CV优化包含2轮修改，并补充了价格、交付时效、内容和不代写等资料内信息，无编造内容，差距极小。"
+    },
+    {
+      "id": "r048",
+      "query": "推荐信你们能帮忙写吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "推荐信我们不代写，但可以帮你把推荐信准备得更扎实。\n\n**推荐信指导（¥199 / 封）** 包含：\n- 推荐人选择建议\n- 素材梳理与结构建议\n- 2 轮修改意见\n\n不包含代写、代签。每轮 3–5 个工作日返回。这项不参与早鸟和团报折扣，老带新立减仍可用。\n\n另外，如果同时有文书需求，「文书套餐 · 3 个项目（¥999 / 套）」里已经包含 2 封推荐信指导，还含 1 篇主 PS/动机信（3 轮修改）、2 篇项目适配改写（各 2 轮）和学术简历 CV（2 轮），套餐更划算。\n\n来源：《服务介绍：推荐信指导》《服务介绍：文书套餐 · 3 个项目》，价格以工作室最新价目为准。\n\n需要我帮你算一下具体组合的报价，或者约一次免费 15 分钟沟通吗？顾问在瑞典，和北京有 6–7 小时时差，会提前约双方都方便的时间。",
+          "ms": 3000.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "推荐信我们不代写，也不代签。这是工作室的底线，也是欧洲高校明确要求的内容。\n\n我们能做的是「推荐信指导」（¥199 / 封，来源：《文书类服务：PS/动机信、简历、推荐信、文书套餐》）：\n\n- 推荐人选择建议：找哪位老师、怎么排优先级\n- 素材梳理与结构建议：把你和推荐人之间的具体事例整理成可写的点\n- 2 轮修改意见：推荐人写完初稿后，我们给结构和表达上的反馈\n- 每轮 3–5 个工作日返回\n\n也就是说，正文由推荐人本人写，我们负责让这封信和其他材料互相印证、不空泛。\n\n另外提醒一句：这属于文书类服务，不参与早鸟和团报折扣，老带新立减仍可用。具体金额我可以帮你用报价工具算准确数字，需要的话告诉我申请几个项目、几封推荐信。\n\n要不要我先把「推荐信指导」和文书套餐的报价算给你看？或者你想先约一次免费 15 分钟沟通，聊聊推荐人怎么选？",
+          "ms": 3690.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确回答了不代写推荐信的核心问题，并正确引用了推荐信指导服务的内容、价格和限制，信息完整度相当，差距很小。"
+    },
+    {
+      "id": "r049",
+      "query": "套餐的修改轮次用完了还能加吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以加，按增值服务单独购买。\n\n**文书额外修改轮**\n- 价格：¥129 / 轮（来源：《服务介绍：文书额外修改轮》）\n- 内容：1 轮完整修改意见，用于任意文书超出套餐轮次后的追加\n- 时效：5 个工作日内返回\n- 优惠：不参与早鸟/团报折扣，老带新立减仍可用\n\n需要提醒一点：具体某个套餐本身含几轮修改，我这边没有对应明细，得看套餐 SKU 的说明。你告诉我打算报哪个套餐（或目标国家 + 申请几个项目），我帮你查一下该套餐的轮次和交付内容。\n\n另外，如果你是想让我看看文书本身、判断还需不需要再改，那属于顾问 1 对 1 的文书服务范围，我这边不做文书评价，可以帮你约顾问沟通。\n\n要不要我先查一下套餐明细？",
+          "ms": 2478.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以加，有专门的增值服务。\n\n**文书额外修改轮（¥129 / 轮）**\n- 内容：任意文书超出套餐轮次后，追加 1 轮完整修改意见\n- 时效：5 个工作日内返回\n- 注意：不参与早鸟/团报折扣，老带新立减仍可用\n\n**参考一下套餐原本的轮次**（来源：《文书类服务》价目说明）\n- 文书套餐 · 3 个项目：共 9 轮（主 PS/动机信 3 轮 + 2 篇适配改写各 2 轮 + CV 2 轮）\n- 文书套餐 · 5 个项目：共 13 轮（主 PS/动机信 3 轮 + 4 篇适配改写各 2 轮 + CV 2 轮）\n\n以上价格和轮次是工作室价目表整理的信息，具体以电子服务协议为准。\n\n如果你已经买了套餐、想确认自己还剩几轮，或者想算一下加几轮的总价，告诉我套餐类型和想加的轮数，我用报价工具给你算准确金额。",
+          "ms": 2930.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "B 不仅准确回答了可加购文书额外修改轮，还补充了套餐原本的轮次明细，信息更完整，且未虚构事实。"
+    },
+    {
+      "id": "r050",
+      "query": "申 3 个项目的文书套餐包括哪些",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "文书套餐 · 3 个项目（¥999 / 套）包含：\n\n- 1 篇主 PS/动机信，3 轮修改\n- 2 篇项目适配改写，各 2 轮\n- 学术简历 CV，2 轮\n- 2 封推荐信指导\n- 合计 9 轮修改\n\n不包含：选校服务；也不代写。\n\n来源：《服务介绍：文书套餐 · 3 个项目（¥999 / 套）》。价格和优惠以工具报价与电子服务协议为准。\n\n如果你已经定好 3 个目标项目，这套就够用；如果项目数更多或题目差异大，可以看 5 个项目版（¥1,299）。需要我帮你算一下含早鸟或团报的报价吗？",
+          "ms": 1925.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "文书套餐 · 3 个项目（¥999 / 套）包含：\n\n- **1 篇主 PS / 动机信**：3 轮修改\n- **2 篇项目适配改写**：各 2 轮\n- **学术简历 CV**：2 轮修改\n- **2 封推荐信指导**\n- 合计 9 轮修改\n\n不包含：选校服务；也不代写，正文由你本人撰写，顾问提供结构、内容和表达上的修改意见。\n\n来源：《文书类服务：PS/动机信、简历、推荐信、文书套餐》（工作室价目资料，价格以正式报价和电子服务协议为准）。\n\n如果你打算申 3 个项目、但还没定校，可以再补一个选校类服务；需要的话我帮你查一下对应内容和价格。",
+          "ms": 3230.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地列出了3个项目文书套餐的内容、轮次和不包含项，且未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r051",
+      "query": "5 个项目的文书套餐一共多少轮修改",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "文书套餐 · 5 个项目一共 **13 轮修改**，具体分配如下（来源：《服务介绍：文书套餐 · 5 个项目》，¥1,299 / 套）：\n\n- 1 篇主 PS/动机信：3 轮修改\n- 4 篇项目适配改写：各 2 轮，共 8 轮\n- 学术简历 CV：2 轮\n- 3 封推荐信指导：属于指导，不计入修改轮次\n\n合计 3 + 8 + 2 = 13 轮。超出轮次后可以加购「文书额外修改轮」，¥129 / 轮，5 个工作日内返回，不参与早鸟/团报折扣（老带新立减仍可用）。\n\n需要的话我可以帮你查这个套餐的完整交付说明，或者用报价工具算一下含优惠的应付金额。",
+          "ms": 3163.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "文书套餐 · 5 个项目一共 **13 轮**修改。\n\n拆开看（来源：《文书类服务：PS/动机信、简历、推荐信、文书套餐》）：\n\n- 主 PS/动机信：3 轮\n- 4 篇项目适配改写：各 2 轮，共 8 轮\n- 学术简历 CV：2 轮\n- 3 封推荐信指导：按“指导”计，不单独计入修改轮次\n\n合计 3 + 8 + 2 = 13 轮。价格是 ¥1,299 / 套，不含选校服务，也不代写；超出轮次后可按 ¥129 / 轮追加。\n\n需要的话我可以帮你查一下这个套餐参与早鸟/团报后的实际报价，或者约一次免费沟通看看适不适合你的申请节奏。",
+          "ms": 2190.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确给出了13轮修改及具体分配，并补充了价格和额外修改轮信息，与原始资料一致，差距极小。"
+    },
+    {
+      "id": "r052",
+      "query": "全程陪跑包括哪些内容",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "全程陪跑（¥1,399 / 套）的内容，按知识库《服务介绍：全程陪跑》整理如下：\n\n**包含**\n- 选校定位全案的全部内容\n- 最多 6 个项目的全套文书辅导：主文书 + 适配改写 + CV + 推荐信指导\n- 网申材料逐项审核（提交前核对）\n- 德国 APS 审核与 uni-assist 流程指导（如申请德国）\n- 录取后的项目对比与选择建议\n- 申请季内微信群随时答疑（工作日 24 小时内回复）\n\n**不包含**\n- 不代为提交网申\n- 不代写文书\n- 不承诺录取结果\n- 不含签证办理\n\n另外，如果想把项目上限提高到 8 个，并加上 2 次模拟面试、签证材料清单指导和落地前 1 次 60 分钟北欧生活答疑，可以看「全程陪跑 Plus」（¥1,499 / 套）。\n\n价格和优惠以工具报价为准，我可以帮你算一份具体报价；也可以先约一次免费 15 分钟沟通，看看哪档更合适。需要的话告诉我：目标国家、打算申几个项目、现在进行到哪一步。",
+          "ms": 3593.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "全程陪跑（¥1,399 / 套）包含的内容，按知识库《全程陪跑与单项服务》整理：\n\n- **选校定位全案的全部内容**（含选校定位部分）\n- **最多 6 个项目的全套文书辅导**：主文书 + 适配改写 + CV + 推荐信指导\n- **网申材料逐项审核**：提交前核对表格和上传材料\n- **德国流程指导**：APS 审核与 uni-assist（如申请德国）\n- **录取后的项目对比与选择建议**\n- **申请季内微信群答疑**：工作日 24 小时内回复\n\n不包含的部分也说清楚：\n- 不代为提交网申\n- 不代写文书\n- 不承诺录取结果\n- 不含签证办理（需要的话可以单独加签证/居留材料指导）\n\n另外它参与早鸟和团报优惠。如果想把项目上限提到 8 个、加 2 次模拟面试和签证材料指导，可以看全程陪跑 Plus（¥1,499 / 套）。\n\n需要我按你的情况（目标国家、打算申几个项目、是否早鸟签约）算一份准确报价吗？或者先约一次免费 15 分钟沟通？",
+          "ms": 2624.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地列出了全程陪跑的全部包含与不包含内容，并正确提及 Plus 版本和优惠，无资料外事实，差距极小。"
+    },
+    {
+      "id": "r053",
+      "query": "陪跑 Plus 比普通陪跑多了什么",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "**全程陪跑 Plus（¥1,499）比全程陪跑（¥1,399）多出的内容：**\n\n- **项目上限提高**：从最多 6 个项目提高到 8 个\n- **2 次模拟面试**：含反馈报告\n- **签证/居留许可材料清单指导**：学生居留许可材料怎么准备\n- **落地前 1 次 60 分钟答疑**：北欧生活（住房、银行、交通等）\n\n两者共同的部分：选校定位全案内容、全套文书辅导（主文书 + 适配改写 + CV + 推荐信指导）、网申材料逐项审核、德国 APS / uni-assist 流程指导、录取后项目对比建议、申请季微信群答疑（工作日 24 小时内回复）。\n\n两者都**不包含**：代为提交网申、代写、签证代办，也不承诺录取结果。\n\n来源：知识库《服务介绍：全程陪跑 Plus》《服务介绍：全程陪跑》《套餐对比与怎么选》。价格以正式价目和电子服务协议为准，我可以帮你出一份带优惠的报价明细。\n\n要不要我按你的情况（申请几个项目、是否早鸟、有没有同伴一起报）算一下 Plus 的实际报价？或者先约 15 分钟免费沟通，看看哪个套餐更合适。",
+          "ms": 2788.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "**全程陪跑 Plus（¥1,499 / 套）比全程陪跑（¥1,399 / 套）多出的部分：**\n\n- **项目上限从 6 个提高到 8 个**\n- **2 次模拟面试**（含书面反馈报告）\n- **学生居留许可 / 签证材料清单指导**\n- **落地前 1 次 60 分钟北欧生活答疑**（住房、银行、交通等）\n\n两者共同的部分：选校定位全案全部内容、全套文书辅导（主文书 + 适配改写 + CV + 推荐信指导）、网申材料逐项审核、德国 APS 与 uni-assist 流程指导（如申请德国）、录取后项目对比建议、申请季微信群答疑（工作日 24 小时内回复）。\n\n两者都不包含：不代为提交网申、不代写、不承诺录取结果；Plus 也不代办签证。\n\n来源：《全程陪跑与单项服务》价目说明（整理于 2026 年初，最终以电子服务协议为准）。\n\n差价 ¥100，如果你申请的项目里有面试环节（部分荷兰、丹麦项目），或者想顺带把签证材料和落地准备一起解决，Plus 更划算；如果只申 6 个以内、无面试，普通陪跑就够。\n\n需要我按你的情况算一份报价明细吗？告诉我打算申几个项目、是否早鸟签约、有没有同伴一起报名就行。",
+          "ms": 2549.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地列出了 Plus 相比普通陪跑多出的项目上限、模拟面试、签证/居留指导和落地答疑，且未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r054",
+      "query": "提交网申前能帮我检查一下材料吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以，这正是「网申材料审核」服务做的事。\n\n**服务内容**（来源：《服务介绍：网申材料审核》）\n- 网申表格逐项核对\n- 材料完整性与格式检查\n- 价格：¥149 / 所学校\n- 交付时效：3 个工作日内返回\n- 不包含：不代为填写或提交\n- 折扣：不参与早鸟/团报折扣，老带新立减仍可用\n\n**几点说明**\n- 这项服务是核对表格和材料，不涉及文书内容的撰写、修改或评价。如果你想要的是 PS、简历、推荐信的打磨，那属于文书服务，需要顾问来对接。\n- 材料清单本身按国家有差异：瑞典走统一平台上传；德国要留意 APS 和 uni-assist 的办理周期；荷兰、丹麦多为各校独立系统且截止较早（来源：《CS 硕士申请材料清单与准备建议》）。这些是参考资料整理，具体以各校官网为准。\n\n**下一步**\n- 想直接下单或确认适用学校数量，我可以帮你按学校数算一下报价。\n- 如果你还不确定要审几所、或者想连同文书一起规划，建议约一次免费 15 分钟沟通，让顾问看你的整体情况。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。\n\n需要我先出个报价，还是帮你登记预约？",
+          "ms": 2793.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以，这项服务我们工作室有，叫「网申材料审核」。\n\n**服务内容**（来源：《全程陪跑与单项服务》）\n- 价格：¥149 / 所学校\n- 包含：网申表格逐项核对；材料完整性与格式检查\n- 不包含：不代为填写或提交网申\n- 交付时效：3 个工作日内返回\n- 折扣：不参与早鸟/团报折扣，老带新立减仍可用\n\n**说明一下边界**：这项服务是核对表格填写和材料完整性、格式，属于流程性检查；如果是想看文书内容写得好不好、要不要改，那属于文书服务，需要顾问 1 对 1 来做。\n\n**下一步**，你可以选：\n1. 告诉我你打算申几所、哪几个国家，我用报价工具给你算准确金额（含可用的优惠）；\n2. 或者先约一次免费 15 分钟沟通，让顾问看看你的情况适合哪档服务。\n\n要哪个？",
+          "ms": 2089.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确引用了网申材料审核服务的价格、内容、交付时效和边界，并给出了合理的下一步建议，信息完整度相当，差距很小。"
+    },
+    {
+      "id": "r055",
+      "query": "有英文模拟面试吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "有的，我们提供英文模拟面试。\n\n**模拟面试（增值服务）**\n- 价格：¥149 / 次（45 分钟）\n- 内容：45 分钟英文模拟面试 + 书面反馈\n- 适用：有面试环节的项目，比如部分荷兰、丹麦的项目\n- 安排时效：预约后 5 个工作日内安排\n- 折扣：不参与早鸟/团报优惠，老带新立减仍可用\n\n以上价格来自工作室价目资料（《服务介绍：模拟面试》），如需确认最新价格和档期，可以让顾问再核对一次。\n\n需要的话我可以帮你登记预约意向，或者你先说说目标国家和项目，我看看是否属于常见有面试环节的那类。",
+          "ms": 1675.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "有的，我们提供英文模拟面试。\n\n**模拟面试（¥149 / 次，45 分钟）**\n- 内容：45 分钟英文模拟面试，结束后给书面反馈\n- 适用：有面试环节的项目，比如部分荷兰、丹麦的项目\n- 安排：预约后 5 个工作日内\n- 优惠：不参与早鸟/团报折扣，老带新立减仍可用\n\n来源：《全程陪跑与单项服务》服务介绍。价格以工具报价为准，如果你要报名，我可以帮你出一份正式报价明细。\n\n另外提醒一下：模拟面试是练习和反馈，不涉及对你背景的录取判断；如果你想要针对具体项目的面试准备策略，那属于顾问 1 对 1 的范围，可以约一次免费 15 分钟沟通先聊聊（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。\n\n需要我帮你算报价，或者登记一下让顾问联系你吗？",
+          "ms": 1892.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地给出了模拟面试的价格、内容、适用对象、安排时效和优惠规则，且未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r056",
+      "query": "居留许可材料你们能指导吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "能，这项服务是有的。\n\n**签证/居留材料指导（¥199 / 次）**\n- 包含：按你的目标国家整理个性化学生居留许可材料清单，以及 1 次 45 分钟答疑\n- 不包含：不代办、不代为提交\n- 交付时效：付款后 5 个工作日内\n- 优惠：不参与早鸟/团报折扣，老带新立减仍可用\n\n另外，**全程陪跑 Plus（¥1,499 / 套）**里也包含学生居留许可/签证材料清单指导，还带 2 次模拟面试和落地前 1 次 60 分钟北欧生活答疑（住房、银行、交通等）。如果你整体申请也想有人跟，这个套餐更划算；只想解决签证材料这一块，单次就够了。\n\n以上价格来自工作室公开价目（参考资料整理，最终以顾问确认为准）。\n\n需要的话我可以：\n1. 帮你算一下具体组合的报价（比如加选校或文书服务）；\n2. 或者登记一下，让顾问跟你约个免费 15 分钟沟通，确认你的目标国家和时间线。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。\n\n你想先看哪个？",
+          "ms": 2240.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以，这项是单独的增值服务。\n\n**签证/居留材料指导（¥199 / 次）**\n- 内容：按你的目标国家整理学生居留许可材料清单，并做 1 次 45 分钟答疑\n- 交付：付款后 5 个工作日内\n- 不包含：不代办、不代为提交\n- 折扣：不参与早鸟/团报，老带新立减仍可用\n\n另外，如果你报的是**全程陪跑 Plus（¥1,499 / 套）**，里面已经包含学生居留许可/签证材料清单指导，以及落地前 1 次 60 分钟北欧生活答疑，就不必再单买这一项了。\n\n顺带说下五国居留许可的大致方向（参考资料整理于 2026 年初，以各国移民局官网为准）：\n- 瑞典：录取并缴首期学费后向 Migrationsverket 在线申请，需证明每月约 1 万瑞典克朗以上生活费 + 医疗保险\n- 德国：先办国家 D 类学生签证，入境后办居留；通常需要 APS 证书、保证金账户（2025 年起每年 €11,904）、医疗保险\n- 荷兰：学校作为担保方向 IND 代为申请，学生需向学校证明生活费\n- 芬兰：向 Migri 在线申请，需证明学费缴纳或减免、每年数千欧元生活费及医疗保险\n- 丹麦：通过 SIRI 申请 ST1，需证明学费已缴和生活费\n\n需要我帮你算一下具体组合的价格吗？比如单买这一项，或者和网申审核、模拟面试一起报。也可以先约一次免费 15 分钟沟通，让顾问看看你的情况需不需要这项。",
+          "ms": 2458.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明了签证/居留材料指导服务及全程陪跑 Plus 的包含内容，并补充了五国居留许可要点或后续选项，信息与原始资料一致，差距很小。"
+    },
+    {
+      "id": "r057",
+      "query": "全案和陪跑我该选哪个",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "这两个服务的主要区别在于覆盖范围，我按知识库里的《套餐对比与怎么选》和《服务介绍：全程陪跑》给你梳理一下：\n\n**选校定位全案（¥699）**\n- 从背景评估到最终选校清单和时间规划，一次讲透\n- 适合：你只想确定去哪些国家、申哪些项目，文书自己写\n\n**全程陪跑（¥1,399）**\n- 包含选校定位全案的全部内容\n- 再加：最多 6 个项目的全套文书辅导（主文书 + 适配改写 + CV + 推荐信指导）\n- 再加：网申材料逐项审核、德国 APS 与 uni-assist 流程指导（如申德国）、录取后项目对比建议、申请季微信群答疑（工作日 24 小时内回复）\n- 不包含：不代提交网申、不代写、不承诺录取、不含签证办理\n\n**怎么判断**\n- 只需要有人帮你把国家和项目定下来 → 选校定位全案\n- 希望从选校到录取都有人跟进，包括文书和网申审核 → 全程陪跑\n- 如果还需要面试、签证材料和落地准备 → 全程陪跑 Plus（¥1,499）\n\n以上价格来自工作室公开价目（参考资料整理，最终以电子服务协议为准）。\n\n不过「你该选哪个」这件事，其实取决于你的背景、打算申几个项目、现在进行到哪一步；这属于顾问 1 对 1 服务的范围，我不适合直接替你下结论。有两个选择：\n\n1. 先约免费的 15 分钟初步沟通，顾问帮你判断；\n2. 如果你愿意，我可以先帮你登记咨询线索，让顾问联系你（只用于安排沟通）。\n\n你想走哪条？或者先告诉我目标国家和大概申请几个项目，我可以再帮你缩小范围。",
+          "ms": 2807.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题需要结合你的情况才能判断，我先说明两者的区别，再帮你判断。\n\n**选校定位全案（¥699/套）**\n- 包含：书面背景评估报告、8–12 个项目的选校清单（冲刺、匹配、保底三档）、项目要求汇总表、申请时间规划表、2 次 60 分钟 1 对 1 沟通、交付后 14 天文字答疑\n- 不包含：文书辅导、不代提交网申\n- 适合：你只需要确定申请哪些国家和项目，文书自己写\n\n**全程陪跑（¥1,399/套）**\n- 包含：选校定位全案的全部内容，加上最多 6 个项目的全套文书辅导（主文书、适配改写、CV、推荐信指导）、网申材料逐项审核、德国 APS 与 uni-assist 流程指导、录取后项目对比建议、申请季微信群答疑\n- 不包含：不代提交网申、不代写、不承诺录取、不含签证办理\n- 适合：你希望从选校到拿到录取，全程都有人跟进\n\n**全程陪跑 Plus（¥1,499/套）**：在全程陪跑基础上，项目上限提高到 8 个，另加 2 次模拟面试、居留许可材料清单指导、1 次落地前生活答疑。\n\n**怎么判断**：主要看两点：文书你是否打算自己写，以及你申请几个项目。如果文书自己写、项目数不多，选全案就够；如果文书想有人带、希望网申和流程也有人盯，陪跑更省心。\n\n不过具体到你的背景和申请项目数，这属于顾问 1 对 1 判断的范围，我不做定校和方案结论。建议先约一次**免费 15 分钟初步沟通**（不收费，也不给选校结论，只帮你判断适合哪项服务）。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。\n\n要不要留个联系方式，我登记后让顾问联系你安排？只需要称呼和一种联系方式（微信、邮箱或手机），仅用于顾问联系你安排沟通。",
+          "ms": 3038.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "B 更完整地列出了选校定位全案的具体交付物（8-12 个项目、三档、报告、时间规划等），并补充了全程陪跑 Plus 的差异，信息更全面且与资料一致。"
+    },
+    {
+      "id": "r058",
+      "query": "怎么预约你们的顾问",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "预约流程很简单，按《预约咨询流程》整理如下：\n\n1. **说明需求**：在对话里告诉我想了解的服务（比如选校、文书、全案），并留下称呼和一种联系方式（微信 / 邮箱 / 手机）。\n2. **顾问联系**：顾问会在 1 个工作日内联系你，先安排一次 **15 分钟免费初步沟通**。\n3. **确认签约**：沟通后确认服务项目，签电子服务协议、付款（套餐付定金）。\n4. **启动服务**：顾问按协议排期开始服务。\n\n几点补充：\n- 已约好的时间可在 **24 小时前免费改期一次**。\n- 顾问在瑞典（CET/CEST），比北京时间晚 6 小时（夏令时）或 7 小时（冬令时），约时间时留意时差。\n\n如果你愿意，现在就可以把**称呼 + 一种联系方式**（微信/邮箱/手机）发我，并说明想了解的服务和目标国家、入学时间，我帮你登记线索，仅用于顾问联系你安排沟通。需要我登记吗？",
+          "ms": 1809.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "预约流程很简单，分四步（来源：《关于指北工作室：介绍、常见问题与预约流程》）：\n\n1. **在对话里说明想了解的服务**，并留下称呼和一种联系方式（微信 / 邮箱 / 手机）。\n2. 顾问 **1 个工作日内**联系你，先安排 **15 分钟免费初步沟通**。\n3. 确认服务项目后签电子服务协议、付款（套餐签约时付 30% 定金，单项服务全款预付）。\n4. 顾问按协议排期启动服务。\n\n几点提醒：\n- 顾问在瑞典（中欧时间），比北京时间晚 6 小时（夏令时）或 7 小时（冬令时），约时间时记得算时差。\n- 已约时间可在 24 小时前免费改期一次。\n- 联系方式只用于顾问联系你和提供服务，不会给第三方；请不要在对话里发身份证号、护照号或银行卡号。\n\n如果你愿意，现在就可以告诉我：**怎么称呼你、用哪种方式联系（微信/邮箱/手机）+ 对应号码或账号**，以及想聊的方向（比如目标国家、入学时间、想了解的服务）。你确认同意后，我帮你登记线索，顾问会按上面的流程联系你。",
+          "ms": 1992.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "B 在完整复述预约流程的基础上，额外补充了付款规则、隐私保护等资料中的相关要点，信息更全面且无错误。"
+    },
+    {
+      "id": "r059",
+      "query": "约好的时间能改期吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以改，但有一次免费改期的限制：\n\n- **提前 24 小时以上**：可免费改期一次（来源：《预约咨询流程》）\n- 24 小时内或第二次改期怎么处理，资料里没写，需要顾问确认\n\n另外提醒一下时差：顾问在瑞典（CET/CEST），比北京时间晚 6 小时（夏令时）或 7 小时（冬令时），约时间时记得换算。\n\n如果你还没预约、想先约 15 分钟免费初步沟通，告诉我你的称呼和一种联系方式（微信/邮箱/手机），我可以帮你登记，顾问会在 1 个工作日内联系你。",
+          "ms": 1512.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以改期，但有一个时间限制：\n\n- **约定时间前 24 小时以外**：可以免费改期一次（来源：《关于指北工作室：介绍、常见问题与预约流程》）\n- **24 小时内取消或未到场**：视为已使用，单次咨询按已使用处理（来源：《退款政策与发票》）\n\n另外提醒一下时差：顾问在瑞典（中欧时间），比北京时间晚 6 小时（夏令时）或 7 小时（冬令时），改期时建议按双方都方便的时间来约。\n\n需要我帮你约一次 15 分钟免费初步沟通吗？如果要约，留个称呼和一种联系方式（微信/邮箱/手机）就行，我会说明用途，只用于顾问联系你安排时间。",
+          "ms": 1460.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了免费改期一次和24小时限制，并补充了时差信息，差异仅在措辞和后续引导，整体质量相当。"
+    },
+    {
+      "id": "r060",
+      "query": "有早鸟优惠吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "有的。根据知识库《优惠规则（早鸟、团报、老带新）》：\n\n- **早鸟**：每年 9 月 30 日前（含）签约，选校定位全案、文书套餐、全程陪跑类服务享 **9 折**。\n- **团报**：同校或同班 2 人及以上一起报名任意套餐，每人 **95 折**。\n- **老带新**：老学员推荐，新学员立减 ¥100（推荐人也有 ¥100 返现），可与早鸟或团报叠加。\n- 早鸟和团报**二选一**，系统自动取更优惠的一项；所有优惠叠加后实付不低于标价的 85%。\n- 除以上公开优惠外不接受议价。\n\n如果你告诉我打算报哪些服务、是否早鸟签约、有没有同伴一起报、是否老学员推荐，我可以用报价工具给你算一份准确明细（含优惠和应付金额）。需要的话也可以先约一次免费沟通。\n\n另外提醒一下：以上优惠规则整理自工作室价目资料，最终以电子服务协议为准。",
+          "ms": 1760.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "有，早鸟优惠是公开规则之一。按知识库《优惠规则、付款方式与定金》的整理：\n\n- **早鸟**：每年 9 月 30 日前（含）签约，选校定位全案、文书套餐和全程陪跑类服务享 9 折。\n- **团报**：同校或同班 2 人及以上一起报名任意套餐，每人 95 折。\n- **老带新**：老学员推荐，新学员立减 ¥100（推荐人也有 ¥100 返现），可与早鸟或团报叠加。\n- 早鸟和团报**二选一**，自动取更优惠的一项；所有优惠叠加后实付不低于标价 85%。\n\n注意两点：早鸟只适用于全案、文书套餐、全程陪跑这类服务，单次咨询和单项文书不在内；具体金额我不能口头估算，需要按你选的服务用报价工具算。\n\n方便的话告诉我：目标国家、打算申几个项目、想选哪类服务（比如选校全案 / 文书套餐 / 全程陪跑），以及是否能在 9 月 30 日前签约、有没有同伴一起报。我直接给你出一份带优惠明细的报价。\n\n以上规则为工作室公开价目整理，最终以电子服务协议为准。",
+          "ms": 2634.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地说明了早鸟优惠规则，且未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r061",
+      "query": "和同学一起报名能便宜点吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "能，工作室有公开的团报优惠：同校或同班 2 人及以上一起报名任意套餐，每人享 95 折（来源：《优惠规则（早鸟、团报、老带新）》）。\n\n几点说明：\n- 早鸟（9 月 30 日前签约，选校定位全案、文书套餐、全程陪跑类服务 9 折）和团报二选一，系统会自动取更优惠的一项；老带新（老学员推荐，新学员立减 ¥100）可以在此基础上叠加。\n- 所有优惠叠加后，实付不低于标价的 85%。\n\n具体能省多少，要看你选哪些服务、几个人一起报、是否早鸟签约。你告诉我这三点，我用报价工具给你算一份准确明细（金额以工具结果为准，报价有效期 14 天）。\n\n如果你还没定服务组合，也可以先说说目标国家和大概要申几个项目，我帮你缩小范围。",
+          "ms": 1651.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以，工作室有公开的团报优惠。\n\n**团报优惠（来源：《优惠规则、付款方式与定金》）**\n- 同校或同班 2 人及以上一起报名任意套餐，每人享 95 折。\n- 早鸟（9 月 30 日前签约，选校定位全案、文书套餐、全程陪跑类享 9 折）和团报二选一，系统自动取更优惠的一项。\n- 老带新（老学员推荐，新学员立减 ¥100，推荐人返 ¥100）可以和上面任一项叠加。\n- 所有优惠叠加后，实付不低于标价的 85%。\n\n具体能省多少，要看你选哪些服务、几个人一起报、是否在早鸟期内签约。这些金额我不能心算，得用报价工具算。\n\n方便的话告诉我：\n1. 你们打算报哪几项服务（或让我先列一下套餐对比）？\n2. 一共几个人一起报？\n3. 是否计划在 9 月 30 日前签约？\n\n给我这几个信息，我就出一份带明细的报价给你。",
+          "ms": 1896.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了团报优惠规则，并说明了早鸟、老带新和85%下限，信息完整度相当，仅措辞和引导方式略有差异，无实质优劣。"
+    },
+    {
+      "id": "r062",
+      "query": "老带新减多少，能和早鸟一起用吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "老带新是**立减 ¥100**，而且**可以和早鸟叠加**。\n\n按《优惠规则（早鸟、团报、老带新）》：\n\n- **老带新**：由指北老学员推荐，新学员立减 ¥100，推荐人同时获得 ¥100 返现。\n- **早鸟**：每年 9 月 30 日前（含）签约，选校定位全案、文书套餐、全程陪跑类服务享 9 折。\n- **叠加规则**：早鸟和团报二选一（自动取更优惠的一项），老带新可以在此基础上再叠加；所有优惠叠加后实付不低于标价的 85%。\n- 注意：单次选校咨询、模拟面试这类单项不参与早鸟/团报折扣，但老带新立减仍可用。\n\n以上是参考资料整理，具体金额以正式报价和电子服务协议为准。\n\n如果你告诉我打算选哪些服务、是否在 9 月 30 日前签约、是否有同伴一起报名、是否老学员推荐，我可以用报价工具给你算一份明细。",
+          "ms": 1667.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "老带新是**立减 ¥100**，推荐人同样获得 ¥100 返现。可以和早鸟叠加。\n\n优惠规则（来源：《优惠规则、付款方式与定金》）：\n\n- **早鸟**：每年 9 月 30 日前（含）签约，选校定位全案、文书套餐和全程陪跑类服务享 9 折。\n- **团报**：同校或同班 2 人及以上一起报名任意套餐，每人享 95 折。\n- **老带新**：立减 ¥100，推荐人得 ¥100 返现。\n- 叠加方式：早鸟和团报**二选一**，自动取更优惠的一项；老带新可在此基础上叠加。\n- 所有优惠叠加后，实付不低于标价的 85%。\n\n需要提醒的是：单次咨询、单项文书和增值服务不在早鸟 9 折范围内，老带新的 ¥100 是否适用于这些项目，建议以顾问确认为准。\n\n如果你告诉我打算选哪些服务、是否早鸟签约、有没有同伴一起报名、是否老学员推荐，我可以用报价工具给你算一份准确明细（含优惠和应付金额）。要现在算吗？",
+          "ms": 2015.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 1,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "A 准确说明老带新立减仍可用于不参与早鸟/团报的单项服务，B 对此表示不确定，与资料不符。"
+    },
+    {
+      "id": "r063",
+      "query": "能不能再给我便宜一点",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "我理解你想把预算控制得更紧一些。不过价格这块我这边没有权限私自让价，能给的只有公开的三类优惠：早鸟签约、团报（和朋友一起报名）、老学员推荐，而且叠加有下限，具体金额必须由报价工具算出来。\n\n我能帮你做的几件事：\n\n- **算一份准确报价**：告诉我你打算选哪些服务（或者目标国家、申请几个项目、现在进行到哪一步，我帮你缩小范围），我用报价工具把明细和优惠都列出来。\n- **换更小的组合**：比如先做单次咨询，30 天内升级到更大的服务可以抵扣，前期投入会低一些。\n- **先约免费 15 分钟沟通**：把需求和预算跟顾问聊清楚，再决定买什么。\n\n你想先看哪一项？如果方便，说一下你目前的情况（目标国家、大概申几个项目、进行到哪一步），我直接给你算报价。",
+          "ms": 2072.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个我得直接说：不行。除了公开的三项优惠（早鸟 9 折、2 人及以上团报 95 折、老学员推荐立减 ¥100），工作室不接受议价，我这边也没有权限给额外折扣。\n\n来源：《优惠规则、付款方式与定金》——早鸟和团报二选一，自动取更优惠的一项；老带新可叠加；所有优惠叠加后实付不低于标价 85%。\n\n能帮到你的几个方向：\n- 如果你打算申的项目不多，可以只买需要的部分（比如先做单次选校咨询），不用一上来就上套餐。\n- 如果你有同学一起报名，团报 95 折是实打实的。\n- 具体到你的组合能省多少，我可以按你的情况跑一次报价，金额以工具结果为准。\n\n方便的话告诉我：目标国家、大概申几个项目、现在进行到哪一步（了解中 / 准备中 / 申请中），我帮你算一版明细。",
+          "ms": 1906.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确说明不接受议价、只提供公开优惠，并给出可行建议；A 额外提到单次咨询升级抵扣，B 额外引用规则来源，差距很小。"
+    },
+    {
+      "id": "r064",
+      "query": "定金要付多少",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "定金比例取决于你选的服务类型，来源是知识库《付款方式与定金规则》：\n\n- **选校定位全案、套餐类服务**：签约时付 30% 定金，服务启动前付清尾款。\n- **单次咨询、单项文书、增值服务**：需要全款预付，没有定金这一说。\n\n所以具体金额要看你的合同总价。我这边看不到你的合同记录，如果你告诉我合同号和服务类型，我可以帮你确认该按哪一档走；实际金额以顾问核对协议为准。\n\n另外提醒一句：所有付费服务都会签电子服务协议，里面写明服务内容、轮次、交付时间和退款条款，签约前可以重点看一下退款那部分。\n\n需要我帮你查退款政策或发票相关的内容吗？",
+          "ms": 1411.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "定金比例取决于你选的服务类型，来源是知识库《优惠规则、付款方式与定金》：\n\n- **选校定位全案、套餐类服务**：签约时付 30% 定金，服务启动前付清尾款。\n- **单次咨询、单项文书、增值服务**：需要全款预付，没有定金这一说。\n\n（这里的金额没有经过报价工具核算，请以报价工具的计算结果或顾问确认为准。）不过我看不到你的合同记录，实际金额以协议上写的为准。\n\n如果你告诉我合同号和服务类型，我可以帮你确认该按哪条规则走；需要核对具体金额的话，我会转给顾问查协议。\n\n另外提醒一下：顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1764.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了定金规则，完整回答了学生问题，且未编造资料外事实，差距很小。"
+    },
+    {
+      "id": "r065",
+      "query": "可以用支付宝付吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以。支付宝、微信支付和银行转账都支持。\n\n来源：《常见问题（关于指北工作室）》——「怎么付款？有合同吗？」：所有付费服务都签电子服务协议；套餐类服务签约时付 30% 定金，服务启动前付清尾款；单项服务全款预付。\n\n另外，你之前提到想咨询退款。如果方便，请补充以下两项信息，我就能按政策帮你估算可退金额：\n\n- 合同号\n- 已付金额（以及付款时间、渠道，比如支付宝）\n\n另外还需要确认：是哪项服务（选校全案、文书、套餐还是单次咨询），以及目前的服务进度（未启动、进行中、已交付）。退款金额最终由顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 1899.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以。支付宝是支持的付款方式之一，微信支付和银行转账也可以。\n\n来源：《优惠规则、付款方式与定金》——「支持的付款方式：微信支付、支付宝、银行转账」。\n\n另外提醒一下付款节奏，方便你安排：\n- 选校定位全案、套餐类服务：签约时付 30% 定金，服务启动前付清尾款\n- 单次咨询、单项文书、增值服务：需全款预付\n\n如果你是想确认某笔具体付款（比如定金或尾款）的状态，或者要办退款，把合同号、金额、付款时间和渠道发我，我帮你走核验流程。",
+          "ms": 1639.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确回答了支付宝可用的核心问题，并补充了付款方式与付款节奏，信息均与原始资料一致，无编造内容，差距极小。"
+    },
+    {
+      "id": "r066",
+      "query": "报价能保留多久",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "这个问题我这边没有确切依据，不能给你一个具体天数——报价有效期通常写在顾问给你的报价单或协议里，以那份文件为准。\n\n如果你手上有报价单，可以看一下上面有没有写有效期；没有的话，建议直接问对接顾问确认。顾问在瑞典（比北京晚 6–7 小时），工作日 24 小时内回复。\n\n另外提醒一句：报价和实际费用以顾问核验后的协议为准，我这边看不到你的合同和报价记录，所以不能替你确认某个价格是否还有效。\n\n需要我帮你把这个问题转给顾问吗？",
+          "ms": 1693.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "报价有效期是 **14 天**，从报价发出当天算起。超过 14 天，价格和优惠档位可能需要重新确认，因为早鸟、团报这类优惠本身有截止时间。\n\n来源：《优惠规则、付款方式与定金》。\n\n如果你手上有具体报价，想确认是否还在有效期内，把报价日期和合同号（如果已经签约）发我，我帮你对照一下。",
+          "ms": 1910.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 0,
+          "complete": 1,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确引用了原始资料中“报价有效期 14 天”的规定，并补充了优惠截止的合理提醒；B 声称没有确切依据，未答出资料中已有的明确答案。"
+    },
+    {
+      "id": "r067",
+      "query": "签合同吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "签的。所有付费服务都会签电子服务协议，来源：《常见问题（关于指北工作室）》。\n\n顺带把付款规则一起说清楚，免得后面来回问：\n\n- **套餐类**：签约时付 30% 定金，服务启动前付清尾款\n- **单项服务**（单次选校咨询、单篇文书、简历、推荐信指导）：全款预付\n- **付款渠道**：微信支付、支付宝、银行转账\n\n另外提醒一句：30% 定金在套餐启动后是不退的，这条写在退款政策里，签约前值得先看一眼。\n\n你这次是想了解签约流程，还是已经在走退款、需要核对协议？如果是退款，麻烦给我**合同号**和**已付金额**，我按政策帮你估算可退金额（最终以顾问核验协议为准）。",
+          "ms": 1758.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "签的。所有付费服务都会签电子服务协议，协议里会写明服务内容、轮次、交付时间和退款条款。（来源：《优惠规则、付款方式与定金》）\n\n另外，你这次来问的是退款相关的事，我这边需要先确认几个信息才能帮你估算：\n\n- 合同号\n- 已付金额\n- 付款时间和渠道\n- 服务进度（未启动 / 进行中 / 已交付），文书类的话还需要知道已完成几轮\n\n方便的话把这几项发我，我按政策帮你算一下可退金额。最终金额还是要顾问核对协议后确认。",
+          "ms": 1483.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都正确回答了签约问题，但B补充了付款规则和定金不退等资料中的相关信息，信息更完整。"
+    },
+    {
+      "id": "r068",
+      "query": "服务还没开始，钱能全退吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "按政策，服务未启动是可以全额退的。不过要真正走退款，得先核验几项信息。\n\n**按政策可以判断的（来源：《退款政策》）**\n- 已付款、服务尚未启动：全额退还已付款项。\n- 退款在确认后 7 个工作日内原路退回。\n- 实际金额以服务协议和人工核验结果为准。\n\n**还需要你提供的信息**\n- 合同号\n- 已付金额\n- 付款时间\n- 付款渠道（微信 / 支付宝 / 银行转账）\n\n另外想确认一下：服务进度是「完全未启动」对吧？如果顾问那边已经排期或开始准备材料，进度认定可能不一样，这个最终由顾问核验。\n\n**下一步**\n你把上面几项发我，我先用工具按政策估算一版金额给你参考；实际退款需要顾问核对协议后发起，确认后 7 个工作日内原路退回。顾问在瑞典，工作日 24 小时内回复，注意时差。\n\n（另外提醒：付款截图只发时间和金额就行，不要发银行卡号、密码或验证码。）",
+          "ms": 2096.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "按政策，服务未启动是可以全额退的。\n\n**政策依据**（来源：《退款政策与发票》）\n- 已付款、服务尚未启动：全额退还已付款项。\n- 退款在确认后 7 个工作日内原路退回。\n- 实际退款金额以服务协议和人工核验结果为准。\n\n**需要你提供的信息**（用来核验，一次给齐就行）\n1. 合同号\n2. 已付金额\n3. 付款时间\n4. 付款渠道（微信 / 支付宝 / 银行转账）\n\n另外确认一下：这个服务确实还没启动，对吧？比如文书还没开始写、选校报告还没出。\n\n**下一步**\n信息齐了之后，我会按政策给你一个可退金额的估算，然后转给顾问核对协议和付款流水。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。确认后 7 个工作日内原路退回。\n\n需要说明的是：我不能承诺退款一定成功，也不能给出比政策更快的到账时间，最终以顾问核验协议为准。",
+          "ms": 2005.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了退款政策中“服务未启动全额退”的核心条款，并补充了7个工作日原路退回、以协议和人工核验为准等要点，均未编造事实，信息完整度相当，差距极小。"
+    },
+    {
+      "id": "r069",
+      "query": "套餐开始以后定金还能退吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "套餐启动后，定金不退。这是《退款政策》里的明确条款：套餐类服务启动后，30% 定金不退，已付尾款部分按剩余进度比例退还。\n\n也就是说：\n- **定金**：启动后不退\n- **尾款**：按剩余进度比例退，具体比例需要顾问确认服务进度\n\n如果你想知道自己大概能退多少，我需要几个信息（一次问齐，省得来回）：\n1. 合同号\n2. 已付金额\n3. 服务进度（未启动 / 进行中 / 已交付；进行中的话，顾问确认的进度百分比）\n\n给我这些，我可以按政策帮你估算一个可退金额。不过要说明：这只是估算，最终金额由顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 1797.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "套餐启动后，定金不退。这是政策里明确写的一条。\n\n**按政策可以判断的（来源：《退款政策与发票》）**\n- 套餐类服务启动后：30% 定金不退，已付尾款部分按剩余进度比例退还。\n- 如果服务还没启动：全额退还已付款项。\n- 已交付完成：不予退款。\n\n**要给你具体估算，还需要核验**\n- 合同号\n- 已付金额（定金 + 尾款各多少）\n- 服务进度（由顾问确认的百分比）\n\n**下一步**\n把上面三项发我，我可以用退款工具按政策估算尾款部分能退多少。估算只是参考，最终金额由顾问核对协议后确认，确认后 7 个工作日内原路退回。\n\n顾问在瑞典（比北京晚 6–7 小时），工作日 24 小时内回复。",
+          "ms": 1723.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了套餐启动后定金不退、尾款按剩余进度比例退还的政策，并说明了未启动和已交付的情况，均未编造资料外事实，差距很小。"
+    },
+    {
+      "id": "r070",
+      "query": "没被录取可以退款吗",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不能。按《退款政策》，录取结果不理想不属于退款理由——我们不承诺录取结果，所以这个不构成退款依据。\n\n不过能不能退，主要看**服务进度**，不是看结果：\n\n- **服务未启动**：全额退已付款项\n- **文书类进行中**：按剩余修改轮次比例退\n- **选校全案进行中（报告交付前）**：退已付款的 50%\n- **套餐启动后**：30% 定金不退，已付尾款按剩余进度比例退\n- **已交付完成**：不退\n- **单次咨询**：约定时间前 24 小时以外取消可全额退或改期\n\n如果你想知道自己这种情况大概能退多少，我需要几个信息（一次问全，省得来回）：\n\n1. 合同号\n2. 已付金额\n3. 付款时间和渠道（微信 / 支付宝 / 银行转账）\n4. 服务类型（文书单项 / 选校全案 / 套餐 / 单次咨询）\n5. 当前进度：未启动 / 进行中（文书类请说已完成几轮）/ 已交付\n\n给我这些，我可以按政策帮你估算一个金额。说明一下：这只是估算，最终金额要顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 2144.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "按政策，录取结果不理想不属于退款理由——我们不承诺录取，这一点在协议里也是明确的。来源：《退款政策与发票》。\n\n不过能不能退，主要看**服务进度**，不是看结果：\n\n- 服务未启动：全额退已付款项\n- 文书类进行中：按剩余修改轮次比例退\n- 选校全案进行中（报告交付前）：退已付款的 50%\n- 套餐启动后：30% 定金不退，已付尾款按剩余进度比例退\n- 已交付完成：不退\n\n如果你想知道具体能退多少，我需要几个信息（一次给齐就行）：\n\n1. 合同号\n2. 已付金额\n3. 服务项目（文书单项 / 选校全案 / 套餐 / 单次咨询）\n4. 服务进度（未启动 / 进行中 / 已交付；文书类请说明已完成几轮）\n\n给我这些，我可以按政策帮你估一个数。最终金额要顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 1914.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两个回答都准确引用了退款政策，但 A 更完整，补充了单次咨询的取消退款规则，并多询问了付款时间和渠道，便于更准确地按政策估算退款金额。"
+    },
+    {
+      "id": "r071",
+      "query": "退款多久能到账",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "退款到账时间按政策是：**顾问核验协议、确认金额后 7 个工作日内原路退回**（来源：《退款政策》）。\n\n有两点需要说明：\n- 这 7 个工作日从「确认金额」开始算，不是从你提出申请开始算；前面还有顾问核对协议和付款记录的时间。\n- 我这边看不到你的实际付款和合同记录，所以没法承诺具体哪天到账，也不能保证退款一定成功——最终金额和时效以顾问核验结果为准。\n\n如果你要发起退款，我需要先确认几项信息（一次问全，省得来回）：\n1. 合同号\n2. 已付金额\n3. 付款时间和付款渠道（微信 / 支付宝 / 银行转账）\n4. 服务项目（比如文书单项、选校全案、套餐）和目前进度（未启动 / 进行中 / 已交付；文书类的话已完成几轮）\n\n把这些发我，我可以先按政策帮你估算可退金额，然后转给顾问做实际核验和处理。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1948.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "退款到账时间按政策是：**顾问核验协议、确认退款金额后，7 个工作日内原路退回**（来源：《退款政策与发票》）。\n\n需要说明两点：\n- 这 7 个工作日从「确认退款金额」之后开始算，不是从你提出申请时算。\n- 我这边看不到你的付款和合同记录，所以现在还没法判断你的具体情况能退多少、什么时候能确认。\n\n如果你要推进，我需要先核对这几项（一次问全，省得来回）：\n1. 合同号\n2. 已付金额\n3. 付款时间和渠道（微信 / 支付宝 / 银行转账）\n4. 服务项目，以及目前进度（未启动 / 进行中 / 已交付；文书类的话已完成几轮）\n\n给我这些信息后，我可以按政策帮你估算可退金额，然后转顾问核验协议、实际发起退款。顾问在瑞典，和北京有 6–7 小时时差，工作日 24 小时内回复。",
+          "ms": 1955.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了退款政策中确认后7个工作日内原路退回的要点，并补充了合理说明和所需信息，差距极小。"
+    },
+    {
+      "id": "r072",
+      "query": "单次咨询临时去不了怎么办",
+      "tags": [
+        "colloquial"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "单次咨询如果临时去不了，按政策是这样：\n\n- **提前 24 小时以上**取消：可以全额退款，或者改期。\n- **不足 24 小时**：政策里没有写可以全额退，这种情况需要顾问看具体情况再定，我不能先替你承诺。\n\n想改期或退款的话，告诉我这两项就行：\n\n1. 合同号\n2. 原定咨询时间\n\n我记录后转给顾问处理。顾问在瑞典（比北京晚 6–7 小时），工作日 24 小时内回复。",
+          "ms": 1491.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "单次咨询临时去不了，按政策分两种情况（来源：《退款政策与发票》）：\n\n- **约定时间前 24 小时以外取消**：可以全额退款，也可以改期。\n- **24 小时内取消或未到场**：视为已使用，不再退款。\n\n如果你是想改期，直接告诉我原定时间，我帮你记录并转给顾问安排；如果是要退款，我需要先确认几项信息才能估算：\n\n1. 合同号\n2. 已付金额\n3. 付款时间和渠道（微信 / 支付宝 / 银行转账）\n4. 原定咨询时间\n\n另外说明一下：退款金额是按政策的估算，最终以顾问核对协议后确认为准，确认后 7 个工作日内原路退回。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1371.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "B 更完整地引用了退款政策中 24 小时内取消或未到场视为已使用的规定，并补充了退款流程和所需信息，A 对此表述不够明确。"
+    },
+    {
+      "id": "r073",
+      "query": "能开发票吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以开。按知识库《发票说明》：\n\n- **类型**：电子普通发票\n- **时间**：款项付清后 5 个工作日内开具\n- **抬头**：个人或企业（企业抬头需要提供税号）\n- **开票主体**：工作室在国内的合作主体\n\n需要你提供的信息：发票抬头（个人姓名或企业全称）、企业需税号、接收邮箱。\n\n另外提醒一下：如果之后涉及发票作废重开，需要顾问处理，我这边只能记录需求。\n\n需要我现在帮你登记开票信息吗？",
+          "ms": 1435.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以开。按《退款政策与发票》里的说明：\n\n**发票类型**\n- 电子普通发票，付清款项后 5 个工作日内开具\n- 抬头可以是个人，也可以是企业\n- 发票由工作室在国内的合作主体开具\n\n**需要你提供的信息**\n- 发票抬头（个人姓名或企业全称）\n- 企业抬头需要税号\n- 接收发票的邮箱\n\n**下一步**\n你把上面三项发我，我记录下来转给顾问处理。开票前需要确认对应款项已付清，这一步顾问会核对。\n\n另外提醒一句：如果之后要退款，已开的发票可能需要作废或重开，这类操作也要顾问处理，不会自动完成。\n\n需要我顺便帮你确认一下开票对应的合同号吗？",
+          "ms": 1882.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地说明了可开发票、类型、时限、抬头和所需信息，且未虚构资料外事实，差距极小。"
+    },
+    {
+      "id": "r074",
+      "query": "发票可以开公司抬头吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "可以，企业抬头能开。\n\n- 类型：电子普通发票\n- 抬头：个人或企业都行；企业抬头需要提供**公司名称 + 税号**\n- 时间：款项付清后 5 个工作日内开具\n- 开具主体：工作室在国内的合作主体\n\n来源：《发票说明》。\n\n需要开的话，把公司名称、税号、接收邮箱发我，我记录后转给顾问处理。另外提醒一下：发票作废重开需要顾问核验，我这边不能直接操作。\n\n如果你同时还想问退款的事，麻烦补一下合同号和付款金额，我按政策帮你估算。",
+          "ms": 1589.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "可以。发票这块按知识库《退款政策与发票》的说明：\n\n- **类型**：电子普通发票\n- **抬头**：个人或企业都可以，公司抬头属于企业抬头\n- **需要提供**：公司全称 + 税号，以及接收发票的邮箱\n- **开具时间**：付清款项后 5 个工作日内\n- **开票主体**：由工作室在国内的合作主体开具\n\n另外提醒一句：发票信息一旦开出，作废重开需要走顾问处理，所以公司名称和税号麻烦核对准确再发。\n\n如果是要为某笔具体付款开票，把合同号发我，我记录后转顾问跟进。顾问在瑞典，和北京有 6–7 小时时差，工作日 24 小时内回复。",
+          "ms": 1437.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确回答了企业抬头可开、需提供税号、5个工作日内开具等核心要点，且均未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r075",
+      "query": "你们是留学中介吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不是中介。我们是由几位在瑞典读 CS 的留学生创办的小型咨询工作室，只做瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的选校和文书辅导，所有服务由创始人亲自完成。\n\n几个你可能关心的点：\n- 不代为提交申请，也不收学校佣金，推荐项目只看是否适合你\n- 不承诺录取，也没有机构能保证；我们做的是把选校定位做准、把材料准备好\n- 不代写文书，顾问陪你挖素材、搭结构、逐段给修改意见，正文由你本人完成\n- 全部线上进行，视频会议加微信沟通；顾问在瑞典，和北京有 6–7 小时时差，会提前约双方都方便的时间\n\n以上来自《常见问题（关于指北工作室）》，具体以顾问确认为准。\n\n想先了解哪块：申请信息和选校、服务和价格，还是你已经买了服务想查进度？",
+          "ms": 1572.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不是中介。指北 · Nordic CS Master Studio 是几位在瑞典读 CS 的留学生办的小型咨询工作室，只做瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的选校咨询和文书辅导，服务都由创始人亲自做，不外包。\n\n几个和中介不太一样的地方：\n- 不代你提交申请，也不收学校佣金，推荐项目只看是否适合你\n- 不代写文书：顾问陪你挖素材、搭结构、逐段给修改意见，正文你自己写\n- 不做\"保录\"承诺，录取由学校决定\n\n顾问在瑞典斯德哥尔摩，比北京时间晚 6 小时（夏令时）或 7 小时（冬令时），工作日 24 小时内回复。\n\n（来源：《关于指北工作室：介绍、常见问题与预约流程》）\n\n想了解哪块？比如选校咨询、文书辅导，或者服务和价格，我可以接着讲。",
+          "ms": 1823.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确回答了不是中介及核心区别，信息与资料一致，无明显遗漏或编造，差距很小。"
+    },
+    {
+      "id": "r076",
+      "query": "能保证录取吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不能，也没有任何机构能保证录取。录取结果由学校决定。\n\n我们能做的是把选校定位做准、把材料准备好：顾问会陪你挖掘素材、设计结构，逐段给修改意见，正文由你本人完成，不代写。任何承诺\"保录\"的服务都需要谨慎。\n\n（来源：《常见问题（关于指北工作室）》《关于指北：工作室介绍》）\n\n如果你愿意，可以说一下你的背景和目标国家，我帮你判断下一步该聊选校还是文书。",
+          "ms": 1580.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不能，也没有任何机构能保证。录取结果由学校决定，我们能做的是帮你把选校定位做准、把材料准备好。任何承诺“保录”的服务都建议谨慎对待。（来源：《关于指北工作室：介绍、常见问题与预约流程》）\n\n顺带说下我们是谁：指北 · Nordic CS Master Studio，由几位在瑞典读 CS 的留学生创办，只做瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的选校咨询和文书辅导，创始人亲自做，不外包、不收学校佣金。\n\n想了解哪方面？比如选校定位、文书辅导，或者服务和价格，我可以接着帮你梳理。",
+          "ms": 1567.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都准确回答了不能保证录取，但 B 更完整地补充了工作室定位、服务范围和创始人亲自服务等背景信息，并主动引导后续咨询。"
+    },
+    {
+      "id": "r077",
+      "query": "你们会代写文书吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不会代写。\n\n顾问会陪你挖掘素材、设计结构，并逐段给出修改意见，正文由你本人完成。这样写出来的文书更真实，也更经得起面试追问。（来源：《常见问题（关于指北工作室）》）\n\n另外，我们也不做代考语言、代办签证或伪造材料这类事。\n\n如果你需要，我可以接着帮你了解文书辅导具体怎么进行，或者单篇文书指导的价格。你想先看哪一项？",
+          "ms": 1377.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不会。我们不代写文书。\n\n具体来说：\n- 顾问会陪你挖掘素材、设计结构，并逐段给出修改意见和语言润色建议，正文由你本人完成。\n- 推荐信同样不代写、不代签。\n- 这样写出来的文书更真实，也更经得起面试追问。\n\n来源：《关于指北工作室：介绍、常见问题与预约流程》《文书类服务：PS/动机信、简历、推荐信、文书套餐》。\n\n如果你愿意，可以告诉我你现在的阶段（比如还没定校、已有初稿、想改某一篇），我帮你看看适合哪项服务。",
+          "ms": 1725.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 1,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 1,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确回答了不代写文书，并说明了顾问的辅导方式，信息与资料一致，无编造，差距很小。"
+    },
+    {
+      "id": "r078",
+      "query": "顾问在哪个国家，和国内有时差吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "顾问在瑞典，工作室也是几位在瑞典读 CS 的留学生创办的。瑞典和北京有 6–7 小时时差，所以约沟通时间会提前商量双方都方便的时段，顾问在工作日 24 小时内回复。\n\n来源：《常见问题（关于指北工作室）》——服务全部线上进行，通过视频会议和微信沟通，顾问在瑞典，与北京有 6–7 小时时差。\n\n想了解哪方面？比如选校咨询、文书辅导，或者预约一次沟通，我可以帮你对接。",
+          "ms": 1629.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "顾问在瑞典斯德哥尔摩，比北京时间晚 6 小时（夏令时）或 7 小时（冬令时）。所以工作日 24 小时内回复，周末和瑞典公共假期顺延；约时间时我们会提前找双方都方便的时段。\n\n来源：《关于指北工作室：介绍、常见问题与预约流程》。\n\n想了解选校、文书还是服务价格？告诉我一句就行。",
+          "ms": 1109.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明了顾问在瑞典、与国内有6-7小时时差，并补充了工作日24小时回复等资料内信息，无事实错误或编造，差距极小。"
+    },
+    {
+      "id": "r079",
+      "query": "你们做本科申请吗",
+      "tags": [
+        "out_of_scope"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不做。我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课计算机硕士申请，本科、博士和转专业预科都不在范围内。\n\n如果你之后要申 CS 硕士，可以帮你做选校定位和文书辅导（不代写、不保录）。想了解哪部分？",
+          "ms": 1137.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不做。指北只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 相关硕士项目（计算机科学、软件工程、数据科学、人工智能等方向）。本科、博士以及非 CS 方向的申请都不在范围内，五国以外的地区也不做。\n\n来源：《关于指北工作室：介绍、常见问题与预约流程》。\n\n如果你或朋友是在准备这五国的 CS 硕士，可以告诉我目前的情况（学校、专业、年级、目标国家），我帮你判断下一步该聊选校还是文书。",
+          "ms": 1435.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都正确说明不做本科申请，但 A 更完整地列出了服务范围和不做的内容，并主动引导后续咨询。"
+    },
+    {
+      "id": "r080",
+      "query": "我的个人信息会给别人吗",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "关于个人信息的使用，知识库里的《常见问题（关于指北工作室）》有一条相关条目，但片段在\"我的个人信息会被怎么使用？\"这里就截断了，具体条款我这边看不到，所以不能替你复述细节。\n\n我能确定的两点：\n\n- 我们只收集完成当前服务必需的信息，不会索要身份证号、护照号、银行卡号、密码、验证码这类内容。\n- 具体的信息使用范围、保存期限和第三方共享情况，写在电子服务协议里，需要顾问核对原文后回复你。\n\n下一步：如果你已经签约，告诉我签约时的称呼或合同号，我记录后请顾问在工作日 24 小时内把协议里的隐私条款原文发给你（顾问在瑞典，和北京有 6–7 小时时差）。如果还没签约、只是想先了解，也可以直接说，我让顾问把相关条款说明发你一份。\n\n另外提醒一句：如果刚才或之后不小心把证件号、卡号之类的信息发到对话里，请撤回，我这边不会复述。",
+          "ms": 2007.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不会。我们只收集完成当前这件事必需的信息，也不会把你的资料转给别人。\n\n具体来说：\n- 我们不会索要身份证号、护照号、银行卡号、密码或验证码；如果你不小心发来了，建议撤回，我也不会复述。\n- 你的申请背景和文书材料只用于你的咨询和文书服务本身，不会拿去做别的用途。\n- 涉及合同、付款、隐私删除这类事，需要顾问本人核对处理，我这边看不到相关数据。\n\n如果你担心某份材料的具体使用范围，或者想申请删除已提供的信息，告诉我一声，我会转给顾问，由顾问在工作日 24 小时内回复你（顾问在瑞典，比北京晚 6–7 小时）。",
+          "ms": 1740.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 1,
+          "complete": 1,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 准确复述了资料中个人信息保护的核心内容，未编造具体条款；B 声称知识库片段截断、无法看到具体条款，与资料中已给出完整答案不符，且补充了资料未提及的保存期限、合同号等细节。"
+    },
+    {
+      "id": "r081",
+      "query": "咨询是线上还是线下",
+      "tags": [
+        "normal"
+      ],
+      "domain": "general",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "全部线上进行，通过视频会议和微信沟通。顾问在瑞典，和北京有 6–7 小时时差，会提前约好双方都方便的时间。（来源：《常见问题（关于指北工作室）》）\n\n如果你想进一步了解，可以告诉我你目前的情况：目标国家、本科背景、大概的申请年份，我帮你判断适合从哪一步开始。",
+          "ms": 1311.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "咨询全部是线上进行的，通过视频会议和微信沟通。顾问在瑞典，和北京有 6–7 小时时差，会提前约好双方都方便的时间。\n\n来源：《关于指北工作室：介绍、常见问题与预约流程》\n\n如果你愿意，可以留下称呼和一种联系方式（微信/邮箱/手机），顾问会在 1 个工作日内联系你，先安排 15 分钟免费初步沟通。也可以直接告诉我你想了解的方向（选校、文书、价格），我先帮你梳理。",
+          "ms": 1255.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 2,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明了咨询为线上进行、通过视频会议和微信沟通，以及顾问在瑞典与北京有6-7小时时差，均未编造资料外事实，差距很小。"
+    },
+    {
+      "id": "r082",
+      "query": "德国申请要交多少钱的定金",
+      "tags": [
+        "cross_domain"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "定金比例是按服务类型定的，不按国家分——德国申请和瑞典、荷兰等方向用的是同一套规则：\n\n**需要付 30% 定金的**\n- 选校定位全案\n- 套餐类服务（多校/多国混申套餐属于这类）\n\n签约时付 30% 定金，服务启动前付清尾款。\n\n**需要全款预付的**\n- 单次咨询\n- 单项文书\n- 增值服务\n\n**具体金额**取决于你选的服务和学校数量，我这边看不到你的合同和报价，所以没法直接报数字。你可以告诉我合同号，或者让顾问把对应套餐的报价单发你，上面会写清总价和 30% 定金的具体数额。\n\n另外两点提醒：\n- 报价有效期 14 天，超期需要重新确认。\n- 所有付费服务都会签电子服务协议，写明服务内容、轮次、交付时间和退款条款，付款前建议先看一遍退款条款。\n\n需要我帮你核对某个具体套餐的定金金额的话，把合同号发我就行。",
+          "ms": 3051.6,
+          "ok": true,
+          "tools": [
+            "get_payment_policy"
+          ]
+        },
+        "wiki": {
+          "text": "德国申请本身不涉及我们这边的定金，定金是「指北」服务费的一部分。分两块说：\n\n**1. 指北的服务费定金（来源：《优惠规则、付款方式与定金》）**\n- 选校定位全案、套餐类服务：签约时付 30% 定金，服务启动前付清尾款。\n- 单次咨询、单项文书、增值服务：全款预付，没有定金环节。\n- 具体金额取决于你选的套餐和是否适用优惠（早鸟 9 折 / 团报 95 折，老带新减 ¥100，可与前两者之一叠加，叠加后不低于标价 85%）。我这边不报具体价格，需要顾问按你的方案出报价。\n\n**2. 德国学校那边的费用（来源：《德国 CS 硕士申请概览》，草案，以官网为准）**\n- uni-assist 申请费：首个志愿约 €75，同学期后续每个志愿约 €30；学校自有系统多数免费。\n- 学费：多数公立大学免学费，仅每学期约 €150–400 注册费；巴符州非欧盟学生 €1,500/学期；TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000/学期。\n- 另外还有 APS 审核费、保证金账户（2025 年起 €11,904/年）等，这些不是付给我们的。\n\n如果你是想确认自己那份合同的定金金额，把合同号发我，我帮你核对需要哪些信息；实际金额和付款安排由顾问确认。",
+          "ms": 2272.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "B 在准确说明工作室定金规则的同时，还补充了德国申请本身的费用背景，更完整地回应了学生可能的疑问；A 仅回答了工作室定金规则，且未提及德国学校费用。"
+    },
+    {
+      "id": "r083",
+      "query": "瑞典申请的退款政策",
+      "tags": [
+        "cross_domain"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "瑞典申请属于我们服务范围内的项目，退款政策和其他国家一致，按《退款政策》执行：\n\n**按服务进度**\n- 服务未启动：全额退还已付款项\n- 文书类单项进行中：按剩余修改轮次比例退\n- 选校全案进行中（报告交付前）：退已付款的 50%\n- 套餐类启动后：30% 定金不退，已付尾款按剩余进度比例退\n- 已交付完成：不退\n- 单次咨询：约定时间前 24 小时以外取消可全额退或改期；24 小时内取消或未到场视为已使用\n\n**两点说明**\n- 录取结果不理想不属于退款理由（我们不承诺录取结果）。\n- 退款在确认后 7 个工作日内原路退回；实际金额以服务协议和顾问人工核验为准。\n\n来源：《退款政策》（知识库）\n\n如果你要估算具体能退多少，我需要这几项：\n1. 合同号\n2. 已付金额\n3. 服务类型（文书单项 / 选校全案 / 套餐 / 单次咨询）\n4. 当前进度（未启动 / 进行中 / 已交付；文书类还需已完成几轮）\n\n信息给我后，我按政策帮你算一个估算值，最终金额由顾问核对协议后确认。",
+          "ms": 2035.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "**瑞典申请相关的退款政策**（来源：《退款政策与发票》）\n\n按服务进度分三种情况：\n\n- **服务未启动**：全额退还已付款项。\n- **服务进行中**：\n  - 文书类单项：按剩余轮次比例退还\n  - 选校全案：报告交付前退已付款的 50%\n  - 套餐类：启动后 30% 定金不退，已付尾款按剩余进度比例退\n- **已交付完成**：不予退款。\n\n另外两点常被问到：\n- 单次咨询在约定时间前 24 小时以外取消，可全额退或改期；24 小时内取消或未到场视为已使用。\n- 录取结果不理想不属于退款理由（我们不承诺录取）。\n\n退款在确认后 7 个工作日内原路退回；实际金额以服务协议和人工核验结果为准。\n\n**要给你估算具体金额，需要你提供：**\n1. 合同号\n2. 已付金额\n3. 服务类型（文书单项 / 选校全案 / 套餐 / 单次咨询）\n4. 当前进度（未启动 / 进行中 / 已交付；文书类还需知道已完成几轮）\n\n信息齐了我可以按政策算一个估算值，最终由顾问核对协议后确认。",
+          "ms": 1988.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地引用了退款政策，覆盖了所有服务类型和特殊情况，且未编造任何资料外的事实，差距极小。"
+    },
+    {
+      "id": "r084",
+      "query": "全程陪跑交了定金能退吗",
+      "tags": [
+        "cross_domain"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "先直接回答：**定金能不能退，取决于服务是否已经启动**。按我们的政策：\n\n- **服务未启动**：全额退（含定金）。\n- **套餐启动后**：30% 定金不退，已付尾款按剩余进度比例退。\n- **已交付**：不退。\n\n所以「全程陪跑」的定金能不能退，关键看你的服务有没有正式开始（比如选校沟通、文书启动等）。\n\n要给你一个具体估算，我需要先确认几项信息：\n\n1. 合同号\n2. 已付金额（定金多少、是否已付尾款）\n3. 付款时间和渠道（微信 / 支付宝 / 银行转账）\n4. 服务进度：未启动 / 进行中 / 已交付\n\n你把这几项发我，我按政策帮你算一个可退金额的估算。最终金额需要顾问核对协议后确认，确认后 7 个工作日内原路退回。\n\n另外提醒一句：顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2206.4,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "全程陪跑属于套餐类服务，退款要看服务进度，定金规则比较特殊：\n\n**按政策（来源：《退款政策与发票》）**\n- 服务**未启动**：全额退，定金也包含在内。\n- 服务**已启动**：30% 定金不退，已付尾款按剩余进度比例退。\n- 已交付完成：不退。\n\n所以“定金能不能退”取决于你的服务是否已经启动。如果还没启动，可以全额退；一旦启动，定金部分就不退了。\n\n**要给你估算，我需要这几项信息（一次问清，省得来回）**\n1. 合同号\n2. 已付金额（定金多少、尾款是否已付）\n3. 付款时间和渠道（微信 / 支付宝 / 银行转账）\n4. 服务进度：未启动 / 进行中（进行中大概到哪一步，由顾问确认百分比）\n\n你把上面几项发我，我按政策算一个可退金额的估算。说明一下：这只是估算，最终金额要顾问核对协议后确认，确认后 7 个工作日内原路退回。\n\n另外提醒：付款截图里只要有时间和金额就够了，不用发银行卡号、密码或验证码。",
+          "ms": 2307.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都准确引用了退款政策中套餐类服务定金不退、未启动全额退的规则，并询问了必要的进度信息，差距极小。"
+    },
+    {
+      "id": "r085",
+      "query": "选校报告还没交付想退款",
+      "tags": [
+        "cross_domain"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "选校全案在报告交付前，按政策可退已付款的 50%。不过要给你估算，我还缺几个核验信息：\n\n- 合同号\n- 已付金额（元）\n- 付款时间和渠道（微信 / 支付宝 / 银行转账）\n\n另外确认一下：服务是否已经启动（比如已经做过沟通、选校访谈）？这会影响顾问核验时的判断。\n\n补齐后我用工具按政策算一版估算给你。说明一下：这是按政策的估算，最终金额由顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 1450.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "选校全案在报告交付前，按政策可退已付款的 50%。不过要给你准确估算，我还缺两个信息：\n\n- 合同号\n- 已付金额（元）\n\n另外确认一下：服务是否已经启动（比如已经做过沟通、选校访谈）？这会影响顾问核验时的判断。\n\n拿到这些信息后，我会用工具按政策估算，并说明依据。需要提醒的是：估算结果只是参考，最终金额由顾问核对协议后确认，确认后 7 个工作日内原路退回。\n\n来源：《退款政策与发票》——选校全案在报告交付前退还已付款的 50%；实际退款金额以服务协议和人工核验结果为准。",
+          "ms": 1671.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了选校全案报告交付前退已付款50%的政策，并说明最终以人工核验为准，差异仅在询问付款渠道等非关键信息，整体质量相当。"
+    },
+    {
+      "id": "r086",
+      "query": "那德国呢",
+      "tags": [
+        "followup"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "德国英语授课 CS 硕士的公开信息，整理如下（参考《德国（Germany）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- **申请平台**：uni-assist 或学校自有系统（如 TUM 用 TUMonline），因校而异。\n- **申请时间**：冬季学期（10 月入学）多在 5 月 31 日–7 月 15 日截止，热门项目更早（如 TUM 多数项目年初开放、5 月 31 日前截止）；夏季学期多在 11 月–次年 1 月截止。\n- **申请费**：走 uni-assist 时首个志愿约 €75，同学期后续每个志愿约 €30；学校自有系统多数免费。\n- **学费**：多数联邦州公立大学免学费，只收每学期约 €150–400 注册费（常含交通票）；巴符州对非欧盟学生 €1,500/学期；TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000/学期。\n- **学制与语言**：多为 2 年（120 ECTS），少数 1.5 年；英语项目常见 IELTS 6.5 或 TOEFL iBT 88–95，少数要求基础德语。\n- **额外提醒**：中国学历申请德国通常要走 APS 审核，建议尽早启动，别卡在截止前。\n\n以上是参考资料整理，具体金额和截止日期请以各校官网为准。\n\n需要的话，我可以再帮你对比瑞典和德国的时间线差异，或者看看我们的选校/文书服务内容。",
+          "ms": 2496.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "德国英语授课 CS 硕士的公开信息如下（参考资料整理于 2026 年初，以官网为准）：\n\n**申请平台与时间**\n- 平台因校而异：uni-assist 或学校自有系统（如 TUM 用 TUMonline）。\n- 冬季学期（10 月入学）多在 5 月 31 日–7 月 15 日截止，热门项目更早（TUM 多数项目 5 月 31 日前截止）；夏季学期多在 11 月–次年 1 月。\n\n**费用**\n- 申请费：uni-assist 首个志愿约 €75，同学期后续每个约 €30；学校自有系统多数免费。\n- 学费：多数联邦州公立大学免学费，仅收每学期约 €150–400 注册费；巴符州对非欧盟学生 €1,500/学期；TUM 自 2024 冬季学期起对非欧盟学生收费，CS 类约 €4,000–6,000/学期。\n\n**语言与学术要求**\n- 英语授课常见要求 IELTS 6.5 或 TOEFL iBT 88–95，少数项目要求基础德语。\n- 中国大陆学生需先通过 APS 审核，排期可能较长，建议申请前 3–6 个月办理。\n- 课程匹配审核严格，会逐项核对数学、理论计算机、编程类学分；部分项目要求或建议 GRE，或有线上测试/面试。\n\n**代表项目**\nTUM — Informatics / Data Engineering and Analytics；RWTH — Computer Science / Software Systems Engineering；KIT、TU Berlin、TU Darmstadt、Saarland 均有 CS 相关项目。\n\n**签证与资金**\n- 持国家 D 类学生签证入境后办居留；需 APS 证书、保证金账户（Sperrkonto，2025 年起 €11,904/年，即每月 €992，以德国外交部当年公告为准）和医疗保险。\n\n**奖学金**\nDAAD（竞争激烈，多面向有工作或科研经历者）；Deutschlandstipendium（入学后申请，每月 €300）。\n\n来源：《德国（Germany）CS 硕士申请概览》（工作室整理草案，待顾问核实）。具体金额和截止日期请以 uni-assist、各校官网和德国外交部公告为准。\n\n需要的话我可以再对比瑞典和德国的差异，或者帮你查一下相关服务。",
+          "ms": 2755.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "A 更完整地覆盖了德国申请的关键要点，包括 APS、课程匹配、签证资金和奖学金等，B 虽准确但遗漏较多。"
+    },
+    {
+      "id": "r087",
+      "query": "荷兰的呢",
+      "tags": [
+        "followup"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "荷兰的英语授课 CS 硕士，公开信息大致是这样（来源：《荷兰（Netherlands）CS 硕士申请概览》，整理于 2026 年初，草案待顾问核实，以官网为准）：\n\n- **申请平台**：先在 Studielink 注册，再用学校自有申请系统提交材料。\n- **时间窗口**：非欧盟申请者截止多在 1 月 15 日至 4 月 1 日之间；TU Delft、部分 UvA 项目等热门校截止更早，奖学金截止通常还要再提前。\n- **申请费**：因校而异，常见约 €75–100（例如 TU Delft 收申请费）。\n- **学费**：约 €16,000–26,000 / 年；欧盟学生约 €2,500 / 年（法定学费）。\n- **学制**：CS 类研究型硕士多为 2 年，少数项目 1 年。\n- **语言**：常见 IELTS 6.5（单项不低于 6.0）或 TOEFL iBT 90。\n- **学术要求**：对本科院校背景和均分有明确门槛，部分学校对中国院校有分级要求；部分项目名额有限，可能加动机信、面试或选拔环节。\n\n以上是通用参考，具体到某个项目（比如 TU Delft、UvA、TU/e 的 CS）的截止日期和先修课要求，各校差异不小，建议以项目官网为准。\n\n想继续的话，可以告诉我：\n1. 想对比荷兰和另一个国家（瑞典/德国/芬兰/丹麦）的差异；\n2. 或者直接看我们的服务内容和价格。\n\n如果你需要判断自己的背景匹配哪些荷兰项目，这属于顾问 1 对 1 的范围，我可以帮你约一次免费 15 分钟沟通（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）。",
+          "ms": 2793.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "荷兰英语授课 CS 硕士的公开信息，整理如下（来源：《荷兰（Netherlands）CS 硕士申请概览》和《五国横向对比》，资料整理于 2026 年初，以官网为准）：\n\n**申请流程**\n- 先在 Studielink 注册，再走学校自有申请系统，两步都要完成。\n- 非欧盟申请者截止多在 1 月 15 日至 4 月 1 日之间；TU Delft、部分 UvA 项目等热门校截止更早，奖学金截止通常更早。\n\n**费用**\n- 申请费：因校而异，常见约 €75–100（如 TU Delft 收取）。\n- 学费：非欧盟约 €16,000–26,000 / 年；欧盟学生约 €2,500 / 年（法定学费）。\n\n**学制与语言**\n- 学制：CS 类研究型硕士多为 2 年，少数 1 年。\n- 语言：常见 IELTS 6.5（单项不低于 6.0）或 TOEFL iBT 90。\n\n**学术要求要点**\n- 对本科院校背景和均分有明确门槛，部分学校对中国院校有分级要求；部分项目名额有限，可能加动机信、面试或选拔环节。\n\n**代表项目**\n- TU Delft — Computer Science；UvA / VU 联合 — Computer Science；TU/e — Computer Science and Engineering；Leiden — Computer Science；Utrecht — Computing Science；Twente — Computer Science。\n\n**签证与奖学金**\n- 居留许可由录取学校作为担保方向 IND 代为申请，需提前向学校证明生活费。\n- 奖学金：Holland Scholarship（一次性 €5,000，非欧盟）；各校卓越奖学金（TU Delft Excellence、Amsterdam Merit、Leiden Excellence 等），竞争激烈、截止早。\n\n**一个实际提醒**：荷兰住房紧张，录取后要尽早找房。\n\n官网核实：https://www.studyinnl.org、https://www.studielink.nl、https://ind.nl\n\n想继续的话，可以告诉我你想对比哪个国家，或者要不要看看我们针对荷兰的服务内容和价格。",
+          "ms": 2818.5,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者事实均准确，但B更完整地覆盖了代表院校、签证、奖学金和住房提醒等资料要点，A遗漏了这些内容。"
+    },
+    {
+      "id": "r088",
+      "query": "那申请费呢",
+      "tags": [
+        "followup"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "五国申请费（参考资料整理于 2026 年初，面向 2027 秋入学，以官网为准）：\n\n| 国家 | 申请费 | 备注 |\n|---|---|---|\n| 瑞典 | SEK 900 | 每轮一次，最多填 4 个排序志愿（universityadmissions.se） |\n| 芬兰 | €100 | 每个申请季一次，非欧盟申请者（Studyinfo.fi） |\n| 德国 | uni-assist 首个志愿约 €75，同学期后续每个约 €30 | 学校自有系统（如 TUMonline）多数免费 |\n| 荷兰 | 约 €75–100 | 因校而异，如 TU Delft 收申请费 |\n| 丹麦 | 多数学校不收 | 各校独立系统 |\n\n几点提醒：\n- 德国走 uni-assist 时，志愿越多总费用越高；学校自有系统通常免费，但可能有其他环节费用。\n- 荷兰、丹麦的申请费按学校算，多申几所会叠加。\n- 这些是工作室整理的参考数据，具体金额每年可能调整，提交前建议到对应官网确认（如 uni-assist.de、universityadmissions.se、studyinfo.fi）。\n\n需要的话我可以再帮你对比这五国的学费区间或截止时间。也可以约一次免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 4240.3,
+          "ok": true,
+          "tools": [
+            "lookup_country_admissions_overview",
+            "lookup_country_admissions_overview",
+            "lookup_country_admissions_overview",
+            "lookup_country_admissions_overview"
+          ]
+        },
+        "wiki": {
+          "text": "芬兰的申请费情况如下（来源：《芬兰（Finland）CS 硕士申请概览》，整理于 2026 年初，以官网为准）：\n\n- **金额**：非欧盟申请者需缴纳 **€100** 申请费，每个申请季缴一次，不是每个项目各缴一次。\n- **适用对象**：只针对非欧盟/非欧洲经济区申请者；欧盟学生不需要缴。\n- **缴纳方式**：在 Studyinfo.fi 联合申请系统里缴纳，缴一次后，该申请季内提交的志愿都覆盖。\n- **注意**：这是参考资料里的数字，2027 年秋季入学的具体金额和缴费流程请以 Studyinfo.fi 当年页面为准。\n\n如果你还想了解芬兰的学费区间、奖学金减免，或者想对比瑞典、丹麦的申请费，可以继续问我。",
+          "ms": 1950.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "A准确回答了芬兰申请费，但B在准确回答芬兰申请费的同时，还补充了五国申请费对比，信息更完整，且无编造内容。"
+    },
+    {
+      "id": "r089",
+      "query": "这个多少钱",
+      "tags": [
+        "followup"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "你问的是哪一项？上面提到的两项价格不同：\n\n- **模拟面试**：¥149 / 次（45 分钟），含 45 分钟英文模拟 + 书面反馈，预约后 5 个工作日内安排；不参与早鸟/团报折扣（老带新立减仍可用）。\n- **全程陪跑 Plus**：¥1,499 / 套，含全程陪跑全部内容、项目上限 8 个、2 次模拟面试（含反馈报告）、居留许可/签证材料清单指导、落地前 1 次 60 分钟北欧生活答疑；参与早鸟/团报优惠。\n\n来源：知识库《服务介绍：模拟面试》《服务介绍：全程陪跑 Plus》，为工作室公开价目整理，最终以电子服务协议为准。\n\n如果你要的是组合报价（比如全程陪跑 Plus + 模拟面试，或想算早鸟/团报后的实际应付），告诉我选哪些、是否早鸟签约、几个人一起报名、是否老学员推荐，我用报价工具给你算准确明细。\n\n另外，如果你其实是在问\"我这种情况该买哪个\"，那属于需要看完整背景的判断，建议约一次免费 15 分钟沟通，让顾问帮你定。要留联系方式吗？",
+          "ms": 1827.5,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "你问的“这个”我不太确定指哪一项，方便说一下吗？比如：\n\n- 单次选校咨询 / 选校定位全案\n- 文书套餐（3 个或 5 个项目）\n- 全程陪跑 / 全程陪跑 Plus\n- 网申审核、模拟面试、签证材料指导\n\n或者告诉我你的情况（目标国家、打算申几个项目、现在到哪一步），我帮你判断该看哪一项，再用报价工具给你准确金额。\n\n先给你一个价目概览（来源：《套餐对比、怎么选与全部价目一览》，整理于 2026 年初，最终以电子服务协议为准）：\n\n- 免费初步沟通：免费\n- 单次选校咨询：¥199 / 次（60 分钟）\n- 选校定位全案：¥699 / 套\n- PS/动机信单篇辅导：¥599 / 篇；CV 优化：¥299 / 份；推荐信指导：¥199 / 封\n- 文书套餐：3 个项目 ¥999 / 5 个项目 ¥1,299\n- 全程陪跑：¥1,399 / 套；全程陪跑 Plus：¥1,499 / 套\n- 增值：网申材料审核 ¥149 / 所学校；模拟面试 ¥149 / 次；签证/居留材料指导 ¥199 / 次\n\n告诉我具体哪项，我调报价工具算给你（含早鸟、团报、老带新的优惠明细）。",
+          "ms": 2322.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "B 直接回答了学生上一轮提到的模拟面试价格，并补充了全程陪跑 Plus 的相关价格，更贴合对话语境；A 虽然价格信息准确但未优先确认模拟面试价格，回答不够直接。"
+    },
+    {
+      "id": "r090",
+      "query": "Plus 版呢",
+      "tags": [
+        "followup"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "Plus 版是「全程陪跑 Plus」，¥1,499 / 套，来源是知识库里的《服务介绍：全程陪跑 Plus》。\n\n**包含什么**\n- 全程陪跑的全部内容，项目上限从 6 个提高到 **8 个**\n- **2 次模拟面试**（含反馈报告）\n- 学生居留许可 / 签证材料清单指导\n- 落地前 1 次 60 分钟北欧生活答疑（住房、银行、交通等）\n\n**不包含**\n- 不代为提交网申、不代写、不代办签证、不承诺录取结果\n\n**和全程陪跑（¥1,399）的差别**：多 ¥100，换来项目上限 +2、模拟面试、签证材料清单指导和落地答疑。如果你目标项目多、或者有面试环节（部分北欧/荷兰项目会面），Plus 更划算；如果只申 6 个以内、也不需要面试和落地指导，普通版就够。\n\n以上价格来自知识库整理（参考性质，最终以电子服务协议为准）。要不要我按你的情况（申请几个项目、是否早鸟/团报）用报价工具算一份明细？或者先约免费的 15 分钟初步沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2142.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "你问的应该是「全程陪跑 Plus」，我按知识库里的服务说明给你讲清楚：\n\n**全程陪跑 Plus（¥1,499 / 套）**\n- 在「全程陪跑」基础上，把可辅导的项目上限从 6 个提高到 8 个\n- 2 次模拟面试（含反馈报告）\n- 学生居留许可/签证材料清单指导\n- 落地前 1 次 60 分钟北欧生活答疑（住房、银行、交通等）\n\n**和全程陪跑（¥1,399）的差别**：多 2 个项目名额、2 次模拟面试、签证材料指导、落地答疑，差价 ¥100。\n\n**不包含**：不代为提交网申、不代写、不承诺录取结果、不代办签证。\n\n来源：《全程陪跑与单项服务》服务说明（工作室价目资料，非官方政策）。价格和优惠以工具报价和电子服务协议为准。\n\n要不要我按你的情况算一份报价？告诉我：打算申几个项目、是否能在早鸟截止前签约、有没有同伴一起报名或老学员推荐，我用报价工具出明细。也可以先约免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2270.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确完整地给出了全程陪跑 Plus 的价格、包含内容、不包含内容及与全程陪跑的差异，且未编造资料外的事实，差距极小。"
+    },
+    {
+      "id": "r091",
+      "query": "要多久能退回来",
+      "tags": [
+        "followup"
+      ],
+      "domain": "billing",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "退款到账时间按政策是：**顾问核验协议、确认金额后 7 个工作日内原路退回**（来源：《退款政策》）。\n\n有两点需要说清楚：\n\n- 这 7 个工作日是从**确认金额之后**开始算，不是从你提出申请开始算。前面还有顾问核验协议这一步。\n- 我这边看不到你的真实付款和合同记录，所以没法给你一个具体的日期，也不能承诺一定退成功或比政策更快到账。\n\n如果你想让顾问尽快核验，麻烦提供这几项（一次给齐就行）：\n\n- 合同号\n- 已付金额\n- 付款时间和渠道（微信 / 支付宝 / 银行转账）\n- 服务项目，以及目前进度（未启动 / 进行中 / 已交付；文书类的话已完成几轮）\n\n信息齐了，我可以先按政策帮你估算可退金额，然后转给顾问做正式核验。顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2260.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "退款到账时间按政策是：**顾问核验协议、确认金额后 7 个工作日内原路退回**（来源：《退款政策与发票》）。\n\n有两点需要说明：\n- 这 7 个工作日从「确认退款金额」开始算，不是从你提出申请开始算。\n- 我这边看不到你的付款和合同记录，所以现在还没法给你一个具体的确认时间点。\n\n要往下走的话，我需要先补齐两个核验字段：\n1. 合同号\n2. 已付金额（以及付款时间和渠道，方便核对流水）\n\n另外，退款估算还要看服务进度：服务是未启动、进行中（文书类的话已完成几轮），还是已交付？你把这些信息发我，我可以先按政策帮你估一下可退金额。实际退款由顾问核验协议后发起，我这边不能承诺一定退成功或更快的到账时间。",
+          "ms": 1707.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确引用了退款政策中“确认后 7 个工作日内原路退回”的核心事实，并合理补充了需核验合同与进度等信息，未编造资料外事实，整体质量相当。"
+    },
+    {
+      "id": "r092",
+      "query": "日本留学你们做吗",
+      "tags": [
+        "out_of_scope"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "日本不在我们的服务范围内。我们「指北」只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 硕士，日本方向没法给你靠谱的建议，就不硬接了。\n\n如果你之后考虑北欧或荷兰、德国的英语授课 CS 项目，随时可以问我学制、申请平台、时间线、语言要求这类公开信息。\n\n要不要我帮你看看这五国里有没有你感兴趣的？",
+          "ms": 1395.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "日本不在我们的服务范围内，我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 相关硕士（计算机科学、软件工程、数据科学、人工智能等方向）。本科、博士申请和非 CS 方向也不做。\n\n日本的情况我们确实不了解，就不硬接了，建议你找专门做日本方向的机构。\n\n如果你之后也想看看北欧或荷兰的英语授课 CS 项目，随时可以问我，比如学制、申请平台、时间窗口、语言要求这些公开信息。",
+          "ms": 1842.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明日本不在服务范围内，并正确列出五国及 CS 相关硕士范围，未编造资料外事实，信息完整度基本一致。"
+    },
+    {
+      "id": "r093",
+      "query": "英国一年制硕士怎么申请",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "英国不在我们的服务范围内。我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 硕士，所以英国一年制硕士的申请流程我这边没法给你可靠的信息，就不硬答了。\n\n如果你其实是在考虑「一年制、英语授课、性价比高」的 CS 硕士，北欧和荷兰有几个方向可以聊，比如瑞典和芬兰的两年制项目、荷兰的一年到两年制项目，学制和费用差别挺大。要不要我按国家给你做个对比？\n\n也可以直接说你的目标（国家、入学季），我帮你查对应的申请平台、时间窗口和语言要求。",
+          "ms": 1808.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "英国不在我们的服务范围内。我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 硕士，所以英国一年制硕士的申请流程我这边没有可靠资料，就不硬答了，免得给你错信息。\n\n如果你其实是想比较“一年制、时间短”的项目，这五国里也有相对紧凑的选择，比如：\n\n- **荷兰**：多数 CS 硕士 2 年，但个别项目/方向可以压缩\n- **瑞典、芬兰、丹麦**：普遍 2 年，芬兰部分项目对已有背景的学生有弹性\n- **德国**：多为 2 年，课程匹配要求较严\n\n具体哪些项目学制短、能不能一年读完，需要看项目官网的学分结构，这块我可以帮你查公开信息。\n\n要不要我按某个国家给你整理一份申请平台、时间窗口和语言要求的概览？或者你也可以直接说下目标国家和入学季，我看看能帮上什么。",
+          "ms": 2584.0,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 1,
+          "complete": 3,
+          "fabricated": true
+        }
+      },
+      "winner": "rag",
+      "reason": "A 准确说明英国不在服务范围且未编造五国学制细节；B 声称荷兰个别项目可压缩、芬兰部分项目有弹性等，原始资料未提供这些具体说法，属于编造。"
+    },
+    {
+      "id": "r094",
+      "query": "美国 CS PhD 需要几封推荐信",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个不在我们的服务范围内。我们只做瑞典、德国、荷兰、芬兰、丹麦五国的英语授课 CS 硕士，美国的 PhD 申请我不了解，也不想给你不准确的信息。建议直接查目标院校项目的官网要求。\n\n如果你之后也考虑北欧或荷兰的 CS 硕士，随时可以问我。",
+          "ms": 1335.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题超出我的服务范围了。我只负责瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS **硕士**申请，美国的 PhD 申请我不了解，也不想凭印象给你一个可能不准的数字。\n\n如果你之后考虑北欧或荷兰的 CS 硕士，推荐信这块我可以帮你梳理通用要求（比如哪些国家/项目通常要几封、由谁写、怎么提交）。需要的话告诉我具体国家就行。\n\n另外提醒一句：推荐信的具体内容怎么写、怎么选推荐人，属于顾问 1 对 1 服务的范围，我这边不做判断。",
+          "ms": 3778.8,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都如实说明美国 PhD 不在服务范围内、未编造具体事实，并建议查官网或转向北欧 CS 硕士，信息准确且处理方式一致，差距极小。"
+    },
+    {
+      "id": "r095",
+      "query": "瑞典个人所得税税率是多少",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题超出我的范围了。我只负责瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的申请相关问题，比如学制、申请平台和时间、学费、语言要求、材料清单、居留许可这些。个人所得税税率属于当地税务政策，我这边没有可靠资料，也不适合凭印象回答。\n\n如果你关心的是留学期间的**生活成本或打工收入**，我可以帮你查这几个国家的一般性信息（比如学生居留许可下的打工时长规定、生活预算区间），这些和申请规划更相关。需要的话告诉我具体国家。\n\n另外提醒一句：税务和签证打工规定都以当地官方机构（瑞典是 Skatteverket 和 Migrationsverket）的最新说明为准，我给的只能算参考。\n\n要不要我帮你查某个国家的学生居留许可和打工规定？",
+          "ms": 2835.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题超出了我的范围。我只负责瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请相关公开信息，比如申请平台、时间线、学费、语言要求、材料这些；个人所得税税率属于生活/税务范畴，我这边没有可靠资料，也不想给你一个可能过时的数字。\n\n如果你关心的是留学期间的**实际开销**，我可以帮你查这几个国家的学费区间和奖学金方向，或者聊聊瑞典毕业后找工作的居留许可（job seeking）规则。\n\n需要的话告诉我你想看哪个方向。",
+          "ms": 1947.6,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两个回答都如实说明资料未覆盖税务问题、未编造税率，但 A 更完整地关联到学生居留许可、打工规定和生活成本等申请相关方向，并给出更具体的后续帮助选项。"
+    },
+    {
+      "id": "r096",
+      "query": "瑞典的冬天有多冷",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题不在我的服务范围内。我只负责瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的申请相关问题，比如学制、申请平台和时间、学费、语言要求、材料清单这些。\n\n不过既然你问到了瑞典，顺便说一句：如果是在考虑去瑞典读 CS，冬季日照短、体感偏冷是生活层面要提前有心理准备的事，具体气候数据建议查 SMHI（瑞典气象水文研究所）官网。\n\n需要我帮你梳理瑞典 CS 硕士的申请时间线或院校项目类型吗？",
+          "ms": 2456.7,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题不在我的服务范围内——我只负责瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请相关的问题，天气这类生活信息就不硬答了。\n\n不过如果你关心的是「瑞典读研期间的生活适应」，可以换个角度问我，比如：\n\n- 瑞典 CS 硕士的学制、申请时间线和申请费\n- 学费区间和奖学金方向\n- 语言要求和材料清单\n- 瑞典和其他四国在申请流程上的差异\n\n需要的话我可以先给你一份瑞典的申请概览。另外，如果你是想了解某个城市的生活成本或气候对学习安排的影响，这类具体判断建议和顾问聊，他们人在瑞典，比资料更靠谱。\n\n想从哪个方向开始？",
+          "ms": 2525.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都如实说明天气问题不在服务范围内，未编造具体气候数据，并主动引导回申请相关话题，整体质量接近。"
+    },
+    {
+      "id": "r097",
+      "query": "帮我写一个快速排序",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "general",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "你好，我是「指北」的前台接待助手。我们工作室做的是瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请咨询和文书辅导，代码题不在服务范围内，所以这个我帮不上忙。\n\n如果你是想了解申请相关的事，可以告诉我你想问哪一类：\n\n- 申请信息（院校、项目、要求）\n- 服务和价格\n- 已购服务的进度\n- 付款、退款、发票\n- 找真人顾问\n\n你想先聊哪个？",
+          "ms": 2137.3,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "你好，我是「指北」的前台接待助手。我们工作室做的是瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的申请咨询和文书辅导，不提供编程题解答或代码代写，所以快速排序这块我帮不上忙。\n\n如果你是想问这些方向的事，我可以接着聊：\n\n- 申请信息：五国 CS 硕士项目、英语授课要求、申请时间线\n- 服务和价格：选校咨询、文书辅导包含什么\n- 已购服务的进度：我记录后由顾问核对回复\n- 付款、退款、发票，或者想找真人顾问\n\n你想了解哪一类？",
+          "ms": 2708.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都如实说明代码题不在服务范围内，并准确转述了工作室的服务范围，未编造事实，仅措辞略有差异。"
+    },
+    {
+      "id": "r098",
+      "query": "今天天气怎么样",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "general",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题我帮不上忙，我这边只负责「指北」工作室的接待，没有天气数据。\n\n说回正题：我们是由几位在瑞典读 CS 的留学生创办的工作室，专注瑞典、德国、荷兰、芬兰、丹麦五国的英语授课计算机硕士申请，做选校咨询和文书辅导。\n\n你想了解哪方面？比如：\n- 申请信息（院校、项目、要求）\n- 服务和价格\n- 已购服务的进度\n- 付款、退款、发票\n- 找真人顾问\n\n告诉我一句就行。",
+          "ms": 2424.0,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "今天天气我这边查不到，也不在工作室的服务范围内——我们是指北 · Nordic CS Master Studio，由几位在瑞典读 CS 的留学生创办，专注瑞典、德国、荷兰、芬兰、丹麦的英语授课计算机硕士申请，提供选校咨询和文书辅导。\n\n如果你想了解的是这几个国家的生活气候、什么时候适合过去，我可以简单聊聊；如果是申请相关的问题，也可以直接说。\n\n你想了解哪方面？",
+          "ms": 1535.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都如实说明无法查天气且未编造事实，并正确介绍工作室服务范围，回答质量相当。"
+    },
+    {
+      "id": "r099",
+      "query": "推荐一家好吃的火锅店",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "general",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个我帮不上忙——我是「指北」的前台接待助手，只负责瑞典、德国、荷兰、芬兰、丹麦五国英语授课 CS 硕士的申请咨询、选校和文书服务，餐厅推荐不在范围内。\n\n如果你有申请相关的问题，比如选校定位、服务内容和价格、已购服务的进度，随时说，我来帮你对接。",
+          "ms": 1447.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个我帮不上忙哈——我是「指北」的前台接待助手，我们只做瑞典、德国、荷兰、芬兰、丹麦五国的英语授课 CS 硕士申请（选校咨询、文书辅导这类），餐饮推荐不在范围内。\n\n如果你有申请相关的问题，比如想了解某个国家的 CS 硕士项目、服务内容和价格，或者想查已购服务的进度，跟我说一声就行。",
+          "ms": 1403.2,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都如实说明火锅店推荐不在服务范围内，并准确介绍了工作室的服务范围，没有编造事实，差距极小。"
+    },
+    {
+      "id": "r100",
+      "query": "信用卡分期手续费怎么算",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "billing",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题我先说清楚：分期手续费是**发卡行**收的，不是我们收的，所以具体费率得看你的信用卡银行，我们这边没有权限也查不到。\n\n我能确认的部分：\n\n- 我们这边只按合同金额收款，不额外加收分期手续费，也不会替银行代收。\n- 银行的分期手续费（一次性收取或按月摊）由发卡行按自己的费率表计算，通常和期数、是否免息活动有关，以银行 App 或客服口径为准。\n- 如果因为分期产生的手续费，退款时一般**不包含**这部分——退款按协议金额原路退回，银行已收的手续费是否退还要问发卡行。\n\n另外看到你这次是退款场景，但还缺两个核验字段：\n\n1. 合同号\n2. 已付金额（以及付款时间、渠道，方便核对流水）\n\n补齐后我可以按政策帮你估算可退金额。需要的话也告诉我服务项目（比如选校全案、文书、单次咨询）和当前进度（未启动 / 进行中 / 已交付），文书类再说下已完成几轮。\n\n提醒一句：最终退款金额由顾问核对协议后确认，确认后 7 个工作日内原路退回；我这边只能给估算，不能承诺到账时间更早。顾问在瑞典，工作日 24 小时内回复。",
+          "ms": 2730.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题我先说清楚：分期手续费是发卡行收的，不是我们收的，所以具体费率得看你的银行。\n\n**我们能确定的部分**\n- 指北这边只按合同金额收款，不额外收分期手续费，也不会因为分期而加价。\n- 退款时按政策退的是**实际支付给我们的服务费**；银行收取的分期手续费通常不在我们的退款范围内，需要你向发卡行确认能否退回或减免。\n\n**需要你确认的**\n- 你用的是哪家银行的信用卡、分几期？不同银行费率差别很大（常见是每期 0.5%–0.8% 左右，也有按一次性费率收的），这个只能以银行页面或客服口径为准，我不替你估算。\n\n**下一步**\n- 如果你是想确认「退款时手续费怎么办」，告诉我合同号和付款金额，我可以按政策帮你估算可退的服务费部分；手续费部分建议同时联系发卡行问清退款后是否退还。\n- 如果涉及实际退款操作，我会记录后转顾问核验协议再处理，确认后 7 个工作日内原路退回。\n\n需要我帮你估算退款金额的话，把合同号和已付金额发我就行。",
+          "ms": 2593.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都正确说明分期手续费由发卡行收取、工作室不额外收费，并提示退款不含银行手续费，均未编造资料外事实；B 补充了更多退款核验字段，但 A 也覆盖了核心要点，差距很小。"
+    },
+    {
+      "id": "r101",
+      "query": "出国退税怎么办理",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "billing",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题不在我的范围内，我这边只处理「指北」的费用与售后：付款方式、定金尾款、退款、发票。\n\n「出国退税」一般指两类，都不是我们工作室的业务：\n\n- **购物退税（Tax Free）**：在欧盟离境时办理，找商店要退税单、机场海关盖章，具体规则看各国海关和退税公司（Global Blue、Planet 等）官网。\n- **学费/服务费退税**：这属于税务问题，需要问当地税务局或你的税务顾问。\n\n如果你其实是想问我们这边的**退款**（比如服务没启动、进行中想退），或者**发票**（电子普通发票，付清款项后 5 个工作日内开具，来源：《发票说明》），把合同号和已付金额发我，我帮你按政策估算。\n\n顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 2146.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题不在我的范围内——我是「指北」的费用与售后助理，只处理我们工作室的付款、定金尾款、退款和发票问题。出国退税（比如购物退税、个人所得税汇算）属于税务/海关事务，建议直接看对应国家海关或税务局的官方说明，或者问你的银行。\n\n如果你其实是想问我们这边的退款，那我可以帮你。按政策估算退款需要先确认几项信息，目前还缺：\n\n- 合同号\n- 已付金额\n- 付款时间和渠道\n- 服务项目（SKU）和当前进度（未启动 / 进行中 / 已交付；文书类还需知道已完成几轮）\n\n把这几项发我，我就能按政策给你一个估算金额和依据。最终金额还是要顾问核对协议后确认，确认后 7 个工作日内原路退回。",
+          "ms": 1901.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "rag",
+      "reason": "两者都正确说明出国退税不在服务范围，但A更完整地列举了可能的退税类型并主动关联到退款/发票政策，B则只聚焦退款且信息略少。"
+    },
+    {
+      "id": "r102",
+      "query": "德国驾照怎么换",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题不在我的服务范围内。我只负责瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请咨询，驾照换领属于当地生活事务，我这边没有可靠资料，就不乱说了。\n\n如果你有 CS 硕士申请相关的问题，比如德国的申请平台、时间线、语言要求、APS 或 uni-assist，随时问我。",
+          "ms": 1347.6,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题不在我的服务范围内。我只负责瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请相关问题，驾照换领这类生活事务我这边没有可靠资料，就不硬答了。\n\n如果你有德国 CS 硕士申请方面的问题（申请平台、时间线、APS、语言要求、学费等），可以继续问我。",
+          "ms": 1516.3,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都如实说明问题不在服务范围内，未编造任何具体事实，并正确引导回 CS 硕士申请咨询，表现一致。"
+    },
+    {
+      "id": "r103",
+      "query": "MBA 申请你们接吗",
+      "tags": [
+        "out_of_scope"
+      ],
+      "domain": "consulting",
+      "answerable": true,
+      "answers": {
+        "rag": {
+          "text": "不接，我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的**英语授课计算机硕士**申请，MBA 不在范围内。\n\n如果你的目标其实是这五国的 CS 硕士（或者 CS 和商科交叉的项目，比如部分 Information Systems、Data Science 方向），可以继续问我公开信息，比如申请平台、时间线、语言要求、学费区间这些。",
+          "ms": 1596.1,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "不接。指北只做瑞典、德国、荷兰、芬兰、丹麦这五个国家**英语授课的 CS 相关硕士**（计算机科学、软件工程、数据科学、人工智能等方向），MBA 不在范围内。\n\n另外，本科、博士、非 CS 方向，以及五国以外的申请，我们也不做。这是工作室的定位，不是能力问题——只做这一块，才能把选校和文书做细。\n\n如果你身边有人要申这五国的 CS 硕士，可以让他来问；你自己如果也有 CS 方向的想法，随时说。",
+          "ms": 1382.4,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 5,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两个回答都准确说明不接 MBA，并正确限定服务范围为五国英语授课 CS 相关硕士，未编造资料外事实，差距极小。"
+    },
+    {
+      "id": "r104",
+      "query": "高考志愿怎么填",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "general",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题超出我们的范围了。我们只做瑞典、德国、荷兰、芬兰、丹麦的英语授课计算机硕士申请，国内高考志愿这块帮不上，建议找高中老师或专门的志愿填报机构。\n\n如果你之后考虑本科毕业后去北欧读 CS 硕士，随时可以来问选校和申请的事。",
+          "ms": 1349.8,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题超出我们的范围了。我们只做瑞典、德国、荷兰、芬兰、丹麦五国的英语授课计算机硕士申请，国内高考志愿这块帮不上，建议找高中老师或专门的志愿填报机构。\n\n如果你其实是想问「本科毕业之后出国读 CS 硕士」，那可以聊：选校定位、申请时间线、文书辅导这些。你现在是高中毕业、本科在读，还是已经在准备硕士申请了？",
+          "ms": 1427.7,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都正确说明服务范围外并建议其他渠道，但A进一步追问学生阶段并具体列出可聊内容，更完整地引导后续咨询。"
+    },
+    {
+      "id": "r105",
+      "query": "Python 和 Java 哪个好学",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "general",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "这个问题和我们的业务范围不太相关，不过既然你问了，简单说两句：\n\n- **Python** 上手更快，语法接近自然语言，写小脚本、做数据处理、跑算法都省事，零基础一般一两周就能写出能跑的东西。\n- **Java** 前期门槛高一些（类型、类结构、编译流程），但工程规范强，企业后端和大型项目里用得多，学扎实了对理解面向对象很有帮助。\n\n如果只是想先入门编程，选 Python；如果目标是后端开发或想打牢工程基础，Java 更合适。其实先学哪个都不亏，语法会迁移，关键是先动手写。\n\n顺带说一句，我们「指北」是做瑞典、德国、荷兰、芬兰、丹麦英语授课 CS 硕士申请的（选校咨询和文书辅导）。如果你在准备这类申请，或者想知道这些项目对编程基础的要求，可以告诉我，我帮你对接。",
+          "ms": 2149.9,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "这个问题不在我们的服务范围内——我们只做瑞典、德国、荷兰、芬兰、丹麦的英语授课 CS 硕士申请咨询，编程语言入门这类学习问题就不硬接了。\n\n不过如果你是在为申请做准备，可以告诉我：你现在的背景（专业、年级、有没有编程基础），以及想申请哪个国家/方向，我可以帮你看看选校和申请节奏上要注意什么。\n\n下一步你可以选：\n- 了解我们的服务和价格\n- 说说背景，做初步选校方向沟通\n- 找真人顾问聊（顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复）\n\n你想先聊哪个？",
+          "ms": 1903.1,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        },
+        "wiki": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "tie",
+      "reason": "两者都如实说明问题不在服务范围内，未编造资料外事实；A 额外提供了常识性编程入门建议，B 更聚焦引导回咨询流程，差距很小。"
+    },
+    {
+      "id": "r106",
+      "query": "奥地利的大学怎么申请",
+      "tags": [
+        "no_answer"
+      ],
+      "domain": "consulting",
+      "answerable": false,
+      "answers": {
+        "rag": {
+          "text": "奥地利不在我们覆盖的范围内。我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 硕士，奥地利的情况我这边没有可靠资料，就不硬答了，免得给你错信息。\n\n如果你考虑的是德语区的项目，德国是我们在做的方向之一，可以帮你梳理申请平台、时间窗口、APS/uni-assist 这些流程。要不要我按德国给你讲一下？或者你也可以说说具体在看哪些国家，我看看哪些在范围内。",
+          "ms": 1313.2,
+          "ok": true,
+          "tools": []
+        },
+        "wiki": {
+          "text": "奥地利不在我们覆盖范围内。我们只做瑞典、德国、荷兰、芬兰、丹麦这五个国家的英语授课 CS 硕士，所以奥地利的具体申请流程我这边没有可靠资料，就不硬答了，免得给你错信息。\n\n如果你愿意，可以告诉我：\n\n- 你考虑奥地利是因为学费、地理位置，还是某个具体项目？我可以帮你对比这五国里条件相近的选择（比如德国公立大学的学费结构、荷兰和北欧的英语授课覆盖度）。\n- 或者你直接说目标国家和入学季，我给你整理申请平台、时间窗口和材料清单。\n\n需要的话也可以约一次免费 15 分钟沟通，顾问在瑞典，比北京晚 6–7 小时，工作日 24 小时内回复。",
+          "ms": 1893.9,
+          "ok": true,
+          "tools": []
+        }
+      },
+      "scores": {
+        "wiki": {
+          "correct": 2,
+          "complete": 4,
+          "fabricated": false
+        },
+        "rag": {
+          "correct": 2,
+          "complete": 3,
+          "fabricated": false
+        }
+      },
+      "winner": "wiki",
+      "reason": "两者都正确说明奥地利不在服务范围且未编造事实，但 A 更完整地提供了免费初步沟通、时差和回复时效等资料内信息，并主动引导对比五国相近选择。"
+    }
+  ]
+}
