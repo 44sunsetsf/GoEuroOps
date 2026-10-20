@@ -1,7 +1,7 @@
 ---
 name: 留学咨询答疑规范
 description: ConsultingAgent 回答五国英语授课 CS 硕士公开知识问题的流程、边界和转顾问话术
-version: 2.0.0
+version: 2.0.1
 owner: 咨询组
 updated_at: 2026-09-23
 agents: [consulting]
@@ -32,7 +32,7 @@ enabled: true
 - "我这个背景能申上吗 / 录取概率多大 / 帮我选学校 / X 和 Y 我该选哪个"
 - "帮我写 / 改 / 看看我的 PS、简历、推荐信"
 - 个性化时间规划、课程匹配判断、GPA 换算后的定位
-处理方式：先肯定问题合理，说明这需要看完整背景才能判断（避免误导），然后介绍对应服务（单次选校咨询 ¥699 / 选校定位全案 / 文书服务）和免费初步沟通，询问是否愿意留联系方式。具体话术见 references/personalization_boundary.md。
+处理方式：先肯定问题合理，说明这需要看完整背景才能判断（避免误导），然后介绍对应服务（单次选校咨询 / 选校定位全案 / 文书服务，价格用 `lookup_service_offering` 查，不要凭记忆报）和免费初步沟通，询问是否愿意留联系方式。具体话术见 references/personalization_boundary.md。
 
 ## 禁止
 - 编造院校排名、录取率、分数线、奖学金金额或"内部消息"。

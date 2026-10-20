@@ -1,7 +1,7 @@
 ---
 name: 费用与退款处理规范
 description: BillingAgent 处理付款、定金尾款、退款估算和发票问题的流程与边界
-version: 2.0.0
+version: 2.0.1
 owner: 创始人团队
 updated_at: 2026-09-23
 agents: [billing]
