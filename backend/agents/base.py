@@ -1,4 +1,5 @@
 """Agent 的公共部分：请求和回复的数据结构，以及所有角色共用的工具循环（BaseAgent）。"""
+import asyncio
 import json
 import logging
 import time
@@ -25,6 +26,9 @@ from core.rag_gate import RagGate, RagMode
 
 
 OnDelta = Callable[[str], Awaitable[None]]
+
+MAX_TOOL_ROUNDS = 3
+ROUND_LIMIT_FALLBACK = "抱歉，这个问题我暂时没能查全。您可以换个说法再问一次，或者预约顾问为您解答。"
 
 
 async def reset_stream(on_delta: Optional[OnDelta]) -> None:
@@ -350,7 +354,8 @@ class BaseAgent:
             if safe and on_delta is not None:
                 await on_delta(safe)
 
-        for _ in range(3):
+        for round_no in range(MAX_TOOL_ROUNDS):
+            last_round = round_no == MAX_TOOL_ROUNDS - 1
             request_kwargs: Dict[str, Any] = {
                 "model": self._model,
                 "max_tokens": self.profile.max_tokens,
@@ -368,12 +373,36 @@ class BaseAgent:
                     }
                     for spec in tools.values()
                 ]
+                # 最后一轮禁止再调工具，逼模型用已有结果作答。tools 不能去掉：
+                # 消息里已有 tool_use / tool_result 时，API 要求请求里仍然带着工具定义
+                if last_round:
+                    request_kwargs["tool_choice"] = {"type": "none"}
             content_blocks = await self._complete(request_kwargs, guarded_delta if on_delta is not None else None)
             if on_delta is not None:
                 tail = guard.flush()
                 if tail:
                     await on_delta(tail)
             tool_uses = [block for block in content_blocks if self._block_type(block) == "tool_use"]
+            if tool_uses and last_round:
+                # 兼容不支持 tool_choice 的 Anthropic 兼容服务：不再执行，只用这一轮的文字
+                logger.warning(f"{self.agent_type.value} 最后一轮仍请求工具 {[self._block_value(b, 'name') for b in tool_uses]}，已忽略")
+                tool_traces.append({
+                    "agent_type": self.agent_type.value,
+                    "tool_name": "tool_round_limit",
+                    "tool_use_id": "",
+                    "input": {"ignored": [self._block_value(b, "name") for b in tool_uses]},
+                    "success": True,
+                    "result_success": False,
+                    "latency_ms": 0.0,
+                    "cached": False,
+                    "reranked": False,
+                    "error": f"工具调用达到 {MAX_TOOL_ROUNDS} 轮上限，最后一轮的工具请求未执行",
+                })
+                tool_uses = []
+                if not extract_text_content(content_blocks).strip():
+                    if on_delta is not None:
+                        await on_delta(ROUND_LIMIT_FALLBACK)
+                    return ROUND_LIMIT_FALLBACK
             if not tool_uses:
                 text = guard.sanitize(extract_text_content(content_blocks))
                 if guard.violations:
@@ -392,19 +421,18 @@ class BaseAgent:
                 return text
 
             messages.append({"role": "assistant", "content": content_blocks})
+            outcomes = await self._run_tool_batch(tool_uses, tools, req)
             tool_results = []
-            for block in tool_uses:
+            for block, outcome in zip(tool_uses, outcomes):
                 name = self._block_value(block, "name")
                 tool_use_id = self._block_value(block, "id")
                 args = self._block_value(block, "input") or {}
                 spec = tools.get(name)
-                if spec is None:
+                if outcome is None:
                     error_text = f"工具不在 {self.agent_type.value} Agent 白名单中"
                     result: Any = {"success": False, "error": error_text}
                     call_success, result_success, kind, tool_latency_ms, truncated = False, None, "not_allowed", 0.0, False
-                    self._gateway.record_rejected("not_allowed")
                 else:
-                    outcome = await self._gateway.call(spec, req, args)
                     result, call_success, kind = outcome.result, outcome.ok, outcome.kind
                     error_text, result_success = outcome.error, outcome.result_success
                     tool_latency_ms, truncated = outcome.latency_ms, outcome.truncated
@@ -437,7 +465,36 @@ class BaseAgent:
                 })
             messages.append({"role": "user", "content": tool_results})
 
-        raise RuntimeError(f"{self.agent_type.value} 工具调用超过最大轮数")
+        raise RuntimeError(f"{self.agent_type.value} 工具调用超过最大轮数")   # 最后一轮必定返回，走不到这里
+
+    async def _run_tool_batch(
+        self, tool_uses: List[Any], tools: Dict[str, AgentToolSpec], req: Request,
+    ) -> List[Optional[Any]]:
+        """执行同一轮里模型请求的所有工具，结果按请求顺序返回；不在白名单里的位置为 None。
+
+        同一轮的请求是模型一次性发出的，彼此不依赖对方的结果，所以只读和外部检索类
+        并行执行；写入类（如登记线索）之间按顺序执行，避免对同一份数据并发写。
+        """
+        outcomes: List[Optional[Any]] = [None] * len(tool_uses)
+        concurrent: List[Tuple[int, AgentToolSpec, Any]] = []
+        writes: List[Tuple[int, AgentToolSpec, Any]] = []
+        for i, block in enumerate(tool_uses):
+            spec = tools.get(self._block_value(block, "name"))
+            if spec is None:
+                self._gateway.record_rejected("not_allowed")
+                continue
+            args = self._block_value(block, "input") or {}
+            (writes if spec.policy.side_effect == "write" else concurrent).append((i, spec, args))
+
+        async def run_one(i: int, spec: AgentToolSpec, args: Any) -> None:
+            outcomes[i] = await self._gateway.call(spec, req, args)
+
+        async def run_writes() -> None:
+            for item in writes:
+                await run_one(*item)
+
+        await asyncio.gather(*(run_one(*item) for item in concurrent), run_writes())
+        return outcomes
 
     async def _complete(
         self,

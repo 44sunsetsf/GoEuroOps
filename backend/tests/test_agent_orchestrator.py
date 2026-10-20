@@ -425,3 +425,122 @@ def test_concurrent_requests_on_shared_agent_keep_their_own_records():
     assert b.skills_applied == [{"id": "skill-问服务"}]
     assert [t["tool_name"] for t in a.tool_traces] == ["lookup_country_admissions_overview"]
     assert [t["tool_name"] for t in b.tool_traces] == ["lookup_service_offering"]
+
+
+class ScriptedClient:
+    """按顺序返回预设的 content 列表；列表用完后重复最后一个。"""
+
+    def __init__(self, *rounds):
+        self.calls = []
+        self.rounds = list(rounds)
+        owner = self
+
+        class Messages:
+            async def create(inner, **kwargs):
+                owner.calls.append(kwargs)
+                content = owner.rounds.pop(0) if len(owner.rounds) > 1 else owner.rounds[0]
+                return type("R", (), {"content": content})()
+
+        self.messages = Messages()
+
+
+def _tool_block(name, args, block_id=None):
+    return type("B", (), {"type": "tool_use", "id": block_id or f"id-{name}", "name": name, "input": args})()
+
+
+def _text_block(text):
+    return type("T", (), {"type": "text", "text": text})()
+
+
+def test_last_round_forbids_tools_and_answers_from_existing_results():
+    lookup = [_tool_block("lookup_country_admissions_overview", {"country": "瑞典"})]
+    client = ScriptedClient(lookup, lookup, [_text_block("瑞典的申请一般在一月中旬截止。")])
+    agent = ConsultingAgent(client, "test-model")
+    response = asyncio.run(agent.handle(make_request()))
+
+    assert response.success is True
+    assert response.content == "瑞典的申请一般在一月中旬截止。"
+    assert len(client.calls) == 3
+    assert "tool_choice" not in client.calls[0] and "tool_choice" not in client.calls[1]
+    assert client.calls[2]["tool_choice"] == {"type": "none"}
+    assert client.calls[2]["tools"]          # 历史里有 tool_use，工具定义必须保留
+
+
+def test_tool_use_on_last_round_is_ignored_instead_of_failing():
+    from agents.base import ROUND_LIMIT_FALLBACK
+
+    # 模拟不认 tool_choice 的兼容服务：每一轮都要求调工具
+    client = ScriptedClient([_tool_block("lookup_country_admissions_overview", {"country": "瑞典"})])
+    agent = ConsultingAgent(client, "test-model")
+    response = asyncio.run(agent.handle(make_request()))
+
+    assert response.success is True
+    assert response.content == ROUND_LIMIT_FALLBACK
+    assert len(client.calls) == 3
+    names = [t["tool_name"] for t in response.tool_traces]
+    assert names == ["lookup_country_admissions_overview"] * 2 + ["tool_round_limit"]
+
+
+def test_tool_use_on_last_round_keeps_text_if_model_wrote_some():
+    client = ScriptedClient([_text_block("根据已查到的信息：瑞典一月截止。"),
+                             _tool_block("lookup_country_admissions_overview", {"country": "瑞典"})])
+    agent = ConsultingAgent(client, "test-model")
+    response = asyncio.run(agent.handle(make_request()))
+
+    assert response.success is True
+    assert response.content == "根据已查到的信息：瑞典一月截止。"
+
+
+def test_same_round_reads_run_concurrently_and_writes_run_in_order():
+    from tooling.gateway import ToolOutcome
+
+    class RecordingGateway:
+        def __init__(self):
+            self.active = 0
+            self.max_reads_active = 0
+            self.writes_active = 0
+            self.max_writes_active = 0
+            self.order = []
+
+        async def call(self, spec, req, args):
+            write = spec.policy.side_effect == "write"
+            if write:
+                self.writes_active += 1
+                self.max_writes_active = max(self.max_writes_active, self.writes_active)
+            else:
+                self.active += 1
+                self.max_reads_active = max(self.max_reads_active, self.active)
+            await asyncio.sleep(0.01)
+            if write:
+                self.writes_active -= 1
+            else:
+                self.active -= 1
+            self.order.append((spec.name, args.get("name") or args.get("country") or args.get("service_id")))
+            return ToolOutcome(result={"success": True}, ok=True, kind="ok", result_success=True)
+
+        def record_rejected(self, kind):
+            pass
+
+    batch = [
+        _tool_block("create_consultation_lead", {"name": "A"}, "w1"),
+        _tool_block("lookup_country_admissions_overview", {"country": "瑞典"}, "r1"),
+        _tool_block("not_a_tool", {}, "x1"),
+        _tool_block("lookup_country_admissions_overview", {"country": "德国"}, "r2"),
+        _tool_block("create_consultation_lead", {"name": "B"}, "w2"),
+    ]
+    client = ScriptedClient(batch, [_text_block("好的")])
+    agent = ConsultingAgent(client, "test-model")
+    gateway = RecordingGateway()
+    agent._gateway = gateway
+    response = asyncio.run(agent.handle(make_request()))
+
+    assert response.success is True
+    assert gateway.max_reads_active == 2       # 两个只读查询同时在跑
+    assert gateway.max_writes_active == 1      # 写入从不重叠
+    writes = [x for x in gateway.order if x[0] == "create_consultation_lead"]
+    assert writes == [("create_consultation_lead", "A"), ("create_consultation_lead", "B")]
+    # trace 和 tool_result 仍按模型请求的顺序
+    assert [t["tool_use_id"] for t in response.tool_traces] == ["w1", "r1", "x1", "r2", "w2"]
+    results = client.calls[1]["messages"][-1]["content"]
+    assert [r["tool_use_id"] for r in results] == ["w1", "r1", "x1", "r2", "w2"]
+    assert response.tool_traces[2]["outcome"] == "not_allowed"
