@@ -145,3 +145,69 @@ def test_agent_search_tool_reads_wiki_pages():
     assert response.tools_used == ["search_knowledge_base"]
     tool_result = json.loads(client.calls[1]["messages"][-1]["content"][0]["content"])
     assert [r["page_id"] for r in tool_result["results"]] == ["germany-aps"]
+
+
+class FakeEmbed:
+    """假的向量模型：按关键词给出固定方向的向量，记录调用次数。"""
+
+    AXES = ["退款", "签证", "APS"]
+
+    def __init__(self, fail=False):
+        self.fail = fail
+        self.calls = 0
+
+    def __call__(self, texts):
+        self.calls += 1
+        if self.fail:
+            raise RuntimeError("embedding down")
+        return [[1.0 if axis in t else 0.0 for axis in self.AXES] + [0.01] for t in texts]
+
+
+def test_llm_failure_uses_embedding_match_before_ngram():
+    embed = FakeEmbed()
+    wiki = WikiKnowledge(SelectClient(error=RuntimeError("deepseek down")), "m", embed_fn=embed)
+    asyncio.run(wiki.prepare_embeddings())
+    ids = asyncio.run(wiki.select("德国 APS 怎么办"))
+    assert ids and all("APS" in " ".join([wiki.page(i).title, *wiki.page(i).questions]) for i in ids)
+    stats = wiki.get_stats()
+    assert stats["embed_fallback"] == 1 and stats["local_fallback"] == 0 and stats["embed_fallback_ready"]
+
+
+def test_embedding_unavailable_falls_back_to_ngram():
+    wiki = WikiKnowledge(SelectClient(error=RuntimeError("deepseek down")), "m", embed_fn=FakeEmbed(fail=True))
+    question = wiki.page("refund-invoice").questions[0]
+    ids = asyncio.run(wiki.select(question))
+    assert "refund-invoice" in ids
+    assert wiki.get_stats()["local_fallback"] == 1
+
+
+def test_embeddings_not_ready_yet_falls_back_to_ngram_and_starts_preparing():
+    embed = FakeEmbed()
+    wiki = WikiKnowledge(SelectClient(error=RuntimeError("deepseek down")), "m", embed_fn=embed)
+
+    async def run():
+        question = wiki.page("refund-invoice").questions[0]
+        ids = await wiki.select(question)
+        await wiki._embed_prep                      # 第一次兜底时开始在后台准备向量
+        return ids
+
+    assert "refund-invoice" in asyncio.run(run())
+    assert wiki.get_stats()["local_fallback"] == 1 and wiki.get_stats()["embed_fallback_ready"]
+
+
+def test_successful_llm_select_ignores_embedding():
+    embed = FakeEmbed()
+    wiki = WikiKnowledge(SelectClient({"能退款吗": ["refund-invoice"]}), "m", embed_fn=embed)
+    asyncio.run(wiki.prepare_embeddings())
+    assert asyncio.run(wiki.select("能退款吗")) == ["refund-invoice"]
+    assert wiki.get_stats()["embed_fallback"] == 0
+
+
+def test_index_change_invalidates_phrase_vectors():
+    uploads = []
+    wiki = WikiKnowledge(SelectClient(), "m", embed_fn=FakeEmbed(), extra_docs=lambda: list(uploads))
+    asyncio.run(wiki.prepare_embeddings())
+    assert wiki.get_stats()["embed_fallback_ready"]
+    uploads.append({"doc_id": "d2", "title": "新文档", "content": "内容"})
+    wiki.invalidate_cache()
+    assert not wiki.get_stats()["embed_fallback_ready"]
