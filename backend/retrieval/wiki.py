@@ -14,6 +14,12 @@
 查询时不做向量召回：一次 LLM 调用读目录、选出最多 3 页，整页注入。
 这一步和意图识别并行（RagGate 的投机预取），通常不增加首字延迟。
 
+选页失败（超时、出错）时三层兜底，都是拿问题去比对目录里每页的"常见问法"：
+  1. embedding：和 LLM 选页同时把问题向量化，LLM 失败时直接用，不额外等待
+     （线上 bge-large，阈值 0.6 时命中 93.5%、无答案误注入 15.4%）
+  2. 字符 n-gram：不依赖任何网络，向量服务也不可用时的最后一层（命中约 71%）
+阈值由 evaluation/wiki_fallback_calibrate.py 校准。
+
 对外接口和 RetrievalManager 一致（search_fast / search_with_rewrite），
 编排器、门控、检索工具都不用改。编译和 lint 见 retrieval/wiki_compile.py。
 """
@@ -75,7 +81,9 @@ COMPARE_PAGE = "countries-compare"
 GLOSSARY_PAGE = "glossary"
 
 DEFAULT_MAX_PAGES = 3
-# 本地兜底：选页模型超时或出错时，用字符 n-gram 把问题和目录里的常见问法比对
+# 兜底选页（LLM 选页超时或出错时）：问题和目录里的常见问法比相似度，取最像的一两页
+EMBED_MIN_SCORE = env_float("GOEUROOPS_WIKI_EMBED_MIN_SCORE", 0.6)
+EMBED_TIMEOUT_S = env_float("GOEUROOPS_WIKI_EMBED_TIMEOUT", 2.0)
 LOCAL_MIN_SCORE = env_float("GOEUROOPS_WIKI_LOCAL_MIN_SCORE", 0.25)
 LOCAL_MAX_PAGES = 2
 UPLOAD_PAGE_MAX_CHARS = 4000
@@ -194,9 +202,14 @@ class WikiKnowledge:
 
     def __init__(self, client: Any, model: str, *, max_pages: Optional[int] = None,
                  timeout_s: Optional[float] = None, cache_ttl_s: float = 300.0, cache_size: int = 512,
-                 extra_docs: Optional[Callable[[], List[Dict[str, str]]]] = None):
+                 extra_docs: Optional[Callable[[], List[Dict[str, str]]]] = None,
+                 embed_fn: Optional[Callable[[List[str]], List[Any]]] = None):
         self._client = client
         self._extra_docs = extra_docs
+        self._embed_fn = embed_fn
+        self._phrase_ids: List[str] = []
+        self._phrase_vecs: Any = None          # 常见问法的单位向量矩阵；None 表示还没准备好
+        self._embed_prep: Optional["asyncio.Task[None]"] = None
         self._model = model
         self.max_pages = max_pages or env_int("GOEUROOPS_WIKI_MAX_PAGES", DEFAULT_MAX_PAGES)
         self.timeout_s = timeout_s or env_float("GOEUROOPS_WIKI_SELECT_TIMEOUT", 4.0)
@@ -204,7 +217,8 @@ class WikiKnowledge:
         self._cache_size = cache_size
         self._cache: "OrderedDict[str, tuple]" = OrderedDict()
         self._inflight: Dict[str, "asyncio.Task[List[str]]"] = {}
-        self.stats = {"selects": 0, "cache_hits": 0, "errors": 0, "empty": 0, "total_ms": 0.0}
+        self.stats = {"selects": 0, "cache_hits": 0, "errors": 0, "empty": 0, "embed_fallback": 0,
+                      "local_fallback": 0, "total_ms": 0.0}
         self._pages: List[WikiPage] = []
         self._by_id: Dict[str, WikiPage] = {}
         self._version = ""
@@ -220,6 +234,7 @@ class WikiKnowledge:
         version = hashlib.sha256(render_index(self._pages).encode("utf-8")).hexdigest()[:10]
         if version != self._version:
             self._cache.clear()
+            self._phrase_vecs = None           # 目录变了，问法向量要重算
         self._version = version
 
     def _refresh_if_catalog_changed(self) -> None:
@@ -299,21 +314,84 @@ class WikiKnowledge:
         system = SELECT_SYSTEM.format(max_pages=self.max_pages, index=render_index(self._pages))
         prev = [str(t.get("content", "")) for t in (history or [])[-4:] if t.get("role") == "user"]
         user = (f"此前用户说过：{' / '.join(prev[-2:])}\n" if prev else "") + f"用户问题：{query}"
+        # 和 LLM 选页同时把问题向量化：LLM 失败时直接用，不用再等
+        embed_task = asyncio.create_task(self.embed_select(query)) if self._embed_fn is not None else None
         try:
             resp = await asyncio.wait_for(self._client.messages.create(
                 model=self._model, max_tokens=80, temperature=0, system=system,
                 messages=[{"role": "user", "content": safe_text(user)}], **NO_THINKING_KWARGS,
             ), timeout=self.timeout_s)
             ids = self._parse(extract_text_content(resp.content))
+            if embed_task is not None:
+                embed_task.cancel()
         except Exception as ex:
             self.stats["errors"] += 1
-            self.stats["local_fallback"] = self.stats.get("local_fallback", 0) + 1
-            logger.warning("wiki 选页失败（%s），改用本地问法匹配：%r", type(ex).__name__, ex)
-            ids = self.local_select(query)
+            ids = await self._fallback(query, embed_task, ex)
         if not ids:
             self.stats["empty"] += 1
         self.stats["total_ms"] += (time.monotonic() - t0) * 1000
         return ids
+
+    async def _fallback(self, query: str, embed_task: Optional["asyncio.Task[Optional[List[str]]]"],
+                        ex: BaseException) -> List[str]:
+        embedded = None
+        if embed_task is not None:
+            try:
+                embedded = await embed_task
+            except Exception as embed_ex:
+                logger.warning("wiki 兜底向量化失败：%r", embed_ex)
+        if embedded is not None:
+            self.stats["embed_fallback"] += 1
+            logger.warning("wiki 选页失败（%s），改用向量匹配：%s", type(ex).__name__, embedded)
+            return embedded
+        self.stats["local_fallback"] += 1
+        logger.warning("wiki 选页失败（%s），向量也不可用，改用本地问法匹配：%r", type(ex).__name__, ex)
+        return self.local_select(query)
+
+    # ── 兜底：向量匹配 ────────────────────────────────────────────────────
+    def _prepare_embeddings_sync(self) -> None:
+        import numpy as np
+
+        phrases = [(p.id, t) for p in self._pages for t in [p.title, *p.questions] if t.strip()]
+        version = self._version
+        vecs = np.asarray(self._embed_fn([t for _, t in phrases]), dtype=np.float32)
+        vecs /= np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9
+        if version == self._version:          # 编码期间目录又变了就作废，下次再算
+            self._phrase_ids, self._phrase_vecs = [pid for pid, _ in phrases], vecs
+
+    async def prepare_embeddings(self) -> None:
+        """把目录里所有常见问法向量化（线上约 450 条、5 秒左右），放在后台做，不阻塞请求。"""
+        if self._embed_fn is None or self._phrase_vecs is not None:
+            return
+        t0 = time.monotonic()
+        try:
+            await asyncio.to_thread(self._prepare_embeddings_sync)
+            logger.info("wiki 兜底问法向量已就绪：%d 条，%.0f ms", len(self._phrase_ids), (time.monotonic() - t0) * 1000)
+        except Exception as ex:
+            logger.warning("wiki 兜底问法向量化失败，兜底先用本地问法匹配：%r", ex)
+
+    def _ensure_embeddings(self) -> None:
+        if self._phrase_vecs is None and (self._embed_prep is None or self._embed_prep.done()):
+            self._embed_prep = asyncio.create_task(self.prepare_embeddings())
+
+    async def embed_select(self, query: str) -> Optional[List[str]]:
+        """向量兜底：返回选中的页（可能为空列表）；向量还没准备好或服务不可用时返回 None。"""
+        import numpy as np
+
+        if self._embed_fn is None:
+            return None
+        if self._phrase_vecs is None:
+            self._ensure_embeddings()
+            return None
+        ids, vecs = self._phrase_ids, self._phrase_vecs
+        q = await asyncio.wait_for(asyncio.to_thread(self._embed_fn, [query]), timeout=EMBED_TIMEOUT_S)
+        qv = np.asarray(q[0], dtype=np.float32)
+        sims = vecs @ (qv / (np.linalg.norm(qv) + 1e-9))
+        best: Dict[str, float] = {}
+        for pid, score in zip(ids, sims.tolist()):
+            best[pid] = max(best.get(pid, -1.0), score)
+        ranked = sorted(best.items(), key=lambda x: -x[1])[:LOCAL_MAX_PAGES]
+        return [pid for pid, score in ranked if score >= EMBED_MIN_SCORE and pid in self._by_id]
 
     def local_select(self, query: str) -> List[str]:
         """不调模型的选页：问题和每页"常见问法"的字符 n-gram 余弦相似度，取最像的一两页。"""
@@ -352,7 +430,8 @@ class WikiKnowledge:
         self._cache.clear()
 
     async def warmup(self) -> None:
-        """启动时发一次选页请求，让服务商把目录前缀缓存起来，第一位用户不用等冷启动。"""
+        """启动时发一次选页请求，让服务商把目录前缀缓存起来，第一位用户不用等冷启动；同时准备兜底向量。"""
+        self._ensure_embeddings()
         t0 = time.monotonic()
         ids = await self._select_uncached("瑞典 CS 硕士什么时候截止申请", None)
         logger.info("wiki 选页预热完成：%.0f ms，选中 %s", (time.monotonic() - t0) * 1000, ids)
@@ -360,6 +439,7 @@ class WikiKnowledge:
     def get_stats(self) -> Dict[str, Any]:
         n = max(1, self.stats["selects"])
         return {"backend": "wiki", "pages": len(self._pages), "index_version": self._version,
+                "embed_fallback_ready": self._phrase_vecs is not None,
                 **{k: v for k, v in self.stats.items() if k != "total_ms"},
                 "avg_select_ms": round(self.stats["total_ms"] / n, 1)}
 

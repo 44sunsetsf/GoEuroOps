@@ -189,8 +189,10 @@ async def lifespan(app: FastAPI):
     # wiki 模式下 ChromaDB 知识库仍然保留：后台上传的文档会作为额外页面并入 wiki。
     services.knowledge = services.tool_manager
     if knowledge_backend() == "wiki":
+        from retrieval.embeddings import get_shared_embedding_function
+
         services.wiki = WikiKnowledge(make_client(cfg["api_key"], cfg.get("base_url"), "wiki"), cfg["model"],
-                                      extra_docs=kb.uploaded_documents)
+                                      extra_docs=kb.uploaded_documents, embed_fn=get_shared_embedding_function())
         services.knowledge = services.wiki
         asyncio.create_task(services.wiki.warmup())
     logger.info("Agent 知识来源: %s", knowledge_backend())
