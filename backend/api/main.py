@@ -122,6 +122,7 @@ async def _build_knowledge(cfg: Dict[str, Any]) -> None:
                                       extra_docs=kb.uploaded_documents, embed_fn=get_shared_embedding_function())
         services.knowledge = services.wiki
         asyncio.create_task(services.wiki.warmup())
+        asyncio.create_task(services.wiki.compile_uploads())   # 补编还没有目录条目的上传文档
     logger.info("Agent 知识来源: %s", knowledge_backend())
 
 

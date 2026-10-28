@@ -1,0 +1,2 @@
+note: 线上选不中、人工确认过的用户说法，加载时并入对应页的常见问法（流程见 retrieval/wiki_compile.py）
+pages: {}

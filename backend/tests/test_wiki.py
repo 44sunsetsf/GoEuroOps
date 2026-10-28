@@ -5,7 +5,7 @@ from business.catalog import default_prices, get_catalog, set_service_prices
 from business.kb_seed import build_seed_documents
 from core.rag_gate import RagGate
 from retrieval.wiki import WikiKnowledge, build_pages
-from retrieval.wiki_compile import lint
+from retrieval.wiki_compile import article_consistency_errors, catalog_consistency_errors, lint
 
 
 class SelectClient:
@@ -211,3 +211,110 @@ def test_index_change_invalidates_phrase_vectors():
     uploads.append({"doc_id": "d2", "title": "新文档", "content": "内容"})
     wiki.invalidate_cache()
     assert not wiki.get_stats()["embed_fallback_ready"]
+
+
+class IndexClient:
+    """假的编译模型：给任意页面返回固定的摘要和问法（其中一条带金额，应被去掉）。"""
+
+    def __init__(self):
+        self.calls = 0
+        owner = self
+
+        class Messages:
+            async def create(inner, **kwargs):
+                owner.calls += 1
+                text = json.dumps({"summary": "冰岛 CS 硕士的申请要求", "questions": ["冰岛好申吗", "冰岛读研要 ¥5000 吗"]})
+                return type("R", (), {"content": [type("T", (), {"type": "text", "text": text})()]})()
+
+        self.messages = Messages()
+
+
+def test_long_upload_is_split_into_pages_without_losing_content():
+    body = "\n\n".join(f"## 第{i}节\n" + "内容" * 1500 for i in range(3))     # 每节约 3000 字
+    uploads = [{"doc_id": "d3", "title": "长文档", "content": body}]
+    wiki = WikiKnowledge(SelectClient(), "m", extra_docs=lambda: list(uploads))
+    pages = [p for p in wiki.pages if p.kind == "upload"]
+    assert len(pages) >= 2 and all(len(p.content) <= 4000 for p in pages)
+    assert sum(p.content.count("内容") for p in pages) == 4500          # 以前超过 4000 字直接截断
+    assert pages[0].id == "upload-d3-1" and "第0节" in pages[0].title
+
+
+def test_uploaded_pages_get_compiled_index_entries_and_keep_them(tmp_path):
+    uploads = [{"doc_id": "d1", "title": "冰岛 CS 硕士简介", "content": "冰岛大学的 CS 硕士……"}]
+    client = IndexClient()
+    wiki = WikiKnowledge(client, "m", extra_docs=lambda: list(uploads), data_dir=tmp_path)
+    assert wiki.page("upload-d1").questions == ["冰岛 CS 硕士简介"]        # 编好之前只有标题
+    assert asyncio.run(wiki.compile_uploads()) == 1
+    page = wiki.page("upload-d1")
+    assert page.summary == "冰岛 CS 硕士的申请要求" and page.questions == ["冰岛好申吗"]
+    assert asyncio.run(wiki.compile_uploads()) == 0 and client.calls == 1   # 编过的不重编
+    again = WikiKnowledge(IndexClient(), "m", extra_docs=lambda: list(uploads), data_dir=tmp_path)
+    assert again.page("upload-d1").questions == ["冰岛好申吗"]              # 重启后从数据目录读回
+
+
+def test_empty_and_failed_selects_are_recorded_for_review(tmp_path):
+    from retrieval.wiki_compile import read_misses
+
+    wiki = WikiKnowledge(SelectClient({"能退款吗": ["refund-invoice"]}), "m", data_dir=tmp_path)
+    asyncio.run(wiki.select("能退款吗"))
+    asyncio.run(wiki.select("有没有学生价"))
+    assert [m["query"] for m in wiki.misses] == ["有没有学生价"] and wiki.misses[0]["reason"] == "empty"
+    failing = WikiKnowledge(SelectClient(error=RuntimeError("down")), "m", data_dir=tmp_path)
+    asyncio.run(failing.select("学生价怎么算"))
+    assert failing.misses[0]["reason"] == "fallback"
+    assert read_misses(tmp_path / "misses.jsonl") == ["有没有学生价", "学生价怎么算"]
+
+
+def test_accepted_extra_questions_join_the_page(monkeypatch, tmp_path):
+    import retrieval.wiki as wiki_mod
+    import retrieval.wiki_compile as compile_mod
+
+    extra = tmp_path / "extra_questions.yaml"
+    suggestions = tmp_path / "miss_suggestions.yaml"
+    monkeypatch.setattr(wiki_mod, "EXTRA_QUESTIONS_PATH", extra)
+    monkeypatch.setattr(compile_mod, "EXTRA_QUESTIONS_PATH", extra)
+    monkeypatch.setattr(compile_mod, "SUGGESTIONS_PATH", suggestions)
+    suggestions.write_text("pages:\n  discounts-payment: [有没有学生价]\n", encoding="utf-8")
+    assert compile_mod.accept_suggestions() == 1 and not suggestions.exists()
+    page = next(p for p in build_pages() if p.id == "discounts-payment")
+    assert "有没有学生价" in page.questions
+
+
+def test_lint_catches_rule_text_that_contradicts_catalog_fields():
+    from business.catalog import Catalog
+
+    catalog = get_catalog()
+    assert catalog_consistency_errors(catalog) == []
+    data = catalog.model_dump(mode="json")
+    data["discounts"]["early_bird"]["rate"] = 0.85                         # 改了字段，规则文字还写 9 折
+    data["payment"]["deposit_ratio"] = 0.2                                  # 规则文字还写 30%
+    data["services"][1]["upgrade_note"] = "30 天内升级可抵扣 ¥199。"         # 写死金额，改价后过期
+    errors = " ".join(catalog_consistency_errors(Catalog.model_validate(data)))
+    assert "early_bird" in errors and "payment.rule" in errors and "upgrade_note" in errors
+
+
+def test_lint_catches_articles_that_contradict_catalog():
+    catalog = get_catalog()
+    assert article_consistency_errors("ok.md", "套餐签约时付 30% 定金，早鸟 9 折。", catalog) == []
+    errors = article_consistency_errors("bad.md", "签约时付 20% 定金，早鸟 8 折，单次咨询 ¥199。", catalog)
+    assert len(errors) == 3
+
+
+def test_review_misses_only_suggests_existing_pages(monkeypatch, tmp_path):
+    import retrieval.wiki_compile as compile_mod
+
+    monkeypatch.setattr(compile_mod, "SUGGESTIONS_PATH", tmp_path / "miss_suggestions.yaml")
+    misses = tmp_path / "misses.jsonl"
+    misses.write_text("\n".join(json.dumps({"query": q}) for q in ["有没有学生价", "今天天气", "有没有学生价", "x"]),
+                      encoding="utf-8")
+
+    class ReviewClient:
+        class messages:
+            @staticmethod
+            async def create(**kwargs):
+                text = json.dumps({"有没有学生价": "discounts-payment", "今天天气": None, "x": "no-such-page"})
+                return type("R", (), {"content": [type("T", (), {"type": "text", "text": text})()]})()
+
+    out = asyncio.run(compile_mod.review_misses(ReviewClient(), "m", misses))
+    assert out == {"discounts-payment": ["有没有学生价"]}
+    assert (tmp_path / "miss_suggestions.yaml").is_file()
