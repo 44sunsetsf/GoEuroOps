@@ -37,88 +37,22 @@ def quote_bundle(
     """
     catalog = catalog or get_catalog()
     today = today or date.today()
-    rules = catalog.discounts
 
     if not items:
         return {"success": False, "error": "items 不能为空，请至少选择一项服务"}
-
-    lines: List[Dict[str, Any]] = []
-    unknown: List[str] = []
-    for raw in items:
-        sku = str((raw or {}).get("sku", "")).strip()
-        qty = int((raw or {}).get("qty", 1) or 1)
-        if qty < 1 or qty > 20:
-            return {"success": False, "error": f"{sku} 的数量 {qty} 不合理（1–20）"}
-        service = catalog.service(sku)
-        if service is None:
-            unknown.append(sku or "<空>")
-            continue
-        lines.append({
-            "sku": sku,
-            "name": service.name,
-            "category": service.category,
-            "unit_price": service.price,
-            "unit": service.unit,
-            "qty": qty,
-            "amount": service.price * qty,
-            "discount_eligible": service.discount_eligible,
-        })
-    if unknown:
-        return {
-            "success": False,
-            "error": f"未知的服务 SKU: {', '.join(unknown)}",
-            "valid_skus": [s.sku for s in catalog.services],
-        }
+    lines, error = _quote_lines(catalog, items)
+    if error is not None:
+        return error
 
     subtotal = sum(line["amount"] for line in lines)
     eligible_subtotal = sum(line["amount"] for line in lines if line["discount_eligible"])
     notes: List[str] = []
-    discounts: List[Dict[str, Any]] = []
-
-    # 早鸟 / 团报：二选一取最优
-    candidates: List[tuple[float, str, str]] = []
-    if early_bird:
-        if _early_bird_open(catalog, today):
-            candidates.append((rules.early_bird.rate, "early_bird", rules.early_bird.name))
-        else:
-            notes.append(f"今天（{today.isoformat()}）已过本年度早鸟截止日（{rules.early_bird.deadline_month_day}），不适用早鸟优惠。")
-    if group_size >= rules.group.min_people:
-        candidates.append((rules.group.rate, "group", rules.group.name))
-    elif group_size > 1:
-        notes.append(f"团报需至少 {rules.group.min_people} 人。")
-
-    if candidates and eligible_subtotal > 0:
-        rate, code, name = min(candidates, key=lambda c: c[0])
-        off = round(eligible_subtotal * (1 - rate))
-        discounts.append({"code": code, "name": name, "rate": rate, "amount": -off,
-                          "applies_to": "选校全案、文书套餐和全程陪跑类服务"})
-        if len(candidates) > 1:
-            notes.append("早鸟与团报不可叠加，已自动选择更优惠的一项。")
-    elif candidates:
-        notes.append("所选服务均不参与早鸟/团报折扣（仅选校全案、套餐类服务参与）。")
-
+    discounts = _rate_discount(catalog, eligible_subtotal, early_bird, group_size, today, notes)
     if referral and subtotal > 0:
-        discounts.append({"code": "referral", "name": rules.referral.name,
-                          "amount": -min(rules.referral.amount, subtotal)})
-
-    total = subtotal + sum(d["amount"] for d in discounts)
-    floor = math.ceil(subtotal * rules.floor_ratio)
-    if discounts and total < floor:
-        discounts.append({"code": "floor_adjust", "name": "最低实付保护", "amount": floor - total})
-        notes.append(rules.floor_rule)
-        total = floor
-
-    # 付款安排：套餐/选校部分收定金，其余全款
-    deposit_share = sum(
-        line["amount"] for line in lines if line["category"] in catalog.payment.deposit_applies_to
-    )
-    if deposit_share and subtotal:
-        deposit_part_net = round(total * deposit_share / subtotal)
-        other_net = total - deposit_part_net
-        due_now = round(deposit_part_net * catalog.payment.deposit_ratio) + other_net
-    else:
-        deposit_part_net = 0
-        due_now = total
+        discounts.append({"code": "referral", "name": catalog.discounts.referral.name,
+                          "amount": -min(catalog.discounts.referral.amount, subtotal)})
+    total = _apply_floor(catalog, subtotal, discounts, notes)
+    due_now = _due_at_signing(catalog, lines, subtotal, total)
 
     return {
         "success": True,
@@ -135,10 +69,92 @@ def quote_bundle(
         "valid_days": catalog.payment.quote_validity_days,
         "quote_date": today.isoformat(),
         "notes": notes,
-        "no_negotiation": rules.no_negotiation,
+        "no_negotiation": catalog.discounts.no_negotiation,
         "disclaimer": "报价按公开价目表和公开优惠规则自动计算，最终以电子服务协议为准。",
         "display": _format_quote(catalog, lines, subtotal, discounts, total, due_now),
     }
+
+
+def _quote_lines(catalog: Catalog, items: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """把 items 解析成报价行；数量不合理或 SKU 未知时返回 (_, 错误结果)。"""
+    lines: List[Dict[str, Any]] = []
+    unknown: List[str] = []
+    for raw in items:
+        sku = str((raw or {}).get("sku", "")).strip()
+        qty = int((raw or {}).get("qty", 1) or 1)
+        if qty < 1 or qty > 20:
+            return [], {"success": False, "error": f"{sku} 的数量 {qty} 不合理（1–20）"}
+        service = catalog.service(sku)
+        if service is None:
+            unknown.append(sku or "<空>")
+            continue
+        lines.append({
+            "sku": sku,
+            "name": service.name,
+            "category": service.category,
+            "unit_price": service.price,
+            "unit": service.unit,
+            "qty": qty,
+            "amount": service.price * qty,
+            "discount_eligible": service.discount_eligible,
+        })
+    if unknown:
+        return [], {
+            "success": False,
+            "error": f"未知的服务 SKU: {', '.join(unknown)}",
+            "valid_skus": [s.sku for s in catalog.services],
+        }
+    return lines, None
+
+
+def _rate_discount(
+    catalog: Catalog, eligible_subtotal: float, early_bird: bool, group_size: int, today: date, notes: List[str],
+) -> List[Dict[str, Any]]:
+    """早鸟 / 团报：二选一取最优，只作用于参与折扣的服务。"""
+    rules = catalog.discounts
+    candidates: List[tuple[float, str, str]] = []
+    if early_bird:
+        if _early_bird_open(catalog, today):
+            candidates.append((rules.early_bird.rate, "early_bird", rules.early_bird.name))
+        else:
+            notes.append(f"今天（{today.isoformat()}）已过本年度早鸟截止日（{rules.early_bird.deadline_month_day}），不适用早鸟优惠。")
+    if group_size >= rules.group.min_people:
+        candidates.append((rules.group.rate, "group", rules.group.name))
+    elif group_size > 1:
+        notes.append(f"团报需至少 {rules.group.min_people} 人。")
+
+    if not candidates:
+        return []
+    if eligible_subtotal <= 0:
+        notes.append("所选服务均不参与早鸟/团报折扣（仅选校全案、套餐类服务参与）。")
+        return []
+    rate, code, name = min(candidates, key=lambda c: c[0])
+    if len(candidates) > 1:
+        notes.append("早鸟与团报不可叠加，已自动选择更优惠的一项。")
+    return [{"code": code, "name": name, "rate": rate, "amount": -round(eligible_subtotal * (1 - rate)),
+             "applies_to": "选校全案、文书套餐和全程陪跑类服务"}]
+
+
+def _apply_floor(catalog: Catalog, subtotal: float, discounts: List[Dict[str, Any]], notes: List[str]) -> float:
+    """叠加优惠后不低于标价的 floor_ratio，不够就补一条“最低实付保护”。返回应付合计。"""
+    total = subtotal + sum(d["amount"] for d in discounts)
+    floor = math.ceil(subtotal * catalog.discounts.floor_ratio)
+    if discounts and total < floor:
+        discounts.append({"code": "floor_adjust", "name": "最低实付保护", "amount": floor - total})
+        notes.append(catalog.discounts.floor_rule)
+        total = floor
+    return total
+
+
+def _due_at_signing(catalog: Catalog, lines: List[Dict[str, Any]], subtotal: float, total: float) -> float:
+    """签约时应付：套餐/选校部分按比例收定金，其余全款。"""
+    deposit_share = sum(
+        line["amount"] for line in lines if line["category"] in catalog.payment.deposit_applies_to
+    )
+    if not (deposit_share and subtotal):
+        return total
+    deposit_part_net = round(total * deposit_share / subtotal)
+    return round(deposit_part_net * catalog.payment.deposit_ratio) + (total - deposit_part_net)
 
 
 def _format_quote(catalog: Catalog, lines, subtotal, discounts, total, due_now) -> str:
