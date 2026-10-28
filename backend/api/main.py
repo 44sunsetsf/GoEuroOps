@@ -60,91 +60,18 @@ def _anthropic_cfg() -> Dict[str, Any]:
     return cfg
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+def _redis_url() -> str:
+    return os.getenv("REDIS_URL", "redis://redis:6379/0")
 
-    print(BANNER, flush=True)
 
-    from agents.agent_orchestrator import AgentOrchestrator
-    from api.quota import DailyQuota
-    from core.intent_recognizer import IntentRecognizer
-    from evaluation.evaluator import EndToEndEvaluator
+async def _build_knowledge(cfg: Dict[str, Any]) -> None:
+    """检索管理器 + ChromaDB 知识库，再按 GOEUROOPS_KNOWLEDGE_BACKEND 选 Agent 实际用的知识来源。"""
+    from core.llm_utils import make_client
     from retrieval.knowledge_base import KnowledgeBase
     from retrieval.manager import RetrievalManager, Tool
     from retrieval.rerank import load_reranker
     from retrieval.wiki import WikiKnowledge, knowledge_backend
-    from core.llm_utils import make_client
-    from memory.manager import build_memory_manager
-    from monitor.performance_monitor import PerformanceMonitor
-    from core.skill_loader import SkillManager
-    from business.catalog import get_catalog, get_countries
-    from business.lead_store import LeadStore
-    from business.notifier import FeishuNotifier
 
-    cfg = _anthropic_cfg()
-    # 业务目录在启动时校验一次，YAML 写错直接启动失败，而不是等用户问价格时才暴露
-    catalog = get_catalog()
-    logger.info(
-        "业务目录已加载: %s，%d 项服务，%d 个国家",
-        catalog.catalog_version, len(catalog.services), len(get_countries().countries),
-    )
-    logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
-
-    # 意图识别器（Orchestrator 内部也会创建，这里单独暴露给 Evaluator）
-    recognizer = IntentRecognizer(
-        api_key=cfg["api_key"],
-        base_url=cfg.get("base_url"),
-        model=cfg["model"],
-    )
-
-    # Skills：启动时从目录加载业务能力说明，并在 Agent 调用 LLM 时动态注入。
-    skills_dir = os.getenv("GOEUROOPS_SKILLS_DIR", str(pathlib.Path(_ROOT) / "skills"))
-    services.skill_manager = SkillManager(
-        root_dir=skills_dir,
-        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "6000")),
-    )
-    services.skill_manager.load()
-
-    # 公开演示的每日对话上限（GOEUROOPS_DAILY_CHAT_LIMIT，0 = 不限）
-    services.quota = DailyQuota(
-        limit=int(os.getenv("GOEUROOPS_DAILY_CHAT_LIMIT", "0") or 0),
-        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
-    )
-
-    # 演示访客每天可运行内置评测的次数（GOEUROOPS_GUEST_EVAL_LIMIT，默认 5）
-    services.guest_eval_quota = DailyQuota(
-        limit=int(os.getenv("GOEUROOPS_GUEST_EVAL_LIMIT", "5") or 0),
-        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
-        key_prefix="goeuroops:quota:guest_eval:",
-    )
-
-    # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
-    services.lead_store = LeadStore(redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"))
-    # 新线索 / 交接单推送到飞书群机器人（设置了 GOEUROOPS_FEISHU_WEBHOOK 才开启）；评测用的线索库不推送
-    services.lead_store.notifier = FeishuNotifier.from_env()
-    logger.info("线索推送: %s", "飞书机器人" if services.lead_store.notifier else "未配置")
-
-    # Agent 编排器
-    services.orchestrator = AgentOrchestrator(
-        api_key=cfg["api_key"],
-        base_url=cfg.get("base_url"),
-        model=cfg["model"],
-        skill_manager=services.skill_manager,
-        lead_store=services.lead_store,
-    )
-
-    # 记忆（分层：会话状态、客户档案、咨询记录在 Redis，原话档案在 ChromaDB）
-    services.memory = build_memory_manager(
-        redis_url=os.getenv("REDIS_URL", "redis://redis:6379/0"),
-        chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
-        chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
-        chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
-        api_key=cfg["api_key"],
-        base_url=cfg.get("base_url"),
-        model=cfg["model"],
-    )
-
-    # 检索工具管理器 + RAG 知识库（基于 ChromaDB 的真实检索）
     services.tool_manager = RetrievalManager(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
@@ -196,6 +123,114 @@ async def lifespan(app: FastAPI):
         services.knowledge = services.wiki
         asyncio.create_task(services.wiki.warmup())
     logger.info("Agent 知识来源: %s", knowledge_backend())
+
+
+def _build_evaluator(cfg: Dict[str, Any], recognizer: Any) -> Any:
+    """评测器：用一个单独的编排器。线上编排器的统计、监控降权和工具轨迹不被评测流量污染，
+    评测里报价登记、转顾问生成的线索和交接单只写进内存，不进站长的线索库。
+    知识库和检索管理器（缓存、熔断）仍然共用，评测也会消耗真实的模型额度。"""
+    from agents.agent_orchestrator import AgentOrchestrator
+    from business.lead_store import LeadStore
+    from evaluation.evaluator import EndToEndEvaluator
+
+    eval_orchestrator = AgentOrchestrator(
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+        skill_manager=services.skill_manager,
+        lead_store=LeadStore(),
+    )
+    eval_orchestrator.set_shared_tools(services.knowledge)
+    return EndToEndEvaluator(
+        orchestrator=eval_orchestrator,
+        recognizer=recognizer,
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+        baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
+        skill_manager=services.skill_manager,
+    )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    print(BANNER, flush=True)
+
+    from agents.agent_orchestrator import AgentOrchestrator
+    from api.quota import DailyQuota
+    from core.intent_recognizer import IntentRecognizer
+    from memory.manager import build_memory_manager
+    from monitor.performance_monitor import PerformanceMonitor
+    from core.skill_loader import SkillManager
+    from business.catalog import get_catalog, get_countries
+    from business.lead_store import LeadStore
+    from business.notifier import FeishuNotifier
+
+    cfg = _anthropic_cfg()
+    # 业务目录在启动时校验一次，YAML 写错直接启动失败，而不是等用户问价格时才暴露
+    catalog = get_catalog()
+    logger.info(
+        "业务目录已加载: %s，%d 项服务，%d 个国家",
+        catalog.catalog_version, len(catalog.services), len(get_countries().countries),
+    )
+    logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
+
+    # 意图识别器（Orchestrator 内部也会创建，这里单独暴露给 Evaluator）
+    recognizer = IntentRecognizer(
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+    )
+
+    # Skills：启动时从目录加载业务能力说明，并在 Agent 调用 LLM 时动态注入。
+    skills_dir = os.getenv("GOEUROOPS_SKILLS_DIR", str(pathlib.Path(_ROOT) / "skills"))
+    services.skill_manager = SkillManager(
+        root_dir=skills_dir,
+        max_prompt_chars=int(os.getenv("GOEUROOPS_SKILLS_MAX_PROMPT_CHARS", "6000")),
+    )
+    services.skill_manager.load()
+
+    # 公开演示的每日对话上限（GOEUROOPS_DAILY_CHAT_LIMIT，0 = 不限）
+    services.quota = DailyQuota(
+        limit=int(os.getenv("GOEUROOPS_DAILY_CHAT_LIMIT", "0") or 0),
+        redis_url=_redis_url(),
+    )
+
+    # 演示访客每天可运行内置评测的次数（GOEUROOPS_GUEST_EVAL_LIMIT，默认 5）
+    services.guest_eval_quota = DailyQuota(
+        limit=int(os.getenv("GOEUROOPS_GUEST_EVAL_LIMIT", "5") or 0),
+        redis_url=_redis_url(),
+        key_prefix="goeuroops:quota:guest_eval:",
+    )
+
+    # 线索库：咨询线索和转顾问交接单，前端「线索」面板读取
+    services.lead_store = LeadStore(redis_url=_redis_url())
+    # 新线索 / 交接单推送到飞书群机器人（设置了 GOEUROOPS_FEISHU_WEBHOOK 才开启）；评测用的线索库不推送
+    services.lead_store.notifier = FeishuNotifier.from_env()
+    logger.info("线索推送: %s", "飞书机器人" if services.lead_store.notifier else "未配置")
+
+    # Agent 编排器
+    services.orchestrator = AgentOrchestrator(
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+        skill_manager=services.skill_manager,
+        lead_store=services.lead_store,
+    )
+
+    # 记忆（分层：会话状态、客户档案、咨询记录在 Redis，原话档案在 ChromaDB）
+    services.memory = build_memory_manager(
+        redis_url=_redis_url(),
+        chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
+        chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
+        chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
+        api_key=cfg["api_key"],
+        base_url=cfg.get("base_url"),
+        model=cfg["model"],
+    )
+
+    await _build_knowledge(cfg)
     if services.orchestrator is not None:
         services.orchestrator.set_shared_tools(services.knowledge)
 
@@ -210,26 +245,7 @@ async def lifespan(app: FastAPI):
     )
     await services.monitor.start()
 
-    # 评测器：用一个单独的编排器。线上编排器的统计、监控降权和工具轨迹不被评测流量污染，
-    # 评测里报价登记、转顾问生成的线索和交接单只写进内存，不进站长的线索库。
-    # 知识库和检索管理器（缓存、熔断）仍然共用，评测也会消耗真实的模型额度。
-    eval_orchestrator = AgentOrchestrator(
-        api_key=cfg["api_key"],
-        base_url=cfg.get("base_url"),
-        model=cfg["model"],
-        skill_manager=services.skill_manager,
-        lead_store=LeadStore(),
-    )
-    eval_orchestrator.set_shared_tools(services.knowledge)
-    services.evaluator = EndToEndEvaluator(
-        orchestrator=eval_orchestrator,
-        recognizer=recognizer,
-        api_key=cfg["api_key"],
-        base_url=cfg.get("base_url"),
-        model=cfg["model"],
-        baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
-        skill_manager=services.skill_manager,
-    )
+    services.evaluator = _build_evaluator(cfg, recognizer)
 
     logger.info("GoEuroOps 已就绪")
     yield
