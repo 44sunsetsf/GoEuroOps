@@ -317,36 +317,15 @@ class BaseAgent:
         self, req: Request, on_delta: Optional[OnDelta] = None, run: Optional[_RunRecord] = None,
     ) -> str:
         run = run if run is not None else _RunRecord()
-        messages = []
-        if req.context:
-            messages.append({"role": "user", "content": f"[背景信息]\n{safe_text(req.context)}"})
-            messages.append({"role": "assistant", "content": "好的，我已了解背景信息。"})
-        if req.entities:
-            entities_text = json.dumps(req.entities, ensure_ascii=False)
-            messages.append({"role": "user", "content": f"[结构化实体]\n{safe_text(entities_text)}"})
-            messages.append({"role": "assistant", "content": "好的，我会结合这些结构化实体处理。"})
-        role_packet = self._build_role_packet(req)
-        if role_packet:
-            messages.append({"role": "user", "content": f"[角色输入契约]\n{safe_text(role_packet)}"})
-            messages.append({"role": "assistant", "content": "好的，我会按照该角色的输入和输出契约处理。"})
-        if req.knowledge:
-            messages.append({"role": "user", "content": f"[知识库上下文]\n{safe_text(RagGate.format_context(req.knowledge))}"})
-            messages.append({"role": "assistant", "content": "好的，我会优先依据这些知识库片段回答，并注明来源。"})
-        messages.append({"role": "user", "content": safe_text(req.message)})
+        messages = self._build_messages(req)
 
         selection = self._select_skills(req)
         run.skills = selection.applied() if selection is not None else []
         system_prompt = self._build_system_prompt(req, selection)
         tools = self._tools_for(req, selection)
-        tools_used = run.tools_used          # 边执行边写进 run，出异常时 handle() 也能拿到已有的 trace
-        tool_traces = run.tool_traces
+        tool_traces = run.tool_traces        # 边执行边写进 run，出异常时 handle() 也能拿到已有的 trace
 
-        # 金额护栏：回复里的人民币金额必须能在本轮依据里找到（工具结果、用户原话、背景、知识库、Skill、价目表）
-        grounding = AmountGrounding()
-        grounding.add_many(m["content"] for m in messages if isinstance(m["content"], str))
-        grounding.add_text(system_prompt)
-        grounding.add_json(req.history)
-        grounding.add_json(get_catalog().model_dump())
+        grounding = self._amount_grounding(req, messages, system_prompt)
         guard = AmountGuard(grounding)
 
         async def guarded_delta(text: str) -> None:
@@ -356,27 +335,7 @@ class BaseAgent:
 
         for round_no in range(MAX_TOOL_ROUNDS):
             last_round = round_no == MAX_TOOL_ROUNDS - 1
-            request_kwargs: Dict[str, Any] = {
-                "model": self._model,
-                "max_tokens": self.profile.max_tokens,
-                "temperature": self.profile.temperature,
-                "system": system_prompt,
-                "messages": messages,
-                **NO_THINKING_KWARGS,
-            }
-            if tools:
-                request_kwargs["tools"] = [
-                    {
-                        "name": spec.name,
-                        "description": spec.description,
-                        "input_schema": spec.input_schema,
-                    }
-                    for spec in tools.values()
-                ]
-                # 最后一轮禁止再调工具，逼模型用已有结果作答。tools 不能去掉：
-                # 消息里已有 tool_use / tool_result 时，API 要求请求里仍然带着工具定义
-                if last_round:
-                    request_kwargs["tool_choice"] = {"type": "none"}
+            request_kwargs = self._request_kwargs(system_prompt, messages, tools, last_round)
             content_blocks = await self._complete(request_kwargs, guarded_delta if on_delta is not None else None)
             if on_delta is not None:
                 tail = guard.flush()
@@ -385,19 +344,12 @@ class BaseAgent:
             tool_uses = [block for block in content_blocks if self._block_type(block) == "tool_use"]
             if tool_uses and last_round:
                 # 兼容不支持 tool_choice 的 Anthropic 兼容服务：不再执行，只用这一轮的文字
-                logger.warning(f"{self.agent_type.value} 最后一轮仍请求工具 {[self._block_value(b, 'name') for b in tool_uses]}，已忽略")
-                tool_traces.append({
-                    "agent_type": self.agent_type.value,
-                    "tool_name": "tool_round_limit",
-                    "tool_use_id": "",
-                    "input": {"ignored": [self._block_value(b, "name") for b in tool_uses]},
-                    "success": True,
-                    "result_success": False,
-                    "latency_ms": 0.0,
-                    "cached": False,
-                    "reranked": False,
-                    "error": f"工具调用达到 {MAX_TOOL_ROUNDS} 轮上限，最后一轮的工具请求未执行",
-                })
+                ignored = [self._block_value(b, "name") for b in tool_uses]
+                logger.warning(f"{self.agent_type.value} 最后一轮仍请求工具 {ignored}，已忽略")
+                tool_traces.append(self._guard_trace(
+                    "tool_round_limit", {"ignored": ignored},
+                    f"工具调用达到 {MAX_TOOL_ROUNDS} 轮上限，最后一轮的工具请求未执行",
+                ))
                 tool_uses = []
                 if not extract_text_content(content_blocks).strip():
                     if on_delta is not None:
@@ -406,66 +358,134 @@ class BaseAgent:
             if not tool_uses:
                 text = guard.sanitize(extract_text_content(content_blocks))
                 if guard.violations:
-                    tool_traces.append({
-                        "agent_type": self.agent_type.value,
-                        "tool_name": "amount_guard",
-                        "tool_use_id": "",
-                        "input": {"violations": [v.to_dict() for v in guard.violations]},
-                        "success": True,
-                        "result_success": False,
-                        "latency_ms": 0.0,
-                        "cached": False,
-                        "reranked": False,
-                        "error": f"回复里的金额没有依据：{sorted({a for v in guard.violations for a in v.amounts})}（模式 {guard.mode}）",
-                    })
+                    amounts = sorted({a for v in guard.violations for a in v.amounts})
+                    tool_traces.append(self._guard_trace(
+                        "amount_guard", {"violations": [v.to_dict() for v in guard.violations]},
+                        f"回复里的金额没有依据：{amounts}（模式 {guard.mode}）",
+                    ))
                 return text
 
             messages.append({"role": "assistant", "content": content_blocks})
             outcomes = await self._run_tool_batch(tool_uses, tools, req)
-            tool_results = []
-            for block, outcome in zip(tool_uses, outcomes):
-                name = self._block_value(block, "name")
-                tool_use_id = self._block_value(block, "id")
-                args = self._block_value(block, "input") or {}
-                spec = tools.get(name)
-                if outcome is None:
-                    error_text = f"工具不在 {self.agent_type.value} Agent 白名单中"
-                    result: Any = {"success": False, "error": error_text}
-                    call_success, result_success, kind, tool_latency_ms, truncated = False, None, "not_allowed", 0.0, False
-                else:
-                    result, call_success, kind = outcome.result, outcome.ok, outcome.kind
-                    error_text, result_success = outcome.error, outcome.result_success
-                    tool_latency_ms, truncated = outcome.latency_ms, outcome.truncated
-                    if call_success:
-                        tools_used.append(name)
-                if not error_text and isinstance(result, dict):
-                    error_text = str(result.get("error", "") or "")
-                grounding.add_json(result)
-                tool_traces.append(
-                    {
-                        "agent_type": self.agent_type.value,
-                        "tool_name": name,
-                        "tool_use_id": tool_use_id,
-                        "input": dict(args) if isinstance(args, dict) else {"raw": str(args)[:200]},
-                        "success": call_success,
-                        "result_success": result_success,
-                        "outcome": kind,
-                        "side_effect": spec.policy.side_effect if spec is not None else None,
-                        "truncated": truncated,
-                        "latency_ms": round(tool_latency_ms, 1),
-                        "cached": bool(result.get("cached")) if isinstance(result, dict) else False,
-                        "reranked": bool(result.get("reranked")) if isinstance(result, dict) else False,
-                        "error": error_text,
-                    }
-                )
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tool_use_id,
-                    "content": json.dumps(result, ensure_ascii=False),
-                })
+            tool_results = self._record_tool_outcomes(tool_uses, outcomes, tools, run, grounding)
             messages.append({"role": "user", "content": tool_results})
 
         raise RuntimeError(f"{self.agent_type.value} 工具调用超过最大轮数")   # 最后一轮必定返回，走不到这里
+
+    def _build_messages(self, req: Request) -> List[Dict[str, Any]]:
+        """背景、实体、角色契约、知识库各用一对 user/assistant 消息注入，最后是用户原话。"""
+        messages: List[Dict[str, Any]] = []
+
+        def inject(label: str, body: str, ack: str) -> None:
+            messages.append({"role": "user", "content": f"[{label}]\n{safe_text(body)}"})
+            messages.append({"role": "assistant", "content": ack})
+
+        if req.context:
+            inject("背景信息", req.context, "好的，我已了解背景信息。")
+        if req.entities:
+            inject("结构化实体", json.dumps(req.entities, ensure_ascii=False), "好的，我会结合这些结构化实体处理。")
+        role_packet = self._build_role_packet(req)
+        if role_packet:
+            inject("角色输入契约", role_packet, "好的，我会按照该角色的输入和输出契约处理。")
+        if req.knowledge:
+            inject("知识库上下文", RagGate.format_context(req.knowledge), "好的，我会优先依据这些知识库片段回答，并注明来源。")
+        messages.append({"role": "user", "content": safe_text(req.message)})
+        return messages
+
+    @staticmethod
+    def _amount_grounding(req: Request, messages: List[Dict[str, Any]], system_prompt: str) -> AmountGrounding:
+        """金额护栏的依据：回复里的人民币金额必须能在这些地方找到（工具结果在执行后追加）。"""
+        grounding = AmountGrounding()
+        grounding.add_many(m["content"] for m in messages if isinstance(m["content"], str))
+        grounding.add_text(system_prompt)
+        grounding.add_json(req.history)
+        grounding.add_json(get_catalog().model_dump())
+        return grounding
+
+    def _request_kwargs(
+        self, system_prompt: str, messages: List[Dict[str, Any]], tools: Dict[str, AgentToolSpec], last_round: bool,
+    ) -> Dict[str, Any]:
+        request_kwargs: Dict[str, Any] = {
+            "model": self._model,
+            "max_tokens": self.profile.max_tokens,
+            "temperature": self.profile.temperature,
+            "system": system_prompt,
+            "messages": messages,
+            **NO_THINKING_KWARGS,
+        }
+        if tools:
+            request_kwargs["tools"] = [
+                {"name": spec.name, "description": spec.description, "input_schema": spec.input_schema}
+                for spec in tools.values()
+            ]
+            # 最后一轮禁止再调工具，逼模型用已有结果作答。tools 不能去掉：
+            # 消息里已有 tool_use / tool_result 时，API 要求请求里仍然带着工具定义
+            if last_round:
+                request_kwargs["tool_choice"] = {"type": "none"}
+        return request_kwargs
+
+    def _guard_trace(self, name: str, payload: Dict[str, Any], error: str) -> Dict[str, Any]:
+        """框架自己拦下的事件（轮数上限、金额护栏）也记成一条工具轨迹，方便在 Trace 里看到。"""
+        return {
+            "agent_type": self.agent_type.value,
+            "tool_name": name,
+            "tool_use_id": "",
+            "input": payload,
+            "success": True,
+            "result_success": False,
+            "latency_ms": 0.0,
+            "cached": False,
+            "reranked": False,
+            "error": error,
+        }
+
+    def _record_tool_outcomes(
+        self, tool_uses: List[Any], outcomes: List[Any], tools: Dict[str, AgentToolSpec],
+        run: _RunRecord, grounding: AmountGrounding,
+    ) -> List[Dict[str, Any]]:
+        """把一批工具结果写进轨迹和金额依据，返回发回给模型的 tool_result 列表。"""
+        tool_results = []
+        for block, outcome in zip(tool_uses, outcomes):
+            name = self._block_value(block, "name")
+            tool_use_id = self._block_value(block, "id")
+            args = self._block_value(block, "input") or {}
+            spec = tools.get(name)
+            if outcome is None:
+                error_text = f"工具不在 {self.agent_type.value} Agent 白名单中"
+                result: Any = {"success": False, "error": error_text}
+                call_success, result_success, kind, tool_latency_ms, truncated = False, None, "not_allowed", 0.0, False
+            else:
+                result, call_success, kind = outcome.result, outcome.ok, outcome.kind
+                error_text, result_success = outcome.error, outcome.result_success
+                tool_latency_ms, truncated = outcome.latency_ms, outcome.truncated
+                if call_success:
+                    run.tools_used.append(name)
+            if not error_text and isinstance(result, dict):
+                error_text = str(result.get("error", "") or "")
+            grounding.add_json(result)
+            run.tool_traces.append(
+                {
+                    "agent_type": self.agent_type.value,
+                    "tool_name": name,
+                    "tool_use_id": tool_use_id,
+                    "input": dict(args) if isinstance(args, dict) else {"raw": str(args)[:200]},
+                    "success": call_success,
+                    "result_success": result_success,
+                    "outcome": kind,
+                    "side_effect": spec.policy.side_effect if spec is not None else None,
+                    "truncated": truncated,
+                    "latency_ms": round(tool_latency_ms, 1),
+                    "cached": bool(result.get("cached")) if isinstance(result, dict) else False,
+                    "reranked": bool(result.get("reranked")) if isinstance(result, dict) else False,
+                    "error": error_text,
+                }
+            )
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_use_id,
+                "content": json.dumps(result, ensure_ascii=False),
+            })
+        return tool_results
 
     async def _run_tool_batch(
         self, tool_uses: List[Any], tools: Dict[str, AgentToolSpec], req: Request,
