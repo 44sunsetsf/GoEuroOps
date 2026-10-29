@@ -5,7 +5,7 @@ import logging
 import time
 import uuid
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Awaitable, Callable, Deque, Dict, List, Optional, Tuple
 
@@ -247,13 +247,29 @@ class BaseAgent:
         return selection
 
     def _tools_for(self, req: Request, selection: Any = None) -> Dict[str, AgentToolSpec]:
-        """本轮真正暴露给模型的工具：角色白名单 + 门控调整 + Skill 参考资料工具。"""
+        """本轮暴露给模型的工具：角色白名单 + Skill 参考资料工具。
+
+        同一个 Agent 每轮的工具列表保持不变：工具定义排在提示词最前面，列表一变，前缀缓存从第一个字就失效。
+        所以门控 off 时不拿掉检索工具，而是让它直接返回“本轮不需要检索”；read_skill_reference 也固定挂着，
+        只能读本轮命中的 Skill（没命中就什么都读不到）。
+        """
         tools = self.get_tools()
-        if req.rag_mode == RagMode.OFF.value:
-            tools.pop("search_knowledge_base", None)
-        if selection is not None and getattr(selection, "has_references", False):
-            skill_manager = self._skill_manager
-            allowed = list(selection.skill_ids)
+        search = tools.get("search_knowledge_base")
+        if search is not None and req.rag_mode == RagMode.OFF.value:
+            def skip_search(_req: Request, _args: Dict[str, Any]) -> Dict[str, Any]:
+                return {"skipped": True, "reason": "本轮问题不需要检索知识库，请直接回答用户。"}
+
+            tools["search_knowledge_base"] = replace(search, handler=skip_search)
+
+        skill_manager = self._skill_manager
+        if skill_manager is None:
+            return tools
+        if hasattr(skill_manager, "has_references_for"):
+            expose = skill_manager.has_references_for(self.agent_type.value)
+        else:
+            expose = selection is not None and getattr(selection, "has_references", False)
+        if expose:
+            allowed = list(selection.skill_ids) if selection is not None else []
 
             def read_skill_reference(_req: Request, args: Dict[str, Any]) -> Dict[str, Any]:
                 return skill_manager.read_reference(
@@ -317,10 +333,10 @@ class BaseAgent:
         self, req: Request, on_delta: Optional[OnDelta] = None, run: Optional[_RunRecord] = None,
     ) -> str:
         run = run if run is not None else _RunRecord()
-        messages = self._build_messages(req)
-
         selection = self._select_skills(req)
         run.skills = selection.applied() if selection is not None else []
+        messages = self._build_messages(req, selection)
+
         system_prompt = self._build_system_prompt(req, selection)
         tools = self._tools_for(req, selection)
         tool_traces = run.tool_traces        # 边执行边写进 run，出异常时 handle() 也能拿到已有的 trace
@@ -372,9 +388,17 @@ class BaseAgent:
 
         raise RuntimeError(f"{self.agent_type.value} 工具调用超过最大轮数")   # 最后一轮必定返回，走不到这里
 
-    def _build_messages(self, req: Request) -> List[Dict[str, Any]]:
-        """背景、实体、角色契约、知识库各用一对 user/assistant 消息注入，最后是用户原话。"""
+    def _build_messages(self, req: Request, selection: Any = None) -> List[Dict[str, Any]]:
+        """按需 Skill、背景、实体、角色契约、知识库各用一对 user/assistant 消息注入，最后是用户原话。
+
+        每轮会变的内容都放在消息里，system 和工具列表保持不变，好让前缀缓存命中。
+        按需 Skill 放在最前：同一意图的用户命中的是同一组 Skill，比记忆、知识库更稳定，前缀能多命中一段。
+        """
         messages: List[Dict[str, Any]] = []
+        turn_rules = self._build_turn_rules(req, selection)
+        if turn_rules:
+            messages.append({"role": "user", "content": turn_rules})
+            messages.append({"role": "assistant", "content": "好的，我会遵循这些业务规范。"})
 
         def inject(label: str, body: str, ack: str) -> None:
             messages.append({"role": "user", "content": f"[{label}]\n{safe_text(body)}"})
@@ -570,17 +594,29 @@ class BaseAgent:
         prompt = f"{self.system_prompt}{profile_prompt}"
         if self._skill_manager is not None:
             if selection is not None:
-                skill_prompt = selection.prompt
+                # 只放常驻 Skill（每个 Agent 固定），按需命中的放进消息（_build_turn_rules）
+                skill_prompt = getattr(selection, "static_prompt", selection.prompt)
             else:
                 skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
             if skill_prompt:
-                prompt = f"{prompt}\n\n[动态 Skills]\n{skill_prompt}"
+                prompt = f"{prompt}\n\n[常驻 Skills]\n{skill_prompt}"
         # 放在最后：参考资料和 Skills 都是中文，语言要求写在前面会被淹没
         return (
             f"{prompt}\n\n[回答语言]\n"
             "看用户最近一条消息：用英文提问就必须整段用英文回答（含标题和要点），即使参考资料是中文，"
             "并把资料内容翻译成英文；用中文提问就用中文。院校名、服务名可保留原文。"
         )
+
+    @staticmethod
+    def _build_turn_rules(req: Request, selection: Any) -> str:
+        """本轮命中的按需 Skill，以及门控 off 时的说明。"""
+        parts = []
+        dynamic = getattr(selection, "dynamic_prompt", "") if selection is not None else ""
+        if dynamic:
+            parts.append(f"[动态 Skills]\n{dynamic}")
+        if req.rag_mode == RagMode.OFF.value:
+            parts.append("[本轮说明]\n这轮问题不需要检索知识库，直接回答。")
+        return safe_text("\n\n".join(parts)) if parts else ""
 
     def _build_role_packet(self, req: Request) -> str:
         """给子 Agent 的确定性输入包；子类可补充领域字段。"""

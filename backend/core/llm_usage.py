@@ -2,7 +2,7 @@
 模型用量统计：每次调用模型后，把 token 数按天累加到 Redis，供站长后台展示。
 
 用法：创建 AsyncAnthropic 客户端后包一层 ``track(client, "intent")``。普通调用和流式调用都会记录，
-数据写在哈希 ``goeuroops:usage:<北京时间日期>`` 里，字段有 calls / in / out / cost，以及按来源拆开的
+数据写在哈希 ``goeuroops:usage:<北京时间日期>`` 里，字段有 calls / in / cached / out / cost（cached 是命中前缀缓存的输入 token，已含在 in 里），以及按来源拆开的
 ``calls:<source>`` 等，保留 120 天。
 费用（元）按调用时刻估算：单价取 LLM_PRICE_INPUT / LLM_PRICE_CACHED_INPUT / LLM_PRICE_OUTPUT（元 / 百万 token，
 默认是 DeepSeek V4 Flash 的闲时价 1 / 0.02 / 4，见 api-docs.deepseek.com 的价格页），工作日北京时间 9–12 点和 14–18 点按忙时价乘 LLM_PEAK_MULTIPLIER（默认 2）。
@@ -72,8 +72,10 @@ async def record(source: str, usage: Any, redis_client: Any = None) -> None:
     key = day_key()
     try:
         pipe = r.pipeline()
-        for field, n in (("calls", 1), ("in", tokens_in), ("out", tokens_out),
-                         (f"calls:{source}", 1), (f"in:{source}", tokens_in), (f"out:{source}", tokens_out)):
+        # cached 单独记一份：in 里已经含它，cached / in 就是前缀缓存命中率
+        for field, n in (("calls", 1), ("in", tokens_in), ("cached", cached), ("out", tokens_out),
+                         (f"calls:{source}", 1), (f"in:{source}", tokens_in), (f"cached:{source}", cached),
+                         (f"out:{source}", tokens_out)):
             pipe.hincrby(key, field, n)
         pipe.hincrbyfloat(key, "cost", cost)
         pipe.hincrbyfloat(key, f"cost:{source}", cost)

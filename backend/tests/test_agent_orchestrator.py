@@ -285,18 +285,22 @@ def _shared_rag():
     return build_shared_rag_tools(RagManager(), domain="general")
 
 
-def test_rag_mode_off_hides_search_tool():
+def test_rag_mode_off_keeps_tool_list_but_skips_search():
+    """门控 off 不再拿掉检索工具（工具列表一变，前缀缓存就全部失效），而是让它直接返回“不需要检索”。"""
     client = TextOnlyClient()
     agent = GeneralAgent(client, "test-model")
     agent.set_shared_tools(_shared_rag())
 
-    asyncio.run(agent.handle(make_request(intent=IntentCategory.GREETING, rag_mode="off")))
-    names = {tool["name"] for tool in client.calls[0]["tools"]}
-    assert "search_knowledge_base" not in names
-
+    off_req = make_request(intent=IntentCategory.GREETING, rag_mode="off")
+    asyncio.run(agent.handle(off_req))
     asyncio.run(agent.handle(make_request(rag_mode="on_demand")))
-    names = {tool["name"] for tool in client.calls[1]["tools"]}
-    assert "search_knowledge_base" in names
+    assert client.calls[0]["tools"] == client.calls[1]["tools"]
+    assert "search_knowledge_base" in {tool["name"] for tool in client.calls[0]["tools"]}
+    assert "不需要检索知识库" in str(client.calls[0]["messages"])
+
+    skip = agent._tools_for(off_req)["search_knowledge_base"].handler
+    result = skip(off_req, {"query": "你好"})
+    assert result["skipped"] is True
 
 
 def test_prefetched_knowledge_is_injected_with_titles():
@@ -330,9 +334,37 @@ def test_skill_selection_is_reported_and_reference_tool_exposed(tmp_path):
     response = asyncio.run(agent.handle(make_request()))
 
     assert [s["id"] for s in response.skills_applied] == ["study_consulting"]
-    assert "规则正文" in client.calls[0]["system"]
+    # 按需 Skill 放进消息，system 保持不变（前缀缓存）
+    assert "规则正文" not in client.calls[0]["system"]
+    assert "规则正文" in str(client.calls[0]["messages"][0])
     assert "read_skill_reference" in {tool["name"] for tool in client.calls[0]["tools"]}
     assert manager.summary()["skills"][0]["stats"]["hits"] == 1
+
+
+def test_system_and_tools_stay_identical_across_turns(tmp_path):
+    """同一个 Agent：命中不同 Skill、门控不同的两轮，system 和工具列表逐字相同；常驻 Skill 留在 system。"""
+    from core.skill_loader import SkillManager
+
+    for sid, body in (("brand", "mode: always\n---\n品牌底线"),
+                      ("sales", "intents: [service_inquiry]\n---\n报价规则")):
+        d = tmp_path / sid
+        (d / "references").mkdir(parents=True)
+        (d / "SKILL.md").write_text(
+            f"---\nname: {sid}\ndescription: 测试\nagents: [consulting]\n{body}", encoding="utf-8")
+    (tmp_path / "sales" / "references" / "faq.md").write_text("# 价格问答\n内容", encoding="utf-8")
+    manager = SkillManager(str(tmp_path))
+    manager.load()
+
+    client = TextOnlyClient()
+    agent = ConsultingAgent(client, "test-model", skill_manager=manager)
+    asyncio.run(agent.handle(make_request(intent=IntentCategory.SERVICE_INQUIRY, rag_mode="prefetch")))
+    asyncio.run(agent.handle(make_request(intent=IntentCategory.GREETING, rag_mode="off")))
+
+    first, second = client.calls
+    assert first["system"] == second["system"]
+    assert first["tools"] == second["tools"]
+    assert "品牌底线" in first["system"] and "报价规则" not in first["system"]
+    assert "报价规则" in str(first["messages"][0]) and "报价规则" not in str(second["messages"])
 
 
 def test_escalation_does_not_open_duplicate_tickets():
