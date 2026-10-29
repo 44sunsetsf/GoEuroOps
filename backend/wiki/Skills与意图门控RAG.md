@@ -44,7 +44,7 @@ skills/<id>/evals/cases.json  命中回归用例
 
 ### 4. 渐进式披露与安全
 
-`read_skill_reference` 在每次 Agent 调用时，以闭包形式临时构建：
+`read_skill_reference` 在每次 Agent 调用时以闭包形式构建（Agent 有带资料的 Skill 时固定挂上，工具列表每轮不变）：
 
 - 只允许读取**本轮已命中** Skill 的已登记文件名。
 - 文件名必须满足 `^[A-Za-z0-9_\-.]+\.md$`，并且必须在登记列表里，所以不存在路径穿越。
@@ -70,7 +70,7 @@ skills/<id>/evals/cases.json  命中回归用例
 |---|---|---|
 | prefetch | study_consult、application_process、service_inquiry、booking、refund、invoice、payment_issue、billing | 预取 top-3，作为「知识库上下文」注入并标注来源；检索工具保留，模型可以补查 |
 | on_demand | query、request、service_progress、account、other | 维持原行为，由模型决定是否检索 |
-| off | greeting、feedback、complaint、escalation、human_handoff、data_privacy | 不检索，并从本轮工具列表中移除检索工具 |
+| off | greeting、feedback、complaint、escalation、human_handoff、data_privacy | 不检索；检索工具留在列表里（保持前缀缓存），调用时直接返回“本轮不需要检索”，消息里也说明这轮不用查 |
 
 意图置信度低于 0.6 时，prefetch 和 off 都降级为 on_demand，避免意图识别出错导致该查的知识没有查。
 

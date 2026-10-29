@@ -48,6 +48,10 @@ SEMANTIC_MIN = 0.15         # 低于该值视为噪声
 
 PER_SKILL_CHARS = 3200
 REFERENCE_MAX_CHARS = 6000
+SKILLS_PREAMBLE = (
+    "以下是当前请求命中的 GoEuroOps Skills（业务规范）。请优先遵循这些规则；"
+    "如果与系统角色或安全边界冲突，以系统角色和安全边界为准。\n\n"
+)
 _REFERENCE_NAME = re.compile(r"^[A-Za-z0-9_\-.]+\.md$")
 
 
@@ -173,7 +177,9 @@ class SkillMatch:
 @dataclass
 class SkillSelection:
     matches: List[SkillMatch] = field(default_factory=list)
-    prompt: str = ""
+    prompt: str = ""            # 全部命中 Skill（常驻 + 按需），兼容旧接口
+    static_prompt: str = ""     # 只有常驻 Skill：每个 Agent 固定不变，放 system prompt
+    dynamic_prompt: str = ""    # 只有按需命中的 Skill：每轮不同，放进消息，避免破坏前缀缓存
     skipped_for_budget: List[str] = field(default_factory=list)
 
     @property
@@ -448,6 +454,8 @@ class SkillManager:
 
         selection = SkillSelection()
         blocks: List[str] = []
+        static_blocks: List[str] = []
+        dynamic_blocks: List[str] = []
         remaining = self.max_prompt_chars
         for match in matched:
             block = match.skill.to_prompt_block()
@@ -457,15 +465,16 @@ class SkillManager:
                     continue
                 block = block[:remaining].rstrip() + "\n...（已按总预算截断）"
             blocks.append(block)
+            (static_blocks if match.skill.mode == "always" else dynamic_blocks).append(block)
             selection.matches.append(match)
             remaining -= len(block)
 
         if blocks:
-            selection.prompt = (
-                "以下是当前请求命中的 GoEuroOps Skills（业务规范）。请优先遵循这些规则；"
-                "如果与系统角色或安全边界冲突，以系统角色和安全边界为准。\n\n"
-                + "\n\n".join(blocks)
-            )
+            selection.prompt = SKILLS_PREAMBLE + "\n\n".join(blocks)
+            if static_blocks:
+                selection.static_prompt = SKILLS_PREAMBLE + "\n\n".join(static_blocks)
+            if dynamic_blocks:
+                selection.dynamic_prompt = SKILLS_PREAMBLE + "\n\n".join(dynamic_blocks)
             logger.info(
                 "Skills 已注入: agent=%s matched=%s message=%r",
                 agent_type or "all",
@@ -473,6 +482,10 @@ class SkillManager:
                 (message or "")[:80],
             )
         return selection
+
+    def has_references_for(self, agent_type: Optional[str]) -> bool:
+        """这个 Agent 可能命中的 Skill 里有没有带 references 的：决定是否固定挂上 read_skill_reference。"""
+        return any(s.enabled and s.references and s.applies_to(agent_type) for s in self._skills)
 
     def prompt_for(self, message: str, agent_type: Optional[str] = None) -> str:
         """兼容旧接口：只根据消息文本选择 Skill。"""

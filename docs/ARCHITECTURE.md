@@ -211,12 +211,16 @@ sequenceDiagram
 
 | 位置 | 内容 | 来源 |
 |---|---|---|
-| system | 角色提示词 + 命中的 Skills（含 references 目录） | `roles.py`、`core/skill_loader.py` |
-| user / assistant 对 | `[背景信息]` 记忆上下文 | `memory/` |
+| tools | 角色白名单 + `read_skill_reference`（该 Agent 有带资料的 Skill 时固定挂上）；**每轮不变** | `roles.py`、`agents/tools.py` |
+| system | 角色提示词 + 角色契约 + 常驻 Skill（`mode: always`）+ 回答语言；**每轮不变** | `roles.py`、`core/skill_loader.py` |
+| user / assistant 对 | `[动态 Skills]` 本轮按需命中的 Skill（含 references 目录）；门控 off 时加 `[本轮说明]` | `core/skill_loader.py` |
+| | `[背景信息]` 记忆上下文 | `memory/` |
 | | `[结构化实体]` 意图识别抽出的实体 | `core/intent_recognizer.py` |
 | | `[角色输入契约]` 本角色需要的输入和输出要求 | `roles.py` |
 | | `[知识库上下文]` 门控预取的片段 | `core/rag_gate.py` |
 | user | 本轮用户消息 | |
+
+**为什么这么排**：前缀缓存从第一个不同的 token 开始失效，所以每轮不变的放前面，会变的放后面。工具定义排在最前，所以门控 off 时不拿掉检索工具，而是让它直接返回“本轮不需要检索”；`read_skill_reference` 也固定挂着，只能读本轮命中的 Skill。按需 Skill 放在消息的第一对：同一意图的用户命中同一组 Skill，比记忆和知识库更稳定。实测（`deepseek-v4-flash`，咨询 Agent 8 条请求，缓存冷启动）首轮输入的缓存命中率从 43% 到 73%；缓存热了以后两版都在 92% 左右，因为每个 Agent 的 Skill 组合只有几种。命中情况看 `goeuroops:usage:<日期>` 里的 `cached` / `in`。
 
 ## 6. 意图识别、路由与意图门控 RAG
 
@@ -265,7 +269,7 @@ flowchart TD
 | BillingAgent 费用售后 | 费用、退款、发票、付款异常 | `search_knowledge_base`、`check_payment_fields`、`calculate_refund`、`get_payment_policy`、`compare_amounts` | 实际发起退款；多付或付款成功但服务未确认；发票作废重开；对退款金额有异议 |
 | EscalationAgent 转顾问 | 要求真人、找创始人、紧急、投诉升级、隐私删除 | `create_handoff_summary`（在 `handle()` 里直接调用，不经模型） | — |
 
-- 命中的 Skill 带 references 时，本轮会动态加一个 `read_skill_reference` 工具，只能读本轮已命中 Skill 的资料。
+- Agent 有带 references 的 Skill 时，固定挂一个 `read_skill_reference` 工具（工具列表每轮不变，见 5 节“为什么这么排”），只能读本轮已命中 Skill 的资料。
 - 门控为 `off` 时，`search_knowledge_base` 会从本轮工具列表里移除。
 - 工具定义：入参是 `tooling/schemas.py` 里的 Pydantic 模型，发给模型的 JSON Schema 由模型自动生成；处理函数在 `agents/tools.py`。
 
