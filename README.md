@@ -26,8 +26,8 @@ Students learn about the five countries and the services on the public site and 
 | Knowledge base (LLM Wiki) | Topic pages built from the business catalog at request time (prices are always current) plus an LLM-compiled index and glossary that pass a lint; an LLM reads the index and picks up to three whole pages. Against the previous vector RAG (bge-large + reranker) on 106 labelled questions: correct document injected 85% → 99%, fully correct answers about 88% → 95%, fabrication about 4% → 1%. The RAG path stays behind `GOEUROOPS_KNOWLEDGE_BACKEND=rag` |
 | Skills v2 | Multi-signal routing (intent / keywords / semantic examples / conversation stickiness), progressive disclosure, versions and hit statistics; every Skill ships its own regression cases |
 | Business catalog | `business/catalog.yaml` defines services, prices, discounts and refund rules in one place; quotes and refunds are computed deterministically in code |
-| Evaluation | Intent accuracy, Skill-routing accuracy, a scenario-calibrated five-dimension LLM-as-Judge (including boundary compliance), tool-call checks, gating A/B |
-| Observability | Every answer carries its Skill hits, gating decision and tool-call details; Prometheus metrics |
+| Evaluation | Intent accuracy, Skill-routing accuracy, a scenario-calibrated five-dimension LLM-as-Judge (including boundary compliance), tool-call checks, gating A/B; **simulated-user end-to-end** (τ-bench style: 24 customer-service tasks × 4 runs, final state checked in code): pass^1 85.4% → 94.8%, pass^4 62.5% → 83.3% after fixing the 4 issues it found (including a handoff ticket that stored a passport number) |
+| Observability | Every answer carries its Skill hits, gating decision and tool-call details (traces kept in Redis, still queryable after a restart); Prometheus metrics; thumbs-down, handed-off and amount-guard conversations go to a bad-case review queue and, once confirmed, export as regression cases |
 
 ## Repository layout
 

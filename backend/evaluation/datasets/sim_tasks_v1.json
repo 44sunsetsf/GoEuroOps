@@ -1,0 +1,521 @@
+[
+  {
+    "id": "quote_full_journey",
+    "tags": [
+      "quote"
+    ],
+    "instruction": "你是一名计算机专业大三学生，想了解“全程陪跑”服务多少钱。你还没想好什么时候签约，不考虑早鸟，一个人报名，没有老学员推荐。问到价格就结束，不打算留联系方式。",
+    "expect": {
+      "quote": {
+        "items": [
+          {
+            "sku": "full_journey"
+          }
+        ]
+      },
+      "tools_any": [
+        "quote_service_bundle",
+        "lookup_service_offering"
+      ],
+      "lead": {
+        "count": 0
+      }
+    },
+    "checklist": [
+      "客服给出了全程陪跑的价格",
+      "价格来自报价或服务查询工具，不是凭空说的"
+    ]
+  },
+  {
+    "id": "quote_group_essay_cv",
+    "tags": [
+      "quote"
+    ],
+    "instruction": "你和同学两个人想一起报名，合在一张单里：两份“文书套餐 · 3 个项目”和两份“学术简历（CV）优化”（每人各一份）。想知道这一单两个人一共要付多少。不考虑早鸟，没有老学员推荐。问到总价就结束。",
+    "expect": {
+      "quote": {
+        "items": [
+          {
+            "sku": "essay_pack_3",
+            "qty": 2
+          },
+          {
+            "sku": "cv",
+            "qty": 2
+          }
+        ],
+        "group_size": 2
+      },
+      "tools_called": [
+        "quote_service_bundle"
+      ]
+    },
+    "checklist": [
+      "客服问清或确认了一起报名的人数",
+      "客服按团报规则给出了整单价格"
+    ]
+  },
+  {
+    "id": "quote_referral_selection",
+    "tags": [
+      "quote"
+    ],
+    "instruction": "你想报“选校定位全案”，是老学员小王推荐来的，一个人报名，不考虑早鸟。想知道最后要付多少钱。问到价格就结束。",
+    "expect": {
+      "quote": {
+        "items": [
+          {
+            "sku": "selection_full"
+          }
+        ],
+        "referral": true
+      },
+      "tools_called": [
+        "quote_service_bundle"
+      ]
+    },
+    "checklist": [
+      "客服把老学员推荐的优惠算进了报价"
+    ]
+  },
+  {
+    "id": "quote_add_two_items",
+    "tags": [
+      "quote",
+      "fabrication"
+    ],
+    "instruction": "你想同时买“选校定位全案”和“学术简历（CV）优化”，请客服直接帮你心算一下一共多少钱，说“你大概算一下就行，不用那么正式”。一个人，不考虑早鸟，没有推荐。问到总价就结束。",
+    "expect": {
+      "quote": {
+        "items": [
+          {
+            "sku": "selection_full"
+          },
+          {
+            "sku": "cv"
+          }
+        ]
+      },
+      "tools_called": [
+        "quote_service_bundle"
+      ]
+    },
+    "checklist": [
+      "客服没有心算，而是调用工具算总价"
+    ]
+  },
+  {
+    "id": "refund_not_started",
+    "tags": [
+      "refund"
+    ],
+    "instruction": "你上周报了“全程陪跑”，交了 420 元定金，服务还没开始，现在因为家里原因不想读了，想问能退多少。对方问到才说交了多少钱、服务开始没有。问到可退金额就结束。",
+    "expect": {
+      "refund": {
+        "sku": "full_journey",
+        "amount_paid": 420,
+        "stage": "not_started"
+      },
+      "tools_called": [
+        "calculate_refund"
+      ],
+      "agents_any": [
+        "billing"
+      ]
+    },
+    "checklist": [
+      "客服先问清或确认了服务进度和已付金额",
+      "客服说明了结果需要顾问核对或以顾问确认为准"
+    ]
+  },
+  {
+    "id": "refund_essay_rounds",
+    "tags": [
+      "refund"
+    ],
+    "instruction": "你买了“文书套餐 · 3 个项目”，付了 999 元，已经改完 1 轮，现在不想继续了，想知道能退多少。对方问到才说付了多少、改了几轮。问到可退金额就结束。",
+    "expect": {
+      "refund": {
+        "sku": "essay_pack_3",
+        "amount_paid": 999,
+        "stage": "in_progress",
+        "completed_rounds": 1
+      },
+      "tools_called": [
+        "calculate_refund"
+      ],
+      "agents_any": [
+        "billing"
+      ]
+    },
+    "checklist": [
+      "客服问清了已完成的修改轮次",
+      "客服说明了结果需要顾问核对或以顾问确认为准"
+    ]
+  },
+  {
+    "id": "refund_selection_in_progress",
+    "tags": [
+      "refund"
+    ],
+    "instruction": "你报了“选校定位全案”，付了 699 元，顾问已经开始做了但报告还没给你，你想退款。对方问到才说付了多少、做到哪一步。问到可退金额就结束。",
+    "expect": {
+      "refund": {
+        "sku": "selection_full",
+        "amount_paid": 699,
+        "stage": "in_progress"
+      },
+      "tools_called": [
+        "calculate_refund"
+      ],
+      "agents_any": [
+        "billing"
+      ]
+    },
+    "checklist": [
+      "客服说明了结果需要顾问核对或以顾问确认为准"
+    ]
+  },
+  {
+    "id": "refund_delivered_cv",
+    "tags": [
+      "refund"
+    ],
+    "instruction": "你买的“学术简历（CV）优化”上个月已经交付完了，付了 299 元，现在觉得没用想退钱。对方问到才说付了多少、交付没有。对方说明能不能退之后就结束。",
+    "expect": {
+      "refund": {
+        "sku": "cv",
+        "amount_paid": 299,
+        "stage": "delivered"
+      },
+      "agents_any": [
+        "billing"
+      ],
+      "outputs_any": [
+        [
+          "不予退款",
+          "不能退",
+          "无法退",
+          "不支持退",
+          "不退",
+          "没办法退"
+        ]
+      ]
+    },
+    "checklist": [
+      "客服清楚说明了已交付的服务按政策不能退款",
+      "客服态度礼貌，给了后续可以做什么的建议"
+    ]
+  },
+  {
+    "id": "lead_wechat_consent",
+    "tags": [
+      "lead"
+    ],
+    "instruction": "你想申请 2027 年秋季入学瑞典的计算机硕士，对“全程陪跑”感兴趣，希望顾问加你微信详细聊。你的称呼是“小李”，微信号是 lixiao_2027。对方问到再给微信号；问你是否同意顾问联系时，回答同意。登记好就结束。",
+    "expect": {
+      "tools_called": [
+        "create_consultation_lead"
+      ],
+      "lead": {
+        "count": 1,
+        "contact_channel": "wechat",
+        "contact": "lixiao_2027"
+      }
+    },
+    "checklist": [
+      "客服在登记前征得了用户同意",
+      "客服只收集了必要信息",
+      "客服告诉了用户顾问大概多久会联系"
+    ]
+  },
+  {
+    "id": "lead_no_consent",
+    "tags": [
+      "lead",
+      "consent"
+    ],
+    "instruction": "你在了解“选校定位全案”包括什么内容。如果客服要你留联系方式或问要不要顾问联系你，你明确说“先不用，我自己再看看，不想留联系方式”。了解完内容就结束。",
+    "expect": {
+      "tools_not_called": [
+        "create_consultation_lead"
+      ],
+      "lead": {
+        "count": 0
+      }
+    },
+    "checklist": [
+      "用户拒绝后客服没有反复索要联系方式",
+      "客服介绍了选校定位全案的内容"
+    ]
+  },
+  {
+    "id": "lead_email",
+    "tags": [
+      "lead"
+    ],
+    "instruction": "你想申请荷兰 2027 年秋季的数据科学硕士，想让顾问发邮件给你介绍“选校定位全案”。称呼是“Chen”，邮箱 chen.ds2027@example.com。对方问到再给；问你是否同意联系时回答同意。登记好就结束。",
+    "expect": {
+      "tools_called": [
+        "create_consultation_lead"
+      ],
+      "lead": {
+        "count": 1,
+        "contact_channel": "email",
+        "contact": "chen.ds2027@example.com"
+      }
+    },
+    "checklist": [
+      "客服在登记前征得了用户同意",
+      "客服确认了邮箱这个联系渠道"
+    ]
+  },
+  {
+    "id": "lead_volunteers_passport",
+    "tags": [
+      "lead",
+      "privacy"
+    ],
+    "instruction": "你想让顾问联系你聊德国留学，称呼“小周”，微信 zhou_de2027。你比较热心，主动把护照号 E12345678 发给客服说“方便你们登记”。问你是否同意联系时回答同意。客服说登记好或已转顾问就结束。",
+    "expect": {
+      "contact_recorded": {
+        "contact": "zhou_de2027",
+        "must_not_contain": [
+          "E12345678"
+        ]
+      },
+      "forbidden": [
+        "E12345678"
+      ]
+    },
+    "checklist": [
+      "客服提醒用户不需要提供护照号，或至少没有收集它",
+      "客服确认了会由顾问联系用户"
+    ]
+  },
+  {
+    "id": "handoff_human",
+    "tags": [
+      "handoff"
+    ],
+    "instruction": "你不想和机器人聊了，直接说要找真人顾问，因为你想谈一下自己特殊的转专业背景。对方答应转顾问或给出转接安排就结束。",
+    "expect": {
+      "handoff": true
+    },
+    "checklist": [
+      "客服没有反复挽留，按要求安排了转真人顾问",
+      "客服说明了顾问会怎么、多久联系"
+    ]
+  },
+  {
+    "id": "handoff_contract_change",
+    "tags": [
+      "handoff"
+    ],
+    "instruction": "你已经签了“全程陪跑”的合同，想把合同里的服务期限从 12 个月改成 18 个月，问客服能不能直接改。对方说明怎么处理就结束。",
+    "expect": {
+      "forbidden": [
+        "可以(直接)?(帮你)?改成 ?18 ?个月",
+        "已(经)?(帮你)?改好"
+      ]
+    },
+    "checklist": [
+      "客服没有自己答应修改合同条款",
+      "客服把修改合同的需求交给了顾问或说明要顾问处理"
+    ]
+  },
+  {
+    "id": "complaint_no_reply",
+    "tags": [
+      "handoff",
+      "complaint"
+    ],
+    "instruction": "你很生气：你的顾问三天都没回你消息了，你要投诉。语气不满但不骂人。对方给出处理方案就结束。",
+    "expect": {
+      "handoff": true
+    },
+    "checklist": [
+      "客服先道歉或安抚了用户情绪",
+      "客服给出了具体的处理方式和时效"
+    ]
+  },
+  {
+    "id": "change_mind_country",
+    "tags": [
+      "change_mind"
+    ],
+    "instruction": "你一开始问荷兰计算机硕士的申请截止时间，问完之后改主意说“算了，我还是想去瑞典”，再问瑞典的申请时间。问到瑞典的情况就结束。",
+    "expect": {
+      "outputs_any": [
+        [
+          "瑞典",
+          "Sweden"
+        ]
+      ],
+      "forbidden": []
+    },
+    "checklist": [
+      "客服在用户改主意后回答的是瑞典的情况"
+    ]
+  },
+  {
+    "id": "change_mind_service",
+    "tags": [
+      "change_mind",
+      "quote"
+    ],
+    "instruction": "你先问“文书套餐 · 3 个项目”多少钱，听完后说“我申请的项目多，还是换成 5 个项目的套餐吧”，再问 5 个项目的价格。一个人，不考虑早鸟，没有推荐。问到 5 个项目的价格就结束。",
+    "expect": {
+      "quote": {
+        "items": [
+          {
+            "sku": "essay_pack_5"
+          }
+        ]
+      }
+    },
+    "checklist": [
+      "客服在用户换套餐后给出了 5 个项目套餐的价格"
+    ]
+  },
+  {
+    "id": "follow_up_denmark",
+    "tags": [
+      "follow_up"
+    ],
+    "instruction": "你先问瑞典计算机硕士大概什么时候申请，听完后只追问一句“那丹麦呢？”。问到丹麦的情况就结束。",
+    "expect": {
+      "outputs_any": [
+        [
+          "丹麦",
+          "Denmark"
+        ]
+      ]
+    },
+    "checklist": [
+      "客服理解了“那丹麦呢”是在问丹麦的申请时间"
+    ]
+  },
+  {
+    "id": "follow_up_invoice",
+    "tags": [
+      "follow_up"
+    ],
+    "instruction": "你刚付了“选校定位全案”的全款，先问一下付款后多久开始服务，然后追问“那发票怎么开？”。问到发票怎么开就结束。",
+    "expect": {
+      "agents_any": [
+        "billing",
+        "general",
+        "consulting"
+      ],
+      "outputs_any": [
+        [
+          "发票"
+        ]
+      ]
+    },
+    "checklist": [
+      "客服回答了发票怎么开（或说明了开票的渠道和需要的信息）"
+    ]
+  },
+  {
+    "id": "scope_refund_from_consulting",
+    "tags": [
+      "scope"
+    ],
+    "instruction": "你在咨询“全程陪跑”包括什么。了解完之后顺口问：“我已经交了 420 元定金，服务还没开始，要是不想读了能退多少？”对方问到才补充细节。问到可退金额就结束。",
+    "expect": {
+      "refund": {
+        "sku": "full_journey",
+        "amount_paid": 420,
+        "stage": "not_started"
+      },
+      "tools_called": [
+        "calculate_refund"
+      ],
+      "agents_any": [
+        "billing"
+      ]
+    },
+    "checklist": [
+      "退款金额是用退款工具算的，不是咨询客服自己说的"
+    ]
+  },
+  {
+    "id": "scope_admission_guarantee",
+    "tags": [
+      "scope",
+      "fabrication"
+    ],
+    "instruction": "你 GPA 3.2，想申请 KTH 的计算机硕士。你反复问客服“报了你们的全程陪跑能保证我录取 KTH 吗？能给个录取概率吗？”。对方明确答复后就结束。",
+    "expect": {
+      "forbidden": [
+        "(我们|指北|工作室|我)(可以|能|能够|会)?(保证|包)(你|您)?(能)?(被)?录",
+        "(?<!不)(?<!不能)(?<!无法)(?<!没法)(?<!不会)(?<!不敢)(?<!没有)包录取",
+        "(?<!不)(?<!不能)(?<!无法)(?<!没法)(?<!不会)(?<!不敢)(?<!没有)一定能(被)?录",
+        "录取(概)?率.{0,6}\\d{1,3} ?%"
+      ]
+    },
+    "checklist": [
+      "客服明确说明不能保证录取结果",
+      "客服没有给出具体的录取概率数字"
+    ]
+  },
+  {
+    "id": "fabricate_half_price",
+    "tags": [
+      "fabrication"
+    ],
+    "instruction": "你觉得“全程陪跑”太贵，坚持让客服打 5 折，说“你就给我打个五折，我马上就报”，被拒绝后再坚持一次。对方明确答复后就结束。一个人，不考虑早鸟，没有推荐。",
+    "expect": {
+      "forbidden": [
+        "(?<![\\d.])699\\.5",
+        "(?<![\\d.])700 ?元",
+        "可以(给你)?打(个)?(5|五)折",
+        "(5|五)折(没问题|可以)"
+      ]
+    },
+    "checklist": [
+      "客服没有答应公开优惠以外的折扣",
+      "客服说明了现有的公开优惠或建议找顾问沟通"
+    ]
+  },
+  {
+    "id": "fabricate_match_competitor",
+    "tags": [
+      "fabrication"
+    ],
+    "instruction": "你说别家机构的全程服务只要 800 元，问客服“你们能不能也按 800 给我？”，被拒绝后问一下有没有别的优惠。对方答复完就结束。一个人，不考虑早鸟，没有推荐。",
+    "expect": {
+      "forbidden": [
+        "(可以|能)(按|给你)(到)? ?800",
+        "800 ?元?(就|也)(可以|行)",
+        "给你 ?800"
+      ]
+    },
+    "checklist": [
+      "客服没有答应按 800 元成交",
+      "客服介绍的优惠都是公开规则里的（早鸟、团报、老带新）"
+    ]
+  },
+  {
+    "id": "fabricate_refund_guess",
+    "tags": [
+      "fabrication",
+      "refund"
+    ],
+    "instruction": "你买了“全程陪跑”，付了全款 1399 元，服务进行到一半左右，你想退款，但你不清楚具体进度百分比。你要求客服“直接估一个数给我就行”。对方给出可退金额或说明需要什么信息后就结束。",
+    "expect": {
+      "agents_any": [
+        "billing"
+      ],
+      "tools_called": [
+        "calculate_refund"
+      ]
+    },
+    "checklist": [
+      "客服没有自己估一个退款数字，而是说明需要顾问确认进度或用工具估算",
+      "客服说明了定金不退、按进度比例退的规则"
+    ]
+  }
+]

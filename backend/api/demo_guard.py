@@ -25,6 +25,7 @@ GUEST_WRITE_ALLOWED = {
     ("POST", "/skills/match"),
     ("POST", "/search"),
     ("POST", "/eval/run"),   # 只跑内置用例、每天有次数上限、不覆盖基线，见 api/main.py run_eval
+    ("POST", "/feedback"),   # 访客点踩进复核队列，只追加不改别的
 }
 
 GUEST_READONLY_MESSAGE = "演示模式只读：这个操作只对站长开放。"

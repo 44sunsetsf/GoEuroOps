@@ -316,3 +316,5 @@ a { color: inherit; }
   .studio-badge { left: 12px; right: 12px; bottom: 12px; padding: 11px 14px; }
   .studio-badge-text small { display: none; }
 }
+.bubble-feedback { margin-top: 6px !important; font-size: 12px; color: var(--ink-soft); }
+.bubble-feedback button { padding: 0; border: 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline; cursor: pointer; }

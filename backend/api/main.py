@@ -132,6 +132,7 @@ def _build_evaluator(cfg: Dict[str, Any], recognizer: Any) -> Any:
     知识库和检索管理器（缓存、熔断）仍然共用，评测也会消耗真实的模型额度。"""
     from agents.agent_orchestrator import AgentOrchestrator
     from business.lead_store import LeadStore
+    from core.trace_store import TraceStore
     from evaluation.evaluator import EndToEndEvaluator
 
     eval_orchestrator = AgentOrchestrator(
@@ -140,6 +141,7 @@ def _build_evaluator(cfg: Dict[str, Any], recognizer: Any) -> Any:
         model=cfg["model"],
         skill_manager=services.skill_manager,
         lead_store=LeadStore(),
+        trace_store=TraceStore(redis_client=None),   # 评测的 trace 只放内存，不混进线上
     )
     eval_orchestrator.set_shared_tools(services.knowledge)
     return EndToEndEvaluator(
@@ -167,6 +169,7 @@ async def lifespan(app: FastAPI):
     from business.catalog import get_catalog, get_countries
     from business.lead_store import LeadStore
     from business.notifier import FeishuNotifier
+    from core.review_queue import ReviewQueue
 
     cfg = _anthropic_cfg()
     # 业务目录在启动时校验一次，YAML 写错直接启动失败，而不是等用户问价格时才暴露
@@ -211,7 +214,10 @@ async def lifespan(app: FastAPI):
     services.lead_store.notifier = FeishuNotifier.from_env()
     logger.info("线索推送: %s", "飞书机器人" if services.lead_store.notifier else "未配置")
 
-    # Agent 编排器
+    # bad case 复核队列（Redis；没有就放内存）
+    services.review_queue = ReviewQueue()
+
+    # Agent 编排器（trace 存内存 + Redis，重启后仍能按 request_id 查）
     services.orchestrator = AgentOrchestrator(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
@@ -282,9 +288,9 @@ async def _guest_guard(request: Request, call_next):
 
 
 # ── 路由（各模块在 api/routes/ 下）──────────────────────────────────────────────
-from api.routes import chat, evals, knowledge, leads, memory, skills, system  # noqa: E402
+from api.routes import chat, evals, knowledge, leads, memory, review, skills, system  # noqa: E402
 
-for _module in (system, skills, leads, memory, chat, knowledge, evals):
+for _module in (system, skills, leads, memory, chat, knowledge, evals, review):
     app.include_router(_module.router)
 
 

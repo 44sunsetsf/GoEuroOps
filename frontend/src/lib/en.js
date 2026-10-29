@@ -348,6 +348,8 @@ export default {
   '你好，我是指北的 AI 助手。可以问我五国的申请时间、语言要求、学费，也可以了解我们的服务和价格。': 'Hi, I am the True North AI assistant. Ask me about application windows, language requirements and tuition in the five countries, or about our services and prices.',
   '正在回答': 'Answering',
   '已转给顾问，工作日 24 小时内会联系你。': 'Passed to an advisor, who will contact you within 24 hours on weekdays.',
+  '没帮到我': 'Not helpful',
+  '谢谢反馈，顾问会看到这条回答。': 'Thanks, an advisor will review this answer.',
   '输入你的问题': 'Type your question',
   '比如：我想申请 KTH，需要准备什么？': 'e.g. I want to apply to KTH, what do I need to prepare?',
   '今天的体验名额已经用完了，明天再来看看吧。': 'Today\'s demo quota is used up. Please come back tomorrow.',

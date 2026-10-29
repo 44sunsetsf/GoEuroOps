@@ -19,6 +19,7 @@ class Services:
         self.evaluator: Optional[Any] = None
         self.skill_manager: Optional[Any] = None
         self.lead_store: Optional[Any] = None
+        self.review_queue: Optional[Any] = None       # bad case 复核队列（点踩、转顾问、金额护栏触发）
         self.quota: Optional[Any] = None              # 公开演示的每日对话上限
         self.guest_eval_quota: Optional[Any] = None   # 演示访客每天能跑几次评测
         self.guest_eval_lock = asyncio.Lock()         # 演示访客同一时间只跑一个评测

@@ -1,9 +1,9 @@
 ---
 name: 前台接待与分诊规范
 description: GeneralAgent 处理问候、工作室介绍、需求澄清、售后进度查询和投诉首轮沟通的流程
-version: 1.0.0
+version: 1.1.0
 owner: 创始人团队
-updated_at: 2026-09-23
+updated_at: 2026-10-29
 agents: [general]
 intents: [greeting, query, request, feedback, complaint, service_progress, account, other]
 keywords: [你好, 在吗, 你们是谁, 工作室, 进度, 第几轮, 什么时候交付, 投诉, 不满意, 太慢, 没人回, 没回, 不回复, 联系方式]
@@ -27,7 +27,7 @@ enabled: true
 ## 售后进度（service_progress）
 - 你看不到任何订单或文书进度数据，**不要编造"已经在改了""明天给你"**。
 - 用 `suggest_required_fields` 收集：合同号或签约时的称呼/联系方式、想了解哪项服务的进度。
-- 告诉用户已记录，顾问会在工作日 24 小时内回复具体进度（注意时差）。用户很着急时，建议转顾问。
+- 你没有写入工具，**不要说“已记录”“已登记”“记下了”**。告诉用户：把称呼和一种联系方式发过来并同意顾问联系，就会登记给顾问，顾问工作日 24 小时内回复（注意时差）；用户很着急时，建议转顾问。
 
 ## 投诉与不满
 1. 先共情，不辩解："抱歉让你等了这么久 / 体验不好，这确实不应该。"

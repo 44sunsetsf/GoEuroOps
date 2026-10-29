@@ -28,6 +28,10 @@
             <p v-else>{{ m.content }}</p>
             <p v-if="m.handoff" class="bubble-note">{{ t('已转给顾问，工作日 24 小时内会联系你。') }}</p>
             <p v-if="m.failed" class="bubble-note is-error">{{ m.failed }}</p>
+            <p v-if="m.role === 'assistant' && m.requestId && !m.pending" class="bubble-feedback">
+              <span v-if="m.feedback">{{ t('谢谢反馈，顾问会看到这条回答。') }}</span>
+              <button v-else type="button" @click="dislike(m)">{{ t('没帮到我') }}</button>
+            </p>
           </article>
         </div>
 
@@ -52,7 +56,7 @@
 <script setup>
 import { t } from '../lib/i18n.js'
 import { nextTick, reactive, ref, watch } from 'vue'
-import { streamChat } from '../lib/backends'
+import { sendFeedback, streamChat } from '../lib/backends'
 import { renderMarkdown } from '../lib/markdown'
 import { STARTERS } from './content'
 
@@ -108,13 +112,19 @@ function scrollDown() {
   nextTick(() => list.value?.scrollTo({ top: list.value.scrollHeight, behavior: 'smooth' }))
 }
 
+// 点踩的回答进后台的 bad case 复核队列（失败也不打扰用户）
+async function dislike(m) {
+  m.feedback = true
+  try { await sendFeedback(settings, m.requestId, 'down') } catch { /* ignore */ }
+}
+
 async function send(text) {
   const content = (text ?? draft.value).trim()
   if (!content || busy.value) return
   draft.value = ''
   nextTick(grow)
   messages.value.push({ id: ++seq, role: 'user', content })
-  const reply = reactive({ id: ++seq, role: 'assistant', content: '', pending: true, handoff: false, failed: '' })
+  const reply = reactive({ id: ++seq, role: 'assistant', content: '', pending: true, handoff: false, failed: '', requestId: '', feedback: false })
   messages.value.push(reply)
   busy.value = true
   scrollDown()
@@ -126,6 +136,7 @@ async function send(text) {
         if (!reply.content) reply.content = res.response
         if (res.conversationId) { settings.conversationId = res.conversationId; persist() }
         reply.handoff = Boolean(res.escalated)
+        reply.requestId = res.requestId
       },
       onError(error) { reply.failed = failureText(error) }
     })

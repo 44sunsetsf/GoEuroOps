@@ -69,7 +69,7 @@
 		request_header @guest X-Studio-Role guest
 
 		@private {
-			not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog
+			not path / /index.html /assets/* /runtime-config.js /favicon.ico /api/chat /api/chat/* /api/catalog /api/feedback
 			not header X-Studio-Role guest
 		}
 		basic_auth @private {

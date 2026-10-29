@@ -182,3 +182,26 @@ def test_price_update_endpoint_owner_only(monkeypatch):
     cv = next(s for s in r.json()["catalog"]["services"] if s["sku"] == "cv")
     assert cv["price"] == default + 50 and r.json()["default_prices"]["cv"] == default
     assert client.put("/catalog/prices", json={"prices": {"nope": 1}}).status_code == 400
+
+
+def test_guest_thumbs_down_goes_to_review_queue_and_owner_confirms(client, monkeypatch):
+    from core.review_queue import ReviewQueue
+
+    trace = {"request_id": "r1", "user_id": "u1", "message": "微信 wang_2027，想退定金", "response": "退 3000 元",
+             "tool_calls": [], "tools_used": [], "skills_applied": []}
+
+    class FakeOrchestrator:
+        async def get_tool_trace(self, request_id):
+            return trace if request_id == "r1" else None
+
+    monkeypatch.setattr(services, "orchestrator", FakeOrchestrator())
+    monkeypatch.setattr(services, "review_queue", ReviewQueue(redis_client=None))
+    assert client.post("/feedback", json={"request_id": "nope", "rating": "down"}, headers=GUEST).status_code == 404
+    r = client.post("/feedback", json={"request_id": "r1", "rating": "down", "comment": "金额不对"}, headers=GUEST)
+    assert r.status_code == 200 and r.json()["queued"] is True
+    guest_view = client.get("/review", headers=GUEST).json()["items"][0]
+    assert "wang_2027" not in guest_view["message"]                       # 访客看到的打码
+    assert client.post("/review/r1", json={"status": "confirmed", "expected": "x"}, headers=GUEST).status_code == 403
+    assert client.post("/review/r1", json={"status": "confirmed", "expected": "金额以工具结果为准"}).status_code == 200
+    cases = client.get("/review/export").json()["cases"]
+    assert cases[0]["expected"] == "金额以工具结果为准"

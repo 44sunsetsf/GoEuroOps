@@ -111,6 +111,7 @@ async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
     from agents.agent_orchestrator import AgentOrchestrator
     from business.lead_store import LeadStore
     from core.skill_loader import SkillManager
+    from core.trace_store import TraceStore
 
     rows = load_dataset(dataset)[:limit] if limit else load_dataset(dataset)
     model = os.getenv("ANTHROPIC_MODEL", "")
@@ -124,6 +125,7 @@ async def main(dataset: str, limit: Optional[int], concurrency: int) -> Path:
             model=model,
             skill_manager=skills,
             lead_store=LeadStore(),
+            trace_store=TraceStore(redis_client=None),
         )
         orchestrator.set_shared_tools(manager)
         sem = asyncio.Semaphore(concurrency)

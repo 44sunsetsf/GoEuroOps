@@ -43,7 +43,8 @@ python -m pytest -q
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload` | 查看、热加载 |
 | | `POST /skills/match`、`GET /skills/evals` | 命中测试（得分明细）、跑命中回归用例 |
 | 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/stats` | 检索（改写 → 召回 → 重排）、导入、统计 |
-| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /metrics` | 在线指标、单次请求的工具/Skill/门控明细、Prometheus |
+| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /metrics` | 在线指标、单次请求的工具/Skill/门控明细（存 Redis 7 天）、Prometheus |
+| 复核 | `POST /feedback`、`GET /review`、`POST /review/{request_id}`、`GET /review/export` | 点踩 / 转顾问 / 金额护栏触发的对话进复核队列；顾问确认后导出为回归用例 |
 | 评测 | `POST /eval/run` | 意图、Skill 路由、五维对话质量、工具调用检查；可选 RAG 门控对照实验 |
 
 ## 一次对话的链路
@@ -94,6 +95,9 @@ memory/notes.py                原话笔记（ChromaDB，A-Mem）：每句陈述
 memory/consolidate.py          整理：一次模型调用补全笔记、抽档案候选、写咨询记录
 api/routes/memory.py           顾问接口：看档案、改字段、按用户要求删除全部记忆
 evaluation/evaluator.py        端到端评测
+evaluation/sim_benchmark.py    模拟用户端到端评测（τ-bench 思路：硬状态检查 + pass^k，清单裁判做软指标）
+core/trace_store.py            trace 存储：内存 + Redis 持久化，可选 OpenTelemetry 导出
+core/review_queue.py           bad case 复核队列
 skills/                        业务规范（编写规范见 skills/README.md）
 tests/                         单元测试（含所有 Skill 的命中回归用例）
 ```

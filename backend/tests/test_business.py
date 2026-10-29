@@ -343,3 +343,36 @@ def test_price_override_rejects_unknown_sku_and_negative():
             continue
         raise AssertionError(bad)
     assert read_price_overrides() == {}
+
+
+def test_handoff_summary_redacts_id_numbers():
+    from agents.base import Request
+    from agents.tools import build_handoff_summary
+
+    req = Request(message="我护照号 E12345678，身份证 110101199003077777，帮我转顾问", user_id="u", conv_id="c",
+                  entities={"note": ["E12345678"]})
+    summary = build_handoff_summary(req, "用户发了护照号 E12345678")
+    dump = str(summary)
+    assert "E12345678" not in dump and "110101199003077777" not in dump
+    assert "[证件号已隐去]" in summary["last_message"]
+
+
+def test_contact_messages_route_to_consulting_which_can_register_leads():
+    from agents.base import AgentType, Request
+    from agents.routing import Router
+    from core.intent_recognizer import IntentCategory
+
+    router = Router(lambda _agent: True)
+    for msg in ("称呼写 Chen，邮箱是 chen.ds2027@example.com", "我叫小周，微信是 zhou_de2027", "好的，我同意让顾问联系我",
+                "同意，登记吧"):
+        req = Request(message=msg, user_id="u", conv_id="c", intent=IntentCategory.OTHER, intent_confidence=0.6)
+        assert router.decide(req).primary_agent is AgentType.CONSULTING, msg
+    req = Request(message="你好", user_id="u", conv_id="c", intent=IntentCategory.GREETING, intent_confidence=0.9)
+    assert router.decide(req).primary_agent is AgentType.GENERAL
+    # 回答“是否同意顾问联系”被判成转人工时，仍交给咨询登记；真的要人工的照样升级
+    consent = Request(message="可以，同意顾问联系我。", user_id="u", conv_id="c",
+                      intent=IntentCategory.HUMAN_HANDOFF, intent_confidence=0.8)
+    assert router.decide(consent).primary_agent is AgentType.CONSULTING
+    human = Request(message="我同意，但我要转人工顾问联系我", user_id="u", conv_id="c",
+                    intent=IntentCategory.HUMAN_HANDOFF, intent_confidence=0.8)
+    assert router.decide(human).primary_agent is AgentType.ESCALATION

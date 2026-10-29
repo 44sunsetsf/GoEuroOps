@@ -131,7 +131,7 @@ class BillingAgent(BaseAgent):
         role="服务费用与售后",
         mission="解答付款方式、定金与尾款、退款政策和发票问题；用退款计算工具给出估算，明确所有实际退款都需要顾问核验协议后处理。",
         workflow=("确认费用场景", "收集必要核验字段", "按政策解释或用工具估算", "说明处理路径与时效", "需要实际操作时转顾问"),
-        input_contract=("合同号", "金额", "付款时间", "付款渠道", "服务进度", "知识库上下文"),
+        input_contract=("服务项目", "已付金额", "服务进度", "正式核验时：合同号、付款时间、付款渠道", "知识库上下文"),
         output_contract=("需要核验的信息", "按政策可以判断的内容", "估算结果及依据", "下一步处理路径与时效"),
         handoff_conditions=("实际发起退款", "多付或付款成功但服务未确认", "发票作废重开", "对退款金额有异议"),
         tool_scope=("search_knowledge_base", "check_payment_fields", "calculate_refund", "get_payment_policy", "compare_amounts"),
@@ -151,7 +151,8 @@ class BillingAgent(BaseAgent):
             "amount": req.entities.get("amount", []),
             "date": req.entities.get("date", []),
             "services_mentioned": req.entities.get("service", []),
-            "missing_fields": [
+            # 估算退款只看服务、已付金额和进度；合同号等只在顾问正式核验时才要，不要因为缺它们就不估算
+            "missing_for_formal_verification": [
                 label for label, values in (
                     ("合同号", req.entities.get("contract_id", [])),
                     ("付款金额", req.entities.get("amount", [])),
