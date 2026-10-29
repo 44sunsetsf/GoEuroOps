@@ -38,4 +38,10 @@ async def set_profile_field(user_id: str, slot: str, body: ProfileFieldInput, re
 @router.delete("/memory/{user_id}", tags=["记忆"])
 async def forget_user(user_id: str, request: Request):
     """隐私删除：清掉这位用户的会话、档案、咨询记录、笔记和后台对话记录。线索和交接单是业务记录，由顾问在线索面板处理。"""
-    return {"user_id": user_id, "deleted": await _memory(request).forget_user(user_id)}
+    deleted = await _memory(request).forget_user(user_id)
+    # trace 和复核队列里也有原话片段，一起删
+    if services.orchestrator is not None:
+        deleted["traces"] = await services.orchestrator.trace_store.forget(user_id)
+    if services.review_queue is not None:
+        deleted["review_items"] = await services.review_queue.forget(user_id)
+    return {"user_id": user_id, "deleted": deleted}

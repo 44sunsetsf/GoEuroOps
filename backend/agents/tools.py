@@ -12,11 +12,12 @@ catalog.yaml 计算，LLM 只负责解释结果，不自己做算术，也不自
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING, Union
 
 from business.catalog import CATEGORY_LABELS, get_catalog, get_countries
-from business.lead_store import CHANNEL_LABELS, LeadStore, mask_contact, validate_lead_input
+from business.lead_store import CHANNEL_LABELS, LeadStore, mask_contact, redact_sensitive_ids, validate_lead_input
 from business.pricing import calculate_refund, quote_bundle
 from tooling.gateway import ToolPolicy
 from tooling.schemas import (
@@ -334,11 +335,12 @@ def build_handoff_summary(req: Request, reason: str) -> Dict[str, Any]:
         "request_id": req.request_id,
         "user_id": req.user_id,
         "conv_id": req.conv_id,
-        "reason": reason[:200],
+        # 交接单进线索面板、不过期：证件号和记忆模块一样先换成占位符
+        "reason": redact_sensitive_ids(reason)[:200],
         "intent": req.intent.value if req.intent else "unknown",
         "urgency": req.urgency.name if req.urgency else "UNKNOWN",
-        "entities": req.entities or {},
-        "last_message": (req.message or "")[:500],
+        "entities": json.loads(redact_sensitive_ids(json.dumps(req.entities or {}, ensure_ascii=False))),
+        "last_message": redact_sensitive_ids(req.message or "")[:500],
         # 顾问接手时不用翻聊天记录：附上客户档案和以前的咨询记录（线索面板显示 background）
         "background": handoff_background(req.memory_facts, req.memory_cases),
     }

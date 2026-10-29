@@ -87,6 +87,10 @@ export async function runEvaluation(settings, body = null) {
   })
 }
 
+export async function sendFeedback(settings, requestId, rating, comment = '') {
+  return requestJson(backendMeta(settings).baseUrl, '/feedback', jsonRequest('POST', { request_id: requestId, rating, comment }))
+}
+
 export async function requestSearch(settings, query, topK = 5, domain = '') {
   const params = new URLSearchParams({ query, top_k: String(topK) })
   if (domain) params.set('domain', domain)

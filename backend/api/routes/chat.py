@@ -83,7 +83,21 @@ async def _run_chat(req: ChatRequest, conv_id: str, on_delta=None) -> ChatRespon
     )
     # 站长后台按访客查看对话：记下这一轮问答（失败不影响回答）
     await chat_log.record(req.user_id, conv_id, req.message, response)
+    await _queue_for_review(result.request_id)
     return response
+
+
+async def _queue_for_review(request_id: str) -> None:
+    """转了顾问、或金额护栏改过句子的回答，自动进 bad case 复核队列（失败不影响回答）。"""
+    if services.review_queue is None:
+        return
+    from core.review_queue import reasons_from_trace
+    try:
+        trace = await services.orchestrator.get_tool_trace(request_id)
+        if trace is not None:
+            await services.review_queue.add(trace, reasons_from_trace(trace))
+    except Exception:
+        logger.debug("复核入队失败", exc_info=True)
 
 
 async def _check_quota() -> None:

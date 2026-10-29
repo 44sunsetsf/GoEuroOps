@@ -88,7 +88,7 @@ async def get_tool_trace(request_id: str, request: Request):
     """查看某次请求的工具调用明细。"""
     if services.orchestrator is None:
         raise HTTPException(503, "服务未就绪")
-    trace = services.orchestrator.get_tool_trace(request_id)
+    trace = await services.orchestrator.get_tool_trace(request_id)
     if trace is not None and is_guest(request.headers):
         trace = mask_pii(trace)
     return ToolTraceResponse(
@@ -103,7 +103,7 @@ async def list_recent_tool_traces(request: Request, limit: int = 20):
     """查看最近 N 次请求的工具调用明细。"""
     if services.orchestrator is None:
         raise HTTPException(503, "服务未就绪")
-    items = services.orchestrator.get_recent_tool_traces(limit=limit)
+    items = await services.orchestrator.get_recent_tool_traces(limit=limit)
     if is_guest(request.headers):
         items = mask_pii(items)
     return RecentToolTracesResponse(items=items)

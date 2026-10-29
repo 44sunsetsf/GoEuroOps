@@ -100,3 +100,16 @@ class EvalRunInput(BaseModel):
     dialog_cases: Optional[List[EvalDialogInput]] = None
     include_skill_evals: bool = True
     compare_rag_gate: bool = False   # 额外跑一组"模型自行检索"对照，会多调用 LLM
+
+
+class FeedbackInput(BaseModel):
+    """用户对某一轮回答的反馈。点踩的进 bad case 复核队列。"""
+    request_id: str = Field(..., min_length=1, max_length=64)
+    rating: str = Field(..., pattern="^(up|down)$")
+    comment: str = Field("", max_length=300)
+
+
+class ReviewInput(BaseModel):
+    """顾问处理一条复核：confirmed（是 bad case，写期望行为）或 dismissed。"""
+    status: str = Field(..., pattern="^(confirmed|dismissed|pending)$")
+    expected: str = Field("", max_length=500)

@@ -612,6 +612,8 @@ flowchart LR
 | Redis | `goeuroops:lead:<id>`、`goeuroops:leads` | 线索和交接单、索引 | 不过期 | `business/lead_store.py` |
 | Redis | `goeuroops:lead_open:<handoff:user:conv / lead:哈希>` | 去重键：指向还在跟进的那张单 | 30 天，关单时删除 | `business/lead_store.py` |
 | Redis | `goeuroops:chatlog` | 每轮问答（站长后台按访客查看） | 最近 2000 条 | `core/chat_log.py` |
+| Redis | `goeuroops:trace:<request_id>`、`goeuroops:traces` | 每次请求的 trace（意图、路由、门控、Skill、工具入参和结果、原话和回复片段，证件号已隐去） | 7 天，最近 200 条（`GOEUROOPS_TOOL_TRACE_TTL_S`、`GOEUROOPS_TOOL_TRACE_MAX`） | `core/trace_store.py` |
+| Redis | `goeuroops:review`、`goeuroops:review:index` | bad case 复核队列（点踩、转顾问、金额护栏触发） | 最近 500 条 | `core/review_queue.py` |
 | Redis | `goeuroops:usage:<北京日期>` | 按天、按来源的调用数、token、费用估算 | 120 天 | `core/llm_usage.py` |
 | Redis | `goeuroops:quota:chat:<日期>`、`goeuroops:quota:guest_eval:<日期>` | 每日对话、访客评测次数 | 当天 | `api/quota.py` |
 | Redis | `wm:<user>:<conv>` | 会话消息（最多 60 条） | 24 小时 | `memory/` |
@@ -640,7 +642,8 @@ flowchart LR
 | Skills | `GET /skills`、`GET /skills/{id}`、`POST /skills/reload`、`POST /skills/match`、`GET /skills/evals` | 查看、热加载、命中测试、跑回归用例 | 仅 match |
 | 知识库 | `POST /search`、`POST /knowledge/add`、`POST /knowledge/upload`、`GET /knowledge/documents`、`DELETE /knowledge/documents/{doc_id}`、`GET /knowledge/stats` | 检索、导入（同一文档再导入即替换）、按文档列出和删除、统计 | 仅 search |
 | 评测 | `POST /eval/run` | 意图、Skill 路由、五维质量、工具调用、门控对照 | ✓（每天限次，只跑内置用例） |
-| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /trace/tools`、`GET /tools/stats`、`GET /intent/stats`、`GET /metrics` | 在线指标、单次请求明细、Prometheus | — |
+| 观测 | `GET /monitor`、`GET /trace/tool/{request_id}`、`GET /trace/tools`、`GET /tools/stats`、`GET /intent/stats`、`GET /metrics` | 在线指标、单次请求明细（存 Redis，重启后仍可查）、Prometheus | — |
+| 复核 | `POST /feedback`、`GET /review`、`POST /review/{request_id}`、`GET /review/export` | 用户点赞点踩；bad case 复核列表；顾问确认（写期望行为）或驳回；已确认的导出为回归用例 | 仅 feedback |
 | 系统 | `GET /session`、`GET /health` | 当前身份（guest / owner）、健康检查 | — |
 
 **新增写接口默认只对站长开放**：访客能调用的写接口是白名单（`api/demo_guard.py::GUEST_WRITE_ALLOWED`），不在名单里的一律 403。
@@ -686,6 +689,9 @@ flowchart TD
 **在线观测**
 
 - 每次回答都带 `skills_applied`、`rag_gate`、`tools_used`、`routing_reason`。完整明细可以用 `GET /trace/tool/{request_id}` 查到。
+- **trace 持久化**（`core/trace_store.py`）：内存里留最近 200 条，同时异步写 Redis（7 天 TTL），重启后接口照常能查；Redis 出错只用内存，不影响回答。trace 里有原话和回复片段（证件号先隐去），访客查看时打码，隐私删除（`DELETE /memory/{user_id}`）会一起删掉。
+- 可选 OpenTelemetry 导出：`GOEUROOPS_OTEL_EXPORT=1` 且装了 `opentelemetry` 时，每条 trace 发一个 span（GenAI 语义约定的字段加门控、Skill、工具、升级等业务字段），可接 Langfuse、Jaeger。默认关；线上没装，不在小服务器上自部署 Langfuse（要 Postgres + ClickHouse）。
+- **bad case 闭环**（`core/review_queue.py`）：学生端每条回答下有“没帮到我”，点踩的、转了顾问的、金额护栏改过句子的对话自动进复核队列（同一轮合并原因，证件号先隐去）。顾问在 `POST /review/{request_id}` 确认是 bad case 时必须写期望行为，`GET /review/export` 把已确认的导出成回归用例（`message` + `expected` + 当时的坏回答），存进 `evaluation/datasets/` 就能加进回归。
 - `monitor/performance_monitor.py` 定期采集 Agent 和工具的统计，用 Z-score 检测突变，可选 Webhook 告警，并把最近 5 分钟的成功率、首字耗时写回路由（第 6 节）。
 
 几个字段容易读错：
@@ -707,6 +713,7 @@ flowchart TD
 | `retrieval_benchmark.py` | 知识库检索：106 条（含多轮追问、知识库里没有答案的问题），文档级 Hit@1/Hit@3/MRR、注入命中率、无答案误注入率 | `python -m evaluation.retrieval_benchmark [--deep]` |
 | `tool_benchmark.py` | 工具选择：39 条，走完整链路，统计完全正确率、必调召回、多调、误调禁用工具、平均调用次数（标注规则见 `datasets/LABELING.md`） | `python -m evaluation.tool_benchmark` |
 | `memory_benchmark.py`、`locomo_benchmark.py` | 记忆：自建 48 题 + LoCoMo（见 8.5） | 见 8.5 |
+| `sim_benchmark.py` | **模拟用户端到端**（τ-bench 思路）：24 个客服任务（报价、退款、登记线索含未同意、隐私、转顾问、投诉、改主意、追问、越权、编价诱导），模型扮演带目标和隐藏信息的用户多轮对话；结束后**用代码检查最终状态**（线索 / 交接单、该调和不该调的工具、路由、回复里必须有的正确金额、不得出现的话），同一题跑 k 次报 pass^1 和 pass^k；另有逐条清单裁判做软指标，和硬状态分开报 | `python -m evaluation.sim_benchmark [--trials 4]` |
 | `skills/*/evals/cases.json` | 每个 Skill 的命中回归 | `GET /skills/evals`，单元测试里也会跑 |
 
 评测报告写在 `backend/evaluation/reports/`。报告里会记下所用模型，**不同模型的数字不能直接比较**。
@@ -770,7 +777,7 @@ flowchart LR
 
 完整的差距评估和计划见 [ROADMAP-commercial.md](ROADMAP-commercial.md)。和架构相关的主要几条：
 
-- **单机、单进程**：编排器的统计、trace、记忆的后台整理和空闲计时器都在进程内，不能直接横向扩成多副本。要扩容时，这些状态得先移到 Redis 或独立的任务队列。
+- **单机、单进程**：编排器的统计、记忆的后台整理和空闲计时器都在进程内，不能直接横向扩成多副本（trace 和复核队列已经在 Redis）。要扩容时，这些状态得先移到 Redis 或独立的任务队列。
 - **鉴权是演示级别**：站长靠 Caddy basic auth，没有顾问账号体系，CORS 是 `*`。
 - **价目和五国资料是草案**，需要创始人逐条核实。
 - **LLM Wiki 适合现在的资料规模**（18 页、目录约 8,000 字）。资料涨到上百页时，目录本身会太长，需要先按领域分目录或回到向量召回做粗筛；上传文档没有经过编译，只靠标题和开头一段被选中。

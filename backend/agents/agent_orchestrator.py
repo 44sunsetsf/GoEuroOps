@@ -23,7 +23,6 @@ import asyncio
 import logging
 import os
 import time
-from collections import deque
 from datetime import datetime
 from dataclasses import replace
 from typing import Any, Dict, List, Optional
@@ -33,11 +32,12 @@ from anthropic import AsyncAnthropic
 from agents.tools import (
     build_shared_rag_tools,
 )
-from business.lead_store import LeadStore
+from business.lead_store import LeadStore, redact_sensitive_ids
+from core.trace_store import TraceStore
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import make_client
 from core.rag_gate import RagGate, RagGateDecision, RagMode, cancel_speculative, retrieval_query
-from core.config import DEFAULT_MODEL, env_float, env_int
+from core.config import DEFAULT_MODEL, env_float
 
 
 from agents.base import (  # noqa: F401 —— 部分名字供旧的导入路径使用
@@ -90,13 +90,14 @@ class AgentOrchestrator:
         rag_tool_manager: Optional[Any] = None,
         lead_store: Optional[LeadStore] = None,
         rag_gate: Optional[RagGate] = None,
+        trace_store: Optional[TraceStore] = None,
     ):
         client = make_client(api_key, base_url, "agents")
 
         self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model)
         self._skill_manager = skill_manager
         self._composer = ResponseComposer(client, model, skill_manager)
-        self._recent_tool_traces = deque(maxlen=env_int("GOEUROOPS_TOOL_TRACE_MAX", 200))
+        self.trace_store = trace_store or TraceStore()     # 内存 + Redis 持久化，见 core/trace_store.py
         self._rag_gate = rag_gate or RagGate()
 
         # Agent 池：每种类型可有多个实例（水平扩展）
@@ -176,10 +177,15 @@ class AgentOrchestrator:
         """对外暴露意图识别，供 API 层先判断是否需要 RAG 等前置能力。"""
         return await self._intent_recognizer.recognize(message, history=history)
 
-    def _record_tool_trace(self, result: OrchestratorResult) -> None:
+    def _record_tool_trace(self, result: OrchestratorResult, req: Optional[Request] = None) -> None:
         trace = {
             "request_id": result.request_id,
             "timestamp": datetime.now().isoformat(),
+            "user_id": req.user_id if req is not None else "",
+            "conv_id": req.conv_id if req is not None else "",
+            # 原话和回复的片段，复核 bad case 时要看；证件号先换成占位符
+            "message": redact_sensitive_ids(req.message)[:500] if req is not None else "",
+            "response": redact_sensitive_ids(result.response or "")[:800],
             "intent": result.intent.value if result.intent else None,
             "primary_agent": result.primary_agent.value if result.primary_agent else None,
             "supporting_agents": [agent.value for agent in result.supporting_agents],
@@ -190,19 +196,13 @@ class AgentOrchestrator:
             "escalated": result.escalated,
             "latency_ms": round(result.latency_ms, 1),
         }
-        self._recent_tool_traces.append(trace)
+        self.trace_store.add(trace)
 
-    def get_tool_trace(self, request_id: str) -> Optional[Dict[str, Any]]:
-        for trace in reversed(self._recent_tool_traces):
-            if trace.get("request_id") == request_id:
-                return trace
-        return None
+    async def get_tool_trace(self, request_id: str) -> Optional[Dict[str, Any]]:
+        return await self.trace_store.get(request_id)
 
-    def get_recent_tool_traces(self, limit: int = 20) -> List[Dict[str, Any]]:
-        if not self._recent_tool_traces:
-            return []
-        limit = max(1, min(int(limit or 20), len(self._recent_tool_traces)))
-        return list(reversed(list(self._recent_tool_traces)[-limit:]))
+    async def get_recent_tool_traces(self, limit: int = 20) -> List[Dict[str, Any]]:
+        return await self.trace_store.recent(limit)
 
     # ── 主入口 ────────────────────────────────────────────────────────────────
 
@@ -260,7 +260,7 @@ class AgentOrchestrator:
                 **self._intent_fields(req),
                 rag_gate={"mode": "skipped", "reason": "澄清追问，不检索"},
             )
-            self._record_tool_trace(result)
+            self._record_tool_trace(result, req)
             return result
 
         decision = self._route_decision(req)
@@ -303,7 +303,7 @@ class AgentOrchestrator:
             skills_applied=list(response.skills_applied),
             rag_gate=gate.to_dict(),
         )
-        self._record_tool_trace(result)
+        self._record_tool_trace(result, req)
         return result
 
     @staticmethod
@@ -400,7 +400,7 @@ class AgentOrchestrator:
             ],
             rag_gate=gate.to_dict() if gate else {},
         )
-        self._record_tool_trace(result)
+        self._record_tool_trace(result, req)
         return result
 
     # ── 路由逻辑 ──────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@
 领域关键词（business/domain_terms.py）和实体再加分，最高分是主 Agent，够高的第二名做协作。
 """
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List
 
@@ -32,6 +33,17 @@ _GENERAL_INTENTS = {
     IntentCategory.ACCOUNT,
     IntentCategory.OTHER,
 }
+# 用户在留联系方式或同意顾问联系：只有咨询 Agent 有登记线索的工具，交给它，否则前台会说“记下了”却没登记
+_LEAD_HINT_RE = re.compile(
+    r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+    r"|(?<!\d)1[3-9]\d{9}(?!\d)"
+    r"|(?:微信|vx|wx|wechat)\s*(?:号)?\s*(?:是|为|:|：)?\s*[A-Za-z][-_A-Za-z0-9]{4,}"
+    r"|同意.{0,6}(?:联系|登记)|(?:帮我|可以|好的?)，?登记",
+    re.IGNORECASE,
+)
+# 只是在回答“是否同意顾问联系你”（没提人工、真人、转接）：意图识别常把它判成转人工，其实是登记线索的最后一步
+_CONSENT_ONLY_RE = re.compile(r"^(?!.*(?:人工|真人|转接|转给|转顾问)).{0,20}同意.{0,6}(?:联系|登记).{0,10}$")
+
 _CONSULTING_INTENTS = {
     IntentCategory.STUDY_CONSULT,
     IntentCategory.APPLICATION_PROCESS,
@@ -102,7 +114,8 @@ class Router:
                 confidence=1.0,
             )
 
-        if req.intent in (IntentCategory.ESCALATION, IntentCategory.HUMAN_HANDOFF, IntentCategory.DATA_PRIVACY):
+        consent_only = req.intent == IntentCategory.HUMAN_HANDOFF and _CONSENT_ONLY_RE.search((req.message or "").strip())
+        if req.intent in (IntentCategory.ESCALATION, IntentCategory.HUMAN_HANDOFF, IntentCategory.DATA_PRIVACY) and not consent_only:
             return RoutingDecision(
                 primary_agent=AgentType.ESCALATION,
                 reason=f"意图为 {req.intent.value if req.intent else 'unknown'}，触发升级路由",
@@ -172,6 +185,9 @@ class Router:
         scores[AgentType.CONSULTING] += min(0.45, consulting_hits * 0.18)
         scores[AgentType.BILLING] += min(0.45, billing_hits * 0.18)
         scores[AgentType.GENERAL] += min(0.35, general_hits * 0.12)
+
+        if _LEAD_HINT_RE.search(req.message or ""):
+            scores[AgentType.CONSULTING] += 0.7
 
         entities = req.entities or {}
         if entities.get("country") or entities.get("service"):
