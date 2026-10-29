@@ -8,6 +8,7 @@ from fastapi import File, HTTPException, Request, UploadFile
 
 from api.demo_guard import (
     is_guest,
+    mask_pii,
 )
 
 from fastapi import APIRouter
@@ -24,6 +25,8 @@ async def _knowledge_changed() -> None:
     services.tool_manager.invalidate_cache("knowledge_search")
     if services.wiki is not None:
         await asyncio.to_thread(services.wiki.invalidate_cache)
+        # 新上传的页先用标题和开头一段，目录条目在后台编译，编好后自动重组
+        asyncio.create_task(services.wiki.compile_uploads())
 
 
 def _knowledge_base():
@@ -132,6 +135,15 @@ async def knowledge_stats():
     if services.wiki is not None:
         stats["wiki"] = services.wiki.get_stats()
     return stats
+
+
+@router.get("/knowledge/wiki/misses", tags=["知识库"])
+async def wiki_misses(request: Request, limit: int = 50):
+    """wiki 最近选不中（选页为空或失败）的问题，最新的在前；用来发现目录里漏掉的用户说法。"""
+    if services.wiki is None:
+        raise HTTPException(404, "当前不是 wiki 模式")
+    rows = list(services.wiki.misses)[-max(1, min(limit, 200)):][::-1]
+    return {"misses": mask_pii(rows) if is_guest(request.headers) else rows}
 
 
 @router.get("/knowledge/documents", tags=["知识库"])

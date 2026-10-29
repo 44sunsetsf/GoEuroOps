@@ -69,7 +69,7 @@ services:
         price: 99
         unit: 30 分钟
     discount_eligible: false
-    upgrade_note: 30 天内升级选校定位全案，可抵扣 ¥199。
+    upgrade_note: 30 天内升级选校定位全案，已付的单次咨询费可全额抵扣。
 
   - sku: selection_full
     name: 选校定位全案

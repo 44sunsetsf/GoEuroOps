@@ -11,6 +11,13 @@
   目录       business/wiki/index.yaml：每页的摘要和"用户会怎么问"，由 LLM 离线编译，
              lint 禁止出现数字，所以改价不会让目录过期
 
+线上闭环（原版是"好的回答存回 wiki"，客服的回答不一定对，所以改成人工确认）：
+  选页为空或失败的问题记进 misses.jsonl → wiki_compile --review-misses 让模型建议归属页 →
+  人工删掉不对的 → --accept 并入 business/wiki/extra_questions.yaml，加载时并入对应页的常见问法。
+
+后台上传的文档：按标题拆成不超过 UPLOAD_PAGE_MAX_CHARS 的几页（不截断），上传后在后台
+用同一个编译提示词补目录条目（摘要 + 常见问法），结果按内容哈希存在数据目录，编好之前先用标题和开头一段。
+
 查询时不做向量召回：一次 LLM 调用读目录、选出最多 3 页，整页注入。
 这一步和意图识别并行（RagGate 的投机预取），通常不增加首字延迟。
 
@@ -32,7 +39,8 @@ import logging
 import os
 import re
 import time
-from collections import OrderedDict
+from collections import OrderedDict, deque
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
@@ -51,6 +59,14 @@ logger = logging.getLogger(__name__)
 WIKI_DIR = Path(__file__).resolve().parent.parent / "business" / "wiki"
 INDEX_PATH = WIKI_DIR / "index.yaml"
 GLOSSARY_PATH = WIKI_DIR / "glossary.md"
+EXTRA_QUESTIONS_PATH = WIKI_DIR / "extra_questions.yaml"
+MISS_LOG_KEEP = 200                      # 内存里留最近多少条选不中的问题
+MISS_LOG_MAX_BYTES = 2 * 1024 * 1024     # 落盘文件上限，到了就不再追加（等人工处理后清空）
+
+
+def wiki_data_dir() -> Path:
+    """运行时数据（上传文档的目录条目、选不中的问题）；和改价覆盖文件放在同一个数据卷。"""
+    return Path(os.getenv("GOEUROOPS_WIKI_DATA_DIR", "/app/data/wiki")).expanduser()
 
 # 页面 id → (标题, domain, 组成它的种子文档标题前缀)。种子文档由 business/kb_seed.py 从 YAML 生成。
 PAGE_LAYOUT: List[tuple] = [
@@ -149,6 +165,47 @@ def load_index() -> Dict[str, Dict[str, Any]]:
     return dict(data.get("pages") or {})
 
 
+def load_extra_questions() -> Dict[str, List[str]]:
+    """人工确认过的补充问法 {页面 id: [问法]}。"""
+    if not EXTRA_QUESTIONS_PATH.is_file():
+        return {}
+    data = yaml.safe_load(EXTRA_QUESTIONS_PATH.read_text(encoding="utf-8")) or {}
+    return {str(k): [str(q) for q in v or []] for k, v in (data.get("pages") or {}).items()}
+
+
+def split_upload(content: str, max_chars: int) -> List[tuple]:
+    """上传文档按 Markdown 标题拆成 (小标题, 正文) 段；一段太长再按空行、最后按字数切，不丢内容。"""
+    sections: List[List[str]] = [["", ""]]
+    for line in content.splitlines(keepends=True):
+        m = re.match(r"#{1,3}\s+(.+)", line)
+        if m and sections[-1][1].strip():
+            sections.append([m.group(1).strip(), ""])
+        elif m:
+            sections[-1][0] = m.group(1).strip()
+        sections[-1][1] += line
+    out: List[tuple] = []
+    for heading, body in sections:
+        chunk = ""
+        for para in re.split(r"(?<=\n)\s*\n", body):
+            while len(para) > max_chars:                 # 单段超长，硬切
+                out.append((heading, para[:max_chars]))
+                para = para[max_chars:]
+            if chunk and len(chunk) + len(para) > max_chars:
+                out.append((heading, chunk))
+                chunk = ""
+            chunk += para
+        if chunk.strip():
+            out.append((heading, chunk))
+    # 太短的相邻段合并，免得一篇短文被拆成很多页
+    merged: List[tuple] = []
+    for heading, body in out:
+        if merged and len(merged[-1][1]) + len(body) <= max_chars // 2:
+            merged[-1] = (merged[-1][0] or heading, merged[-1][1] + body)
+        else:
+            merged.append((heading, body))
+    return [(h, b.strip()) for h, b in merged if b.strip()]
+
+
 def build_pages(*, with_index: bool = True) -> List[WikiPage]:
     """从当前的 YAML 和文章现场组装全部页面（价格随后台改价实时变化）。"""
     _, seed_docs = build_seed_documents()
@@ -171,6 +228,8 @@ def build_pages(*, with_index: bool = True) -> List[WikiPage]:
             entry = index.get(page.id) or {}
             page.summary = str(entry.get("summary") or "")
             page.questions = [str(q) for q in entry.get("questions") or []]
+        for page in pages:
+            page.questions += [q for q in load_extra_questions().get(page.id, []) if q not in page.questions]
     return pages
 
 
@@ -203,8 +262,13 @@ class WikiKnowledge:
     def __init__(self, client: Any, model: str, *, max_pages: Optional[int] = None,
                  timeout_s: Optional[float] = None, cache_ttl_s: float = 300.0, cache_size: int = 512,
                  extra_docs: Optional[Callable[[], List[Dict[str, str]]]] = None,
-                 embed_fn: Optional[Callable[[List[str]], List[Any]]] = None):
+                 embed_fn: Optional[Callable[[List[str]], List[Any]]] = None,
+                 data_dir: Optional[Path] = None):
         self._client = client
+        self._data_dir = data_dir or wiki_data_dir()
+        self._upload_index: Dict[str, Dict[str, Any]] = self._load_upload_index()
+        self._compile_lock = asyncio.Lock()
+        self.misses: "deque[Dict[str, Any]]" = deque(maxlen=MISS_LOG_KEEP)
         self._extra_docs = extra_docs
         self._embed_fn = embed_fn
         self._phrase_ids: List[str] = []
@@ -218,7 +282,7 @@ class WikiKnowledge:
         self._cache: "OrderedDict[str, tuple]" = OrderedDict()
         self._inflight: Dict[str, "asyncio.Task[List[str]]"] = {}
         self.stats = {"selects": 0, "cache_hits": 0, "errors": 0, "empty": 0, "embed_fallback": 0,
-                      "local_fallback": 0, "total_ms": 0.0}
+                      "local_fallback": 0, "upload_compiled": 0, "total_ms": 0.0}
         self._pages: List[WikiPage] = []
         self._by_id: Dict[str, WikiPage] = {}
         self._version = ""
@@ -248,7 +312,7 @@ class WikiKnowledge:
             self._by_id = {p.id: p for p in self._pages}
 
     def _upload_pages(self) -> List[WikiPage]:
-        """后台上传的文档各自成页。没有经过离线编译，目录里用标题和开头一段当摘要。"""
+        """后台上传的文档按标题拆成几页。目录条目上传后在后台编译，编好之前用标题和开头一段。"""
         if self._extra_docs is None:
             return []
         try:
@@ -262,11 +326,80 @@ class WikiKnowledge:
             if not content:
                 continue
             title = str(d.get("title") or "未命名文档")
-            pages.append(WikiPage(
-                id=f"upload-{d.get('doc_id') or hashlib.md5(title.encode()).hexdigest()[:8]}", title=title,
-                domain=str(d.get("domain") or "shared"), content=content[:UPLOAD_PAGE_MAX_CHARS], sources=[title],
-                summary=re.sub(r"\s+", " ", content)[:80], questions=[title], kind="upload"))
+            base = f"upload-{d.get('doc_id') or hashlib.md5(title.encode()).hexdigest()[:8]}"
+            parts = split_upload(content, UPLOAD_PAGE_MAX_CHARS)
+            for n, (heading, body) in enumerate(parts, 1):
+                page_title = title if len(parts) == 1 else f"{title}（{n}/{len(parts)}{'：' + heading if heading else ''}）"
+                entry = self._upload_index.get(self._upload_key(page_title, body)) or {}
+                pages.append(WikiPage(
+                    id=base if len(parts) == 1 else f"{base}-{n}", title=page_title,
+                    domain=str(d.get("domain") or "shared"), content=body, sources=[title],
+                    summary=entry.get("summary") or re.sub(r"\s+", " ", body)[:80],
+                    questions=list(entry.get("questions") or [page_title]), kind="upload"))
         return pages
+
+    @staticmethod
+    def _upload_key(title: str, content: str) -> str:
+        return hashlib.sha256(f"{title}\x00{content}".encode("utf-8")).hexdigest()[:16]
+
+    def _load_upload_index(self) -> Dict[str, Dict[str, Any]]:
+        path = self._data_dir / "upload_index.json"
+        try:
+            return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, json.JSONDecodeError) as ex:
+            logger.warning("读取上传文档目录条目失败，先用标题和开头一段：%r", ex)
+            return {}
+
+    def _save_upload_index(self) -> None:
+        live = {self._upload_key(p.title, p.content) for p in self._pages if p.kind == "upload"}
+        self._upload_index = {k: v for k, v in self._upload_index.items() if k in live}   # 删掉的文档顺手清掉
+        try:
+            self._data_dir.mkdir(parents=True, exist_ok=True)
+            tmp = self._data_dir / "upload_index.json.tmp"
+            tmp.write_text(json.dumps(self._upload_index, ensure_ascii=False, indent=1), encoding="utf-8")
+            tmp.replace(self._data_dir / "upload_index.json")
+        except OSError as ex:
+            logger.warning("保存上传文档目录条目失败（本次进程内仍生效）：%r", ex)
+
+    async def compile_uploads(self) -> int:
+        """给还没有目录条目的上传页编条目（和内置页同一个提示词、同样去掉金额），返回编好的页数。"""
+        from retrieval.wiki_compile import compile_entry
+
+        async with self._compile_lock:
+            todo = [p for p in self._pages if p.kind == "upload"
+                    and self._upload_key(p.title, p.content) not in self._upload_index]
+            done = 0
+            for page in todo:
+                try:
+                    entry = await compile_entry(self._client, self._model, page)
+                except Exception as ex:
+                    logger.warning("上传文档 %s 编目录条目失败，继续用标题和开头一段：%r", page.id, ex)
+                    continue
+                if entry.get("summary") and entry.get("questions"):
+                    self._upload_index[self._upload_key(page.title, page.content)] = entry
+                    done += 1
+            if done or todo:
+                self._save_upload_index()
+            if done:
+                await asyncio.to_thread(self.reload)
+                self.stats["upload_compiled"] += done
+                logger.info("上传文档目录条目已编译 %d 页", done)
+            return done
+
+    def _record_miss(self, query: str, reason: str, ids: List[str]) -> None:
+        """选页为空或 LLM 失败的问题：留在内存给后台看，并追加到数据目录，供 wiki_compile --review-misses 处理。"""
+        row = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "query": query[:200],
+               "reason": reason, "pages": ids}
+        self.misses.append(row)
+        path = self._data_dir / "misses.jsonl"
+        try:
+            if path.is_file() and path.stat().st_size > MISS_LOG_MAX_BYTES:
+                return
+            self._data_dir.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        except OSError as ex:
+            logger.warning("记录选不中的问题失败：%r", ex)
 
     @property
     def pages(self) -> List[WikiPage]:
@@ -327,6 +460,10 @@ class WikiKnowledge:
         except Exception as ex:
             self.stats["errors"] += 1
             ids = await self._fallback(query, embed_task, ex)
+            self._record_miss(query, "fallback", ids)
+        else:
+            if not ids:
+                self._record_miss(query, "empty", ids)
         if not ids:
             self.stats["empty"] += 1
         self.stats["total_ms"] += (time.monotonic() - t0) * 1000
